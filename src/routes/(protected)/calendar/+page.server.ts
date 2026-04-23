@@ -41,6 +41,10 @@ export const load: PageServerLoad = async ({ locals, setHeaders }) => {
 		}
 
 		const recurrenceDays = await recurrenceDayReq.json();
+		console.log('Fetched recurrence days:', {
+			recurrenceDays: recurrenceDays.recurrenceDays,
+			timestamp: new Date().toISOString()
+		});
 
 		const profileReq = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getCandidateProfile`, {
 			method: 'GET',

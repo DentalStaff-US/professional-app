@@ -59,9 +59,7 @@
 <header class="sticky top-0 z-40 w-full border-b bg-white shadow-sm">
 	<div class="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
 		<div class="flex gap-6 md:gap-10">
-			<a class="flex items-center space-x-2" href="/"
-				><Logo /><span class="inline-block font-bold text-blue-800">{APP_NAME}</span></a
-			>
+			<a class="flex items-center space-x-2" href="/"><Logo /></a>
 			<nav class="md:flex gap-6 hidden">
 				{#if user}
 					<a
@@ -118,11 +116,14 @@
 		<div class="flex flex-1 items-center justify-end space-x-4">
 			<nav class="md:flex items-center space-x-1 hidden">
 				{#if !user}
-					<Button class="bg-blue-800 hover:bg-blue-900" on:click={() => goto('/auth/role-check?action=sign-up')}
-						>Get Started</Button
+					<Button
+						class="bg-blue-800 hover:bg-blue-900"
+						on:click={() => goto('/auth/role-check?action=sign-up')}>Get Started</Button
 					>
-					<Button variant="outline" class="text-blue-800" on:click={() => goto('/auth/role-check?action=sign-in')}
-						>Sign in</Button
+					<Button
+						variant="outline"
+						class="text-blue-800"
+						on:click={() => goto('/auth/role-check?action=sign-in')}>Sign in</Button
 					>
 				{:else}
 					<DropdownMenu.Root>
