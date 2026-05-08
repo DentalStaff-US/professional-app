@@ -45,9 +45,15 @@
 	import type { PageData } from './$types';
 	import { differenceInMinutes } from 'date-fns/fp';
 	import { format } from 'date-fns';
+	import { formatInTimeZone } from 'date-fns-tz';
+	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
 	import { enhance } from '$app/forms';
 
 	export let data: PageData;
+
+	// Requisition timezone is the source of truth for shift times (matches admin app).
+	const requisitionTimezone = data.workday?.requisition?.referenceTimezone || 'America/New_York';
+	const requisitionTimezoneLabel = formatTimezoneName(requisitionTimezone);
 
 	// For demonstration purposes - in a real app, this would be controlled by the actual shift date
 	// compared to current date, and the status of the shift
@@ -140,10 +146,18 @@
 						</div>
 						<div>
 							<h3 class="font-medium">Date & Time</h3>
-							<p class="text-muted-foreground">{format(data.workday.recurrenceDay.date, 'PP')}</p>
 							<p class="text-muted-foreground">
-								{format(data.workday.recurrenceDay.dayStart, 'hh:mm a')} -{' '}
-								{format(data.workday.recurrenceDay.dayEnd, 'hh:mm a')}
+								{new Date(data.workday.recurrenceDay.date).toLocaleDateString('en-US', {
+									month: 'short',
+									day: 'numeric',
+									year: 'numeric',
+									timeZone: 'UTC'
+								})}
+							</p>
+							<p class="text-muted-foreground">
+								{formatInTimeZone(data.workday.recurrenceDay.dayStart, requisitionTimezone, 'hh:mm a')}
+								- {formatInTimeZone(data.workday.recurrenceDay.dayEnd, requisitionTimezone, 'hh:mm a')}
+								<span class="text-xs">({requisitionTimezoneLabel} time)</span>
 							</p>
 						</div>
 					</div>

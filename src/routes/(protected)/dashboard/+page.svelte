@@ -31,14 +31,55 @@
 	import type { SuperValidated } from 'sveltekit-superforms';
 	import type { RecurrenceDayClaimSchema } from '$lib/config/zod-schemas';
 	import { superForm } from 'sveltekit-superforms/client';
-	import { getUserTimezone } from '$lib/_helpers/UTCTimezoneUtils';
+	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
 	import { formatInTimeZone } from 'date-fns-tz';
+
+	// Render a YYYY-MM-DD as "Month d, yyyy" without applying any timezone shift.
+	const formatUtcDate = (value: string | Date | null | undefined) => {
+		if (!value) return '';
+		const d = value instanceof Date ? value : new Date(value);
+		if (isNaN(d.getTime())) return '';
+		return d.toLocaleDateString('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric',
+			timeZone: 'UTC'
+		});
+	};
+
+	// Format a UTC timestamp in a given IANA timezone, falling back to the
+	// requisition's referenceTimezone so the displayed time matches the admin app.
+	const formatTimeInTz = (
+		value: string | Date | null | undefined,
+		timezone: string | null | undefined
+	) => {
+		if (!value) return '';
+		const tz = timezone || 'America/New_York';
+		try {
+			return formatInTimeZone(value instanceof Date ? value : new Date(value), tz, 'p');
+		} catch {
+			return '';
+		}
+	};
+
+	// Render a YYYY-MM-DD weekBeginDate as a 7-day "Mon d – Mon d, yyyy" range,
+	// matching the admin app's pattern (start + 6 days, formatted in UTC).
+	const formatWorkWeekRange = (weekBeginDate: string | null | undefined) => {
+		if (!weekBeginDate) return '';
+		const start = new Date(weekBeginDate);
+		if (isNaN(start.getTime())) return '';
+		const end = new Date(start);
+		end.setUTCDate(start.getUTCDate() + 6);
+		const fmt = (d: Date) =>
+			d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+		return `${fmt(start)} – ${fmt(end)}, ${start.getUTCFullYear()}`;
+	};
 
 	// Mock data - replace with your actual data
 	export let data: PageData;
 	let dialogOpen: boolean = false;
 
-	let selectedShift = null
+	let selectedShift: any = null;
 	$: user = data.user;
 	$: workdays = data.workdays;
 	$: timesheets = data.timesheets;
@@ -186,9 +227,17 @@
 												</p>
 												<div class="flex items-center gap-2 text-sm">
 													<CalendarDays class="h-3.5 w-3.5 text-muted-foreground" />
-													<span>{formatInTimeZone(shift.recurrenceDay.date, getUserTimezone(), 'PP')}</span>
+													<span>{formatUtcDate(shift.recurrenceDay.date)}</span>
 													<Clock class="h-3.5 w-3.5 ml-2 text-muted-foreground" />
-													<span>{format(shift.recurrenceDay.dayStart, 'p')} - {format(shift.recurrenceDay.dayEnd, 'p')}</span>
+													<span>
+														{formatTimeInTz(shift.recurrenceDay.dayStart, shift.requisition.referenceTimezone)}
+														- {formatTimeInTz(shift.recurrenceDay.dayEnd, shift.requisition.referenceTimezone)}
+														<span class="text-xs text-muted-foreground"
+															>({formatTimezoneName(
+																shift.requisition.referenceTimezone || 'America/New_York'
+															)})</span
+														>
+													</span>
 												</div>
 											</div>
 											<div class="flex items-center gap-2">
@@ -229,7 +278,7 @@
 												<p class="text-sm text-muted-foreground">{timesheet.company.name}</p>
 												<div class="flex items-center gap-2 text-sm">
 													<CalendarDays class="h-3.5 w-3.5 text-muted-foreground" />
-													<span>{formatInTimeZone(timesheet.timesheet.weekBeginDate, getUserTimezone(), 'PP')}</span>
+													<span>{formatWorkWeekRange(timesheet.timesheet.weekBeginDate)}</span>
 													<Clock class="h-3.5 w-3.5 ml-2 text-muted-foreground" />
 													<span>{timesheet.timesheet.totalHoursWorked} hours</span>
 												</div>
@@ -545,26 +594,32 @@
 							<div class="flex items-center gap-2 text-gray-600">
 								<CalendarDays size={18} />
 								<span
-									>{new Date(selectedShift?.recurrenceDay.startTime).toLocaleDateString('en-US', {
-										weekday: 'long',
-										year: 'numeric',
-										month: 'long',
-										day: 'numeric'
-									})}</span
+									>{selectedShift?.recurrenceDay?.date
+										? new Date(selectedShift.recurrenceDay.date).toLocaleDateString('en-US', {
+												weekday: 'long',
+												year: 'numeric',
+												month: 'long',
+												day: 'numeric',
+												timeZone: 'UTC'
+											})
+										: ''}</span
 								>
 							</div>
 							<div class="flex items-center gap-2 text-gray-600">
 								<Clock size={18} />
 								<span>
-									{new Date(selectedShift?.recurrenceDay.startTime).toLocaleTimeString('en-US', {
-										hour: 'numeric',
-										minute: '2-digit',
-										hour12: true
-									})} - {new Date(selectedShift?.recurrenceDay.endTime).toLocaleTimeString('en-US', {
-										hour: 'numeric',
-										minute: '2-digit',
-										hour12: true
-									})}
+									{formatTimeInTz(
+										selectedShift?.recurrenceDay.dayStart ?? selectedShift?.recurrenceDay.startTime,
+										selectedShift?.requisition?.referenceTimezone
+									)} - {formatTimeInTz(
+										selectedShift?.recurrenceDay.dayEnd ?? selectedShift?.recurrenceDay.endTime,
+										selectedShift?.requisition?.referenceTimezone
+									)}
+									<span class="text-xs"
+										>({formatTimezoneName(
+											selectedShift?.requisition?.referenceTimezone || 'America/New_York'
+										)})</span
+									>
 								</span>
 							</div>
 						</div>
@@ -581,12 +636,10 @@
 										<span>{selectedShift?.requisition.disciplineName}</span>
 									</div>
 								{/if}
-								{#if selectedShift?.requisition.experienceLevelName}
-									<div class="flex items-center gap-2 text-gray-600">
-										<GraduationCap size={18} />
-										<span>{selectedShift?.requisition.experienceLevelName}</span>
-									</div>
-								{/if}
+								<div class="flex items-center gap-2 text-gray-600">
+									<GraduationCap size={18} />
+									<span>{selectedShift?.requisition.experienceLevelName ?? 'No Preference'}</span>
+								</div>
 							</div>
 </div>
 						<div class="grid grid-cols-2 gap-4">

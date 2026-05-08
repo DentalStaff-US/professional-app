@@ -11,6 +11,8 @@
 	import type { RecurrenceDayClaimSchema } from '$lib/config/zod-schemas.js';
 	import { superForm } from 'sveltekit-superforms/client';
 	import { isPast } from 'date-fns';
+	import { formatInTimeZone } from 'date-fns-tz';
+	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
 
 	type FilterType = 'ALL' | 'OPEN' | 'APPLIED';
 	export let data: PageData;
@@ -113,6 +115,11 @@
 			</Dialog.Header>
 
 			{#if selectedEvent?.extendedProps.type === 'RECURRENCE_DAY'}
+				{@const eventTimezone =
+					selectedEvent.extendedProps.requisition?.referenceTimezone || 'America/New_York'}
+				{@const recurrenceDate = selectedEvent.extendedProps.recurrenceDay?.date}
+				{@const utcStart = selectedEvent.extendedProps.recurrenceDay?.startTime}
+				{@const utcEnd = selectedEvent.extendedProps.recurrenceDay?.endTime}
 				<div class="space-y-6 py-4">
 					<div class="space-y-3">
 						<p class="font-semibold text-lg">Schedule Details</p>
@@ -120,26 +127,24 @@
 							<div class="flex items-center gap-2 text-gray-600">
 								<CalendarDays size={18} />
 								<span
-									>{new Date(selectedEvent.start).toLocaleDateString('en-US', {
-										weekday: 'long',
-										year: 'numeric',
-										month: 'long',
-										day: 'numeric'
-									})}</span
+									>{recurrenceDate
+										? new Date(recurrenceDate).toLocaleDateString('en-US', {
+												weekday: 'long',
+												year: 'numeric',
+												month: 'long',
+												day: 'numeric',
+												timeZone: 'UTC'
+											})
+										: ''}</span
 								>
 							</div>
 							<div class="flex items-center gap-2 text-gray-600">
 								<Clock size={18} />
 								<span>
-									{new Date(selectedEvent.start).toLocaleTimeString('en-US', {
-										hour: 'numeric',
-										minute: '2-digit',
-										hour12: true
-									})} - {new Date(selectedEvent.end).toLocaleTimeString('en-US', {
-										hour: 'numeric',
-										minute: '2-digit',
-										hour12: true
-									})}
+									{utcStart ? formatInTimeZone(utcStart, eventTimezone, 'p') : ''} - {utcEnd
+										? formatInTimeZone(utcEnd, eventTimezone, 'p')
+										: ''}
+									<span class="text-xs">({formatTimezoneName(eventTimezone)})</span>
 								</span>
 							</div>
 						</div>
@@ -156,12 +161,13 @@
 										<span>{selectedEvent.extendedProps.requisition.disciplineName}</span>
 									</div>
 								{/if}
-								{#if selectedEvent.extendedProps.requisition.experienceLevelName}
-									<div class="flex items-center gap-2 text-gray-600">
-										<GraduationCap size={18} />
-										<span>{selectedEvent.extendedProps.requisition.experienceLevelName}</span>
-									</div>
-								{/if}
+								<div class="flex items-center gap-2 text-gray-600">
+									<GraduationCap size={18} />
+									<span
+										>{selectedEvent.extendedProps.requisition.experienceLevelName ??
+											'No Preference'}</span
+									>
+								</div>
 							</div>
 </div>
 						<div class="grid grid-cols-2 gap-4">

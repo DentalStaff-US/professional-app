@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { usPhoneField } from '$lib/_helpers/phone';
 
 export type Primitive = string | number | boolean | null;
 
@@ -86,7 +87,7 @@ export const newProfileSchema = z.object({
 	lon: z.string(),
 	hourlyRateMin: z.number(),
 	hourlyRateMax: z.number(),
-	cellPhone: z.string().optional(),
+	cellPhone: usPhoneField().nullable().optional(),
 	citizenship: z.string().optional(),
 	birthday: z.string().optional(),
 	regionId: z.string().optional()
@@ -97,12 +98,12 @@ export const updateProfileSchema = z.object({
 	firstName: z.string(),
 	lastName: z.string(),
 	email: z.string().email(),
-	hourlyRateMin: z.number(),
-	hourlyRateMax: z.number(),
+	hourlyRateMin: z.number().nullable().optional(),
+	hourlyRateMax: z.number().nullable().optional(),
 	completeAddress: z.string().optional(),
 	lat: z.string().optional(),
 	lon: z.string().optional(),
-	cellPhone: z.string().optional(),
+	cellPhone: usPhoneField().nullable().optional(),
 	citizenship: z.string().optional(),
 	birthday: z.string().optional(),
 	regionId: z.string().optional(),

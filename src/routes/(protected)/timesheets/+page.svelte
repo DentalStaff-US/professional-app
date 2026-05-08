@@ -3,13 +3,25 @@
 	import { cn } from '$lib/utils';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import { goto } from '$app/navigation';
-	import { formatInTimeZone } from 'date-fns-tz';
-	import { getUserTimezone } from '$lib/_helpers/UTCTimezoneUtils.js';
 
 	export let data;
 
 	$: timesheets = data.timesheets;
 
+	// Render the work-week range from a YYYY-MM-DD weekBeginDate using the
+	// admin app's pattern: start + 6 days, formatted in UTC so the displayed
+	// dates match the stored values regardless of viewer timezone/locale.
+	// See dental-staff-app/src/routes/(protected)/timesheets/+page.svelte
+	function formatWorkWeek(weekBeginDate: string | null | undefined): string {
+		if (!weekBeginDate) return '-';
+		const start = new Date(weekBeginDate);
+		if (isNaN(start.getTime())) return '-';
+		const end = new Date(start);
+		end.setUTCDate(start.getUTCDate() + 6);
+		const fmt = (d: Date) =>
+			d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+		return `${fmt(start)} – ${fmt(end)}, ${start.getUTCFullYear()}`;
+	}
 </script>
 
 <svelte:head>
@@ -45,7 +57,7 @@
 							</div>
 						</div>
 					</Table.Cell>
-					<Table.Cell>{formatInTimeZone(data.timesheet.weekBeginDate, getUserTimezone(), 'PP')}</Table.Cell>
+					<Table.Cell>{formatWorkWeek(data.timesheet.weekBeginDate)}</Table.Cell>
 					<Table.Cell>
 						<Badge
 							class={cn(

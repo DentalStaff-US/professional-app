@@ -129,29 +129,33 @@
             <Form.Field config={{form: form, schema: newProfileSchema}} name="cellPhone">
                 <Form.Item>
                     <Form.Label>Cell Phone #</Form.Label>
-                    <Form.Input type="tel"
+                    <Form.Input
+                        type="tel"
+                        inputmode="numeric"
+                        placeholder="(555) 555-5555"
                         on:input={(event) => {
-                          // Get current value and strip non-digits
-                          const value = event.currentTarget.value.replace(/\D/g, '');
+                            // (XXX) XXX-XXXX masking. Drop a leading "1" so we
+                            // always show the local 10 digits. Server normalizes
+                            // to E.164 via the `usPhoneField()` zod transform.
+                            const digits = event.currentTarget.value.replace(/\D/g, '');
+                            const local =
+                                digits.length === 11 && digits.startsWith('1')
+                                    ? digits.slice(1)
+                                    : digits;
+                            const trimmed = local.slice(0, 10);
+                            let formatted = '';
+                            if (trimmed.length === 0) formatted = '';
+                            else if (trimmed.length <= 3) formatted = `(${trimmed}`;
+                            else if (trimmed.length <= 6)
+                                formatted = `(${trimmed.slice(0, 3)}) ${trimmed.slice(3)}`;
+                            else
+                                formatted = `(${trimmed.slice(0, 3)}) ${trimmed.slice(
+                                    3,
+                                    6
+                                )}-${trimmed.slice(6)}`;
 
-                          // Limit to 10 digits and format
-                          const trimmed = value.substring(0, 10);
-                          let formatted = '';
-
-                          // Apply XXX-XXX-XXXX formatting
-                          if (trimmed.length <= 3) {
-                            formatted = trimmed;
-                          } else if (trimmed.length <= 6) {
-                            formatted = `${trimmed.slice(0, 3)}-${trimmed.slice(3)}`;
-                          } else {
-                            formatted = `${trimmed.slice(0, 3)}-${trimmed.slice(3, 6)}-${trimmed.slice(6)}`;
-                          }
-
-                          // Update the input value
-                          event.currentTarget.value = formatted;
-
-                          // Update the form data
-                          $formData.cellPhone = formatted;
+                            event.currentTarget.value = formatted;
+                            $formData.cellPhone = formatted;
                         }}
                     />
                     <Form.Validation />

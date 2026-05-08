@@ -45,7 +45,8 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
-	import { toZonedTime } from 'date-fns-tz';
+	import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
+	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
 
 	export let data: PageData;
 
@@ -72,28 +73,43 @@
 	// ✅ Initialize time entries from existing timesheet or create empty ones
 	let timeEntries: Record<string, { startTime: string; endTime: string; hours: number; lunchStartTime?: string; lunchEndTime?: string }> = {};
 
-	// ✅ Calculate week dates
-	$: weekBeginDate = parseISO(timesheet.weekBeginDate);
-	$: weekEndDate = endOfWeek(weekBeginDate);
-	$: weekDays = eachDayOfInterval({ start: weekBeginDate, end: weekEndDate });
-	$: formattedWeekRange = isValid(weekBeginDate)
-		? `${format(weekBeginDate, 'MMM d')} - ${format(weekEndDate, 'MMM d, yyyy')}`
-		: 'Invalid date range';
+	// Match admin app: weekBeginDate is a YYYY-MM-DD string with no time.
+	// Compute end as start + 6 days using UTC math, format with timeZone: 'UTC'
+	// so the displayed range is stable regardless of the viewer's locale/timezone.
+	// See dental-staff-app/src/routes/(protected)/timesheets/+page.svelte
+	$: formattedWeekRange = (() => {
+		if (!timesheet?.weekBeginDate) return 'Invalid date range';
+		const start = new Date(timesheet.weekBeginDate);
+		if (!isValid(start)) return 'Invalid date range';
+		const end = new Date(start);
+		end.setUTCDate(start.getUTCDate() + 6);
+		const fmt = (d: Date) =>
+			d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+		return `${fmt(start)} – ${fmt(end)}, ${start.getUTCFullYear()}`;
+	})();
 
 	$: workdayDates = data.workdays
 		? data.workdays.map((wd: any) => wd.recurrenceDay.date)
 		: [recurrenceDay?.date].filter(Boolean);
 
+	// Recurrence day `date` is a YYYY-MM-DD (date-only). Format in UTC so the
+	// displayed day matches what's stored, regardless of viewer timezone.
 	$: scheduledWorkDays = workdayDates
 		.map((dateStr: string) => {
-			const date = parseISO(dateStr);
+			const date = new Date(dateStr);
 			return {
 				date,
-				dateKey: format(date, 'yyyy-MM-dd'),
-				dayString: format(date, 'EEE, MMM d')
+				dateKey: dateStr,
+				dayString: isValid(date)
+					? formatInTimeZone(date, 'UTC', 'EEE, MMM d')
+					: dateStr
 			};
 		})
 		.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+	// Display label for the requisition timezone (e.g. "America/New_York" → "New York")
+	$: requisitionTimezone = requisition?.referenceTimezone || 'America/New_York';
+	$: requisitionTimezoneLabel = formatTimezoneName(requisitionTimezone);
 
 	// ✅ Initialize entries for all scheduled workdays
 	$: {
@@ -180,41 +196,20 @@
     });
 
     if (timesheet?.hoursRaw && Array.isArray(timesheet.hoursRaw) && timesheet.hoursRaw.length > 0) {
+      // Convert UTC timestamps into the requisition's timezone so the
+      // pre-filled inputs display times the way they were entered (matches
+      // admin app pattern — requisition.referenceTimezone is the source of truth).
+      const tz = requisitionTimezone;
+      const toTzTime = (iso: string | null | undefined) =>
+        iso ? formatInTimeZone(new Date(iso), tz, 'HH:mm') : '';
+
       timesheet.hoursRaw.forEach((entry: any) => {
         const dateKey = entry.date;
 
-        const startTime = entry.startTime
-          ? new Date(entry.startTime).toLocaleTimeString('en-US', {
-              hour12: false,
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          : '';
-
-        const endTime = entry.endTime
-          ? new Date(entry.endTime).toLocaleTimeString('en-US', {
-              hour12: false,
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          : '';
-
-        // ✅ Load lunch times if they exist
-        const lunchStartTime = entry.lunchStartTime
-          ? new Date(entry.lunchStartTime).toLocaleTimeString('en-US', {
-              hour12: false,
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          : '';
-
-        const lunchEndTime = entry.lunchEndTime
-          ? new Date(entry.lunchEndTime).toLocaleTimeString('en-US', {
-              hour12: false,
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          : '';
+        const startTime = toTzTime(entry.startTime);
+        const endTime = toTzTime(entry.endTime);
+        const lunchStartTime = toTzTime(entry.lunchStartTime);
+        const lunchEndTime = toTzTime(entry.lunchEndTime);
 
         if (timeEntries[dateKey]) {
           timeEntries[dateKey] = {
@@ -320,6 +315,8 @@
 		loadTimeEntries();
 	}
 
+	// Render a UTC timestamp (entry.startTime, etc.) in the requisition's
+	// timezone — admin app uses formatInTimeZone(value, requisition.referenceTimezone, ...)
 	function safeFormatDate(date: any, formatStr: string = 'hh:mm a'): string {
 		if (!date) return 'N/A';
 
@@ -328,18 +325,20 @@
 			if (!isValid(parsedDate)) {
 				return 'N/A';
 			}
-			return format(parsedDate, formatStr);
+			return formatInTimeZone(parsedDate, requisitionTimezone, formatStr);
 		} catch (error) {
 			console.error('Error formatting date:', error, date);
 			return 'N/A';
 		}
 	}
 
+	// Recurrence-day / hours-raw `date` is a YYYY-MM-DD with no time. Render
+	// in UTC so the displayed weekday matches the stored date for every viewer.
 	function formatFullDate(dateString: string) {
 		if (!dateString) return 'N/A';
 
 		try {
-			const date = typeof dateString === 'string' ? parseISO(dateString) : new Date(dateString);
+			const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
 
 			if (!isValid(date)) {
 				console.error('Invalid date:', dateString);
@@ -350,7 +349,8 @@
 				weekday: 'long',
 				year: 'numeric',
 				month: 'long',
-				day: 'numeric'
+				day: 'numeric',
+				timeZone: 'UTC'
 			});
 		} catch (error) {
 			console.error('Error formatting date:', error, dateString);
@@ -416,6 +416,7 @@
 		<p class="text-muted-foreground flex items-center mt-1">
 			<Calendar class="h-4 w-4 mr-1" />
 			Week of {formattedWeekRange}
+			<span class="ml-2 text-xs">({requisitionTimezoneLabel} time)</span>
 		</p>
 	</div>
 
