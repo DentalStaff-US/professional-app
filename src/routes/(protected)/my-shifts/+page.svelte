@@ -104,8 +104,18 @@
 				.sort((a: Record<string, any>, b: Record<string, any>) => sortWorkdays(false)(a, b));
 
 	$: console.log({ pastWorkdays, upcomingWorkdays });
-	$: canCancelShift = (dateString: string) => {
-		return new Date(dateString) > new Date();
+	// Cancel button is allowed only when the shift is in the future AND still
+	// in a candidate-cancellable state. A recurrence day flipped to CANCELED
+	// (or a workday with cancelledAt set) means an admin/client already killed
+	// the shift — surfacing the button there would let the candidate write a
+	// stray CANDIDATE cancellation row into recurrence_day_cancellations,
+	// which would skew the penalty-tracking data.
+	$: canCancelShift = (shift: any) => {
+		if (!shift?.recurrenceDay?.dayStart) return false;
+		if (new Date(shift.recurrenceDay.dayStart) <= new Date()) return false;
+		if (shift.recurrenceDay.status !== 'FILLED') return false;
+		if (shift.workday?.cancelledAt) return false;
+		return true;
 	};
 
 	// Get status badge variant
@@ -258,7 +268,7 @@
 								</div>
 
 								<!-- Action Footer -->
-								{#if canCancelShift(shift.recurrenceDay.date)}
+								{#if canCancelShift(shift)}
 									<form
 										use:enhance
 										action="?/cancelWorkdayShift"

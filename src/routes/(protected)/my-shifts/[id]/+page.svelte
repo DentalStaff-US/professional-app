@@ -66,10 +66,15 @@
 	// can't accidentally write a CANDIDATE cancellation row against a shift
 	// that's already been killed by the other side — that would skew the
 	// penalty-tracking data.
+	// NB: `data.workday` here is the API payload's joined shape; the actual
+	// workday row sits at `data.workday.workday`.
 	const isCancelled =
-		data.workday.recurrenceDay.status === 'CANCELED' || Boolean(data.workday.cancelledAt);
+		data.workday.recurrenceDay.status === 'CANCELED' ||
+		Boolean(data.workday.workday?.cancelledAt);
 	const canCancelShift =
-		isUpcoming && data.workday.recurrenceDay.status === 'FILLED' && !data.workday.cancelledAt;
+		isUpcoming &&
+		data.workday.recurrenceDay.status === 'FILLED' &&
+		!data.workday.workday?.cancelledAt;
 
 	// UI state
 	let isCancelDialogOpen = false;
