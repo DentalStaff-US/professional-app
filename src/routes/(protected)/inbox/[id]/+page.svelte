@@ -68,7 +68,7 @@
                 </div>
                 <div>
                     <p class="text-xl md:text-2xl font-semibold">
-                        {conversation?.applicationData?.requisition.title}
+                        {conversation?.applicationData?.requisition.disciplineName}
                     </p>
                     <p>{conversation.applicationData?.company.companyName}</p>
                 </div>

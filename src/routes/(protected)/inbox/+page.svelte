@@ -30,7 +30,7 @@
                     >
                         <div class="grow w-full">
                             {#if conversation?.applicationData}
-                                <p class="font-semibold">{conversation.applicationData.requisition.title}</p>
+                                <p class="font-semibold">{conversation.applicationData.requisition.disciplineName}</p>
                                 <p class="text-sm">{conversation.applicationData.company.name}</p>
                             {:else}
                                 {@const

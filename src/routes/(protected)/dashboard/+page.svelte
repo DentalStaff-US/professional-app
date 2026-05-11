@@ -183,9 +183,17 @@
 												</p>
 												<div class="flex items-center gap-2 text-sm">
 													<CalendarDays class="h-3.5 w-3.5 text-muted-foreground" />
-													<span>{format(requisition.recurrenceDay.date, 'PP')}</span>
+													<span>{formatUtcDate(requisition.recurrenceDay.date)}</span>
 													<Clock class="h-3.5 w-3.5 ml-2 text-muted-foreground" />
-													<span>{format(requisition.recurrenceDay.startTime, 'p')} - {format(requisition.recurrenceDay.endTime, 'p')}</span>
+													<span
+														>{formatTimeInTz(
+															requisition.recurrenceDay.dayStart ?? requisition.recurrenceDay.startTime,
+															requisition.requisition.referenceTimezone
+														)} - {formatTimeInTz(
+															requisition.recurrenceDay.dayEnd ?? requisition.recurrenceDay.endTime,
+															requisition.requisition.referenceTimezone
+														)}</span
+													>
 												</div>
 											</div>
 											<div class="flex items-center gap-2">
@@ -221,7 +229,7 @@
 											class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
 										>
 											<div class="space-y-1">
-												<div class="font-medium">{shift.requisition.discipline} <span class="text-xs text-gray-500">#{shift.requisition.id}</span></div>
+												<div class="font-medium">{shift.requisition.disciplineName ?? shift.requisition.discipline} <span class="text-xs text-gray-500">#{shift.requisition.id}</span></div>
 												<p class="text-sm text-muted-foreground">
 													{shift.company.companyName} • {shift.location?.name || 'Location Not Provided'}
 												</p>

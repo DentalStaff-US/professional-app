@@ -40,7 +40,7 @@
                                 </div>
                             </div>
                             <div>
-                                <p class="font-semibold text-2xl">{opening.title}</p>
+                                <p class="font-semibold text-2xl">{opening.disciplineName}</p>
                                 <p>{company.companyName}</p>
                             </div>
                         </div>

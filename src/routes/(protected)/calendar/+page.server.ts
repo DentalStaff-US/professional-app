@@ -26,46 +26,76 @@ export const load: PageServerLoad = async ({ locals, setHeaders }) => {
 	const token = generateToken(userId);
 
 	try {
-		const recurrenceDayReq = await fetch(
-			`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getTempRequisitionsForCandidate`,
-			{
+		// Fetch openings (recurrence days still claimable) and the candidate's
+		// own workdays (past + future claimed shifts) in parallel. Merged
+		// together they give the calendar a full picture: stuff to do, stuff
+		// done, stuff already on the books.
+		const [recurrenceDayReq, workdaysReq, profileReq] = await Promise.all([
+			fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getTempRequisitionsForCandidate`, {
 				method: 'GET',
 				headers: { Authorization: `Bearer ${token}` }
-			}
-		);
+			}),
+			fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getWorkdaysForCandidate`, {
+				method: 'GET',
+				headers: { Authorization: `Bearer ${token}` }
+			}),
+			fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getCandidateProfile`, {
+				method: 'GET',
+				headers: { Authorization: `Bearer ${token}` }
+			})
+		]);
+
 		if (!recurrenceDayReq.ok) {
-			if (recurrenceDayReq.status === 401) {
-				throw error(401, 'Authentication failed');
-			}
+			if (recurrenceDayReq.status === 401) throw error(401, 'Authentication failed');
 			throw error(recurrenceDayReq.status, 'Failed to fetch requisitions');
 		}
-
-		const recurrenceDays = await recurrenceDayReq.json();
-		console.log('Fetched recurrence days:', {
-			recurrenceDays: recurrenceDays.recurrenceDays,
-			timestamp: new Date().toISOString()
-		});
-
-		const profileReq = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getCandidateProfile`, {
-			method: 'GET',
-			headers: { Authorization: `Bearer ${token}` }
-		});
+		if (!workdaysReq.ok) {
+			if (workdaysReq.status === 401) throw error(401, 'Authentication failed');
+			throw error(workdaysReq.status, 'Failed to fetch workdays');
+		}
 		if (!profileReq.ok) {
-			if (profileReq.status === 401) {
-				throw error(401, 'Authentication failed');
-			}
+			if (profileReq.status === 401) throw error(401, 'Authentication failed');
 			throw error(profileReq.status, 'Failed to fetch profile');
 		}
 
-		const profile = await profileReq.json();
+		const [recurrenceDayPayload, workdayPayload, profile] = await Promise.all([
+			recurrenceDayReq.json(),
+			workdaysReq.json(),
+			profileReq.json()
+		]);
 
-		// if (!profile.approved) {
-		// 	redirect(302, '/onboarding/awaiting-approval');
-		// }
+		// Normalize both sources into the shape convertRecurrenceDayToEvent
+		// expects. The temp endpoint already returns that shape; the workdays
+		// endpoint needs a small re-key (it nests workday/recurrenceDay/etc
+		// at the top level, same as what the factory expects).
+		const tempRecurrenceDays = recurrenceDayPayload.recurrenceDays ?? [];
+		const workdayRecurrenceDays = (workdayPayload.data ?? []).map((w: any) => ({
+			recurrenceDay: w.recurrenceDay,
+			requisition: w.requisition,
+			workday: w.workday,
+			company: w.company,
+			location: w.location
+		}));
 
-		return { user, profile, recurrenceDays: recurrenceDays.recurrenceDays };
-	} catch (error) {
-		console.error(error);
+		// Dedup: in theory the temp endpoint already excludes recurrence days
+		// the candidate has claimed (their status flips to FILLED), but
+		// belt-and-suspenders against any overlap. Key off recurrenceDay.id.
+		const seen = new Set<string>();
+		const merged: any[] = [];
+		for (const entry of [...workdayRecurrenceDays, ...tempRecurrenceDays]) {
+			const id = entry?.recurrenceDay?.id;
+			if (!id || seen.has(id)) continue;
+			seen.add(id);
+			merged.push(entry);
+		}
+
+		return { user, profile, recurrenceDays: merged };
+	} catch (err) {
+		console.error(err);
+		// Don't let a transient fetch failure crash the page — return empty so
+		// the calendar renders without entries and the user sees their auth
+		// session intact.
+		return { user, profile: null, recurrenceDays: [] };
 	}
 };
 

@@ -38,7 +38,7 @@
 									</div> -->
 								</div>
 								<div>
-									<p class="font-semibold text-2xl">{opening.title}</p>
+									<p class="font-semibold text-2xl">{opening.disciplineName}</p>
 									<p>{opening.company.companyName}</p>
 								</div>
 							</div>
@@ -89,7 +89,7 @@
 									</div> -->
 								</div>
 								<div>
-									<p class="font-semibold text-2xl">{appliedOpening?.title}</p>
+									<p class="font-semibold text-2xl">{appliedOpening?.disciplineName}</p>
 									<p>{appliedOpening?.company.companyName}</p>
 								</div>
 							</div>

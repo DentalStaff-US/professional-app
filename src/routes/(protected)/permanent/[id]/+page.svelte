@@ -15,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>{opening.title} | DentalStaff.US</title>
+	<title>{opening.disciplineName} | DentalStaff.US</title>
 </svelte:head>
 
 <section class="container flex flex-col gap-6 pb-16 max-w-5xl px-4">
@@ -26,7 +26,7 @@
 				alt="Company Logo"
 				src={opening.company.companyLogo}
 			/>
-			<p class="text-2xl md:text-4xl font-bold">{opening.title}</p>
+			<p class="text-2xl md:text-4xl font-bold">{opening.disciplineName}</p>
 			<a class="underline" href={`/company/${opening.company.id}`}>{opening.company.companyName}</a>
 			<div class="flex flex-col gap-2">
 				<div class="flex items-center gap-1">

@@ -30,7 +30,7 @@
 	);
 
 	// Then filter them in a separate derived store
-	$: calendarEvents = convertedEvents.filter((event: CalendarEvent) => {
+	$: calendarEvents = convertedEvents.filter((event) => {
 		switch (filter) {
 			case 'OPEN':
 				return event.extendedProps.recurrenceDay.status === 'OPEN';
@@ -118,8 +118,12 @@
 				{@const eventTimezone =
 					selectedEvent.extendedProps.requisition?.referenceTimezone || 'America/New_York'}
 				{@const recurrenceDate = selectedEvent.extendedProps.recurrenceDay?.date}
-				{@const utcStart = selectedEvent.extendedProps.recurrenceDay?.startTime}
-				{@const utcEnd = selectedEvent.extendedProps.recurrenceDay?.endTime}
+				{@const utcStart =
+					selectedEvent.extendedProps.recurrenceDay?.dayStart ??
+					selectedEvent.extendedProps.recurrenceDay?.startTime}
+				{@const utcEnd =
+					selectedEvent.extendedProps.recurrenceDay?.dayEnd ??
+					selectedEvent.extendedProps.recurrenceDay?.endTime}
 				<div class="space-y-6 py-4">
 					<div class="space-y-3">
 						<p class="font-semibold text-lg">Schedule Details</p>

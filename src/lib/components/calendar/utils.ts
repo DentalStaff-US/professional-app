@@ -104,35 +104,67 @@ const requisitionStatusColorEnum = {
 } as const;
 
 export function convertRecurrenceDayToEvent(data: {
-	recurrenceDay: { id?: any; date?: any; startTime?: any; endTime?: any; status?: any };
-	requisition: { id: any; title?: any; hourlyRate?: number; referenceTimezone?: string | null };
+	// Recurrence-day shape varies by source endpoint:
+	//   - getTempRequisitionsForCandidate aliases to startTime/endTime
+	//   - getUpcomingWorkdaysForCandidate spreads raw dayStart/dayEnd
+	// Accept either; the factory normalizes to the raw `dayStart`/`dayEnd`
+	// names in extendedProps so the dialog / consumers don't have to branch.
+	recurrenceDay: {
+		id?: any;
+		date?: any;
+		startTime?: any;
+		endTime?: any;
+		dayStart?: any;
+		dayEnd?: any;
+		status?: any;
+	};
+	requisition: {
+		id: any;
+		title?: any;
+		disciplineName?: string | null;
+		hourlyRate?: number;
+		referenceTimezone?: string | null;
+	};
 	workday: any | null;
 	company: { id: string; name?: string; logo?: string };
 	location: { completeAddress: string };
 }) {
 	const {
-		recurrenceDay: { id: recurrenceDayId, date, startTime, endTime, status },
+		recurrenceDay: { id: recurrenceDayId, status },
 		requisition,
 		workday,
 		company,
 		location
 	} = data;
-	const isoDate = parseISO(date);
-	const dateString = format(isoDate, 'yyyy-MM-dd');
+
+	// Normalize to raw column names. `dayStart`/`dayEnd` is the canonical
+	// shape (admin app + workdays endpoint); `startTime`/`endTime` is the
+	// alias used by the temp-listing endpoints. Prefer raw, fall back to
+	// alias.
+	const dayStart = data.recurrenceDay.dayStart ?? data.recurrenceDay.startTime;
+	const dayEnd = data.recurrenceDay.dayEnd ?? data.recurrenceDay.endTime;
 
 	// Use the requisition's referenceTimezone as source of truth (matches admin app).
 	// Fall back to America/New_York if the API hasn't supplied one.
 	const timezone = requisition.referenceTimezone || 'America/New_York';
 
 	// Convert UTC timestamps to display times in the requisition's timezone.
-	const localDayStart = formatTimestampForDisplay(startTime, timezone);
-	const localDayEnd = formatTimestampForDisplay(endTime, timezone);
+	const localDayStart = formatTimestampForDisplay(dayStart, timezone);
+	const localDayEnd = formatTimestampForDisplay(dayEnd, timezone);
+
+	// Match the admin calendar's compact, identifying event title — discipline
+	// name plus requisition ID — so the calendar grid is scannable at a glance.
+	// `requisition.title` is a deprecated column that's often null.
+	const disciplineLabel = requisition.disciplineName ?? requisition.title ?? '';
+	const title = requisition.id
+		? `#${requisition.id} ${disciplineLabel}`.trim()
+		: disciplineLabel;
 
 	return {
 		start: localDayStart, // Display the local start time
 		end: localDayEnd, // Display the local end time
 		resourceIds: [requisition.id, recurrenceDayId],
-		title: requisition.title,
+		title,
 		data: requisition,
 		color: status
 			? requisitionStatusColorEnum[status as keyof typeof requisitionStatusColorEnum]
@@ -140,7 +172,9 @@ export function convertRecurrenceDayToEvent(data: {
 		extendedProps: {
 			type: 'RECURRENCE_DAY',
 			requisition: { ...requisition },
-			recurrenceDay: { ...data.recurrenceDay },
+			// Normalize the recurrence day so consumers can rely on dayStart/dayEnd
+			// regardless of which endpoint produced the row.
+			recurrenceDay: { ...data.recurrenceDay, dayStart, dayEnd },
 			workday: { ...workday },
 			company: { ...company },
 			location: { ...location }
