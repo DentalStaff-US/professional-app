@@ -1,13 +1,11 @@
-import { parseISO, startOfWeek, format, parse } from 'date-fns';
+import { startOfWeek, format, parse } from 'date-fns';
 
-// Function to get the correct weekBeginDate regardless of timezone
+// Work weeks run Monday → Sunday everywhere in this app. The cron job that
+// owns timesheet creation (`processTimesheetCreation`) computes
+// weekBeginDate as Monday in the requisition's timezone; this helper agrees
+// so any client-side computation lines up with what the DB stores.
 export function getConsistentWeekBeginDate(dateString: string): string {
-	// Parse the date string
 	const date = parse(dateString, 'yyyy-MM-dd', new Date());
-
-	// Get start of week (Sunday) for this date
-	const weekBegin = startOfWeek(date);
-
-	// Format as YYYY-MM-DD string for consistent comparison
+	const weekBegin = startOfWeek(date, { weekStartsOn: 1 });
 	return format(weekBegin, 'yyyy-MM-dd');
 }

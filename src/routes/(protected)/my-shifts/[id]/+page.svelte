@@ -60,7 +60,16 @@
 	const isUpcoming = new Date(data.workday?.recurrenceDay?.dayStart) > new Date();
 	const isPast = !isUpcoming;
 	// const canSubmitTimesheet = isPast && (!timesheet || timesheet.status === 'draft');
-	const canCancelShift = isUpcoming && data.workday.recurrenceDay.status === 'FILLED';
+	// Admin/client cancellations leave the workday in place with a
+	// `cancelledAt` flag and the recurrence day flipped to CANCELED. Hide the
+	// candidate's "Relinquish Shift" button in either of those states so they
+	// can't accidentally write a CANDIDATE cancellation row against a shift
+	// that's already been killed by the other side — that would skew the
+	// penalty-tracking data.
+	const isCancelled =
+		data.workday.recurrenceDay.status === 'CANCELED' || Boolean(data.workday.cancelledAt);
+	const canCancelShift =
+		isUpcoming && data.workday.recurrenceDay.status === 'FILLED' && !data.workday.cancelledAt;
 
 	// UI state
 	let isCancelDialogOpen = false;
@@ -128,6 +137,13 @@
 		<ArrowLeft class="h-4 w-4" />
 		<span>Back to Shifts</span>
 	</Button>
+
+	{#if isCancelled}
+		<div class="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+			<p class="font-semibold">This shift was cancelled.</p>
+			<p>The position is no longer happening — you do not need to show up.</p>
+		</div>
+	{/if}
 
 	<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 		<!-- Main Content -->

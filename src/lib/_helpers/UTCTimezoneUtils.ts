@@ -145,15 +145,15 @@ export function getUTCWeekStartDate(dateString: string): string {
 			return dateString;
 		}
 
-		// Get day of week in UTC (0 = Sunday, 1 = Monday, etc.)
+		// Work weeks run Monday → Sunday. getUTCDay() returns 0=Sun…6=Sat;
+		// shift so that Monday is the start, then walk back to that Monday.
 		const dayOfWeek = date.getUTCDay();
-
-		// Subtract days to get to Sunday
-		const sunday = new Date(date);
-		sunday.setUTCDate(date.getUTCDate() - dayOfWeek);
+		const offsetToMonday = (dayOfWeek + 6) % 7;
+		const monday = new Date(date);
+		monday.setUTCDate(date.getUTCDate() - offsetToMonday);
 
 		// Format as YYYY-MM-DD
-		return format(sunday, 'yyyy-MM-dd');
+		return format(monday, 'yyyy-MM-dd');
 	} catch (error) {
 		console.error('Error getting UTC week start date:', error);
 		return dateString;

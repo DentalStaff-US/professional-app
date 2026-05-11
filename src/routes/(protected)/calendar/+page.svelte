@@ -124,7 +124,17 @@
 				{@const utcEnd =
 					selectedEvent.extendedProps.recurrenceDay?.dayEnd ??
 					selectedEvent.extendedProps.recurrenceDay?.endTime}
+				{@const isCancelled =
+					selectedEvent.extendedProps.recurrenceDay?.status === 'CANCELED'}
 				<div class="space-y-6 py-4">
+					{#if isCancelled}
+						<div
+							class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+						>
+							<p class="font-semibold">This shift was cancelled.</p>
+							<p>The position is no longer happening — you do not need to show up.</p>
+						</div>
+					{/if}
 					<div class="space-y-3">
 						<p class="font-semibold text-lg">Schedule Details</p>
 						<div class="space-y-2">
