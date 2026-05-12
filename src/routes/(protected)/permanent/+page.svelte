@@ -7,7 +7,16 @@
 	$: requisitions = data.requisitions;
 	$: applied = data.applied;
 
-	$: console.log({ requisitions, applied });
+	// An applied requisition shouldn't also surface in the Recommended tab —
+	// the candidate has already engaged with it, the Applied tab is where they
+	// track its progress. `applied` is the response from
+	// /api/external/getAppliedRequisitions, which exposes the requisition id
+	// directly at the top level (`id: requisitionTable.id` in that endpoint's
+	// select), so a Set of those ids dedupes the Recommended tab cleanly.
+	$: appliedRequisitionIds = new Set((applied ?? []).map((a: any) => a?.id));
+	$: openRequisitions = (requisitions ?? []).filter(
+		(o: any) => !appliedRequisitionIds.has(o.id)
+	);
 </script>
 
 <svelte:head>
@@ -27,7 +36,7 @@
 		<Tabs.Content value="Recommended">
 			<div class="grid grid-cols-6 gap-8 mt-8">
 				<!-- Opening Card Item -->
-				{#each requisitions as opening}
+				{#each openRequisitions as opening}
 					<div class="col-span-6 md:col-span-3 lg:col-span-2">
 						<div class="p-4 flex flex-col gap-6 border border-gray-300 rounded-md relative">
 							<div class="flex flex-col gap-4 w-full">
@@ -43,9 +52,9 @@
 								</div>
 							</div>
 							<div class="flex flex-col gap-2">
-								<div class="flex items-center gap-1">
-									<MapPin size={18} class="text-gray-500" />
-									<p class="text-sm">{opening.location.city}, {opening.location.state}</p>
+								<div class="flex items-start gap-1">
+									<MapPin size={18} class="text-gray-500 shrink-0 mt-0.5" />
+									<p class="text-sm">{opening.location.completeAddress}</p>
 								</div>
 								<div class="flex items-center gap-1">
 									<CircleDollarSign size={18} class="text-gray-500" />
@@ -66,7 +75,7 @@
 						</div>
 					</div>
 				{/each}
-				{#if requisitions.length === 0}
+				{#if openRequisitions.length === 0}
 					<p class="col-span-6 text-center text-gray-500">No permanent job openings available.</p>
 				{/if}
 			</div>
@@ -94,10 +103,10 @@
 								</div>
 							</div>
 							<div class="flex flex-col gap-2">
-								<div class="flex items-center gap-1">
-									<MapPin size={18} class="text-gray-500" />
+								<div class="flex items-start gap-1">
+									<MapPin size={18} class="text-gray-500 shrink-0 mt-0.5" />
 									<p class="text-sm">
-										{appliedOpening?.location.city}, {appliedOpening?.location.state}
+										{appliedOpening?.location.completeAddress}
 									</p>
 								</div>
 								<div class="flex items-center gap-1">

@@ -29,9 +29,9 @@
 			<p class="text-2xl md:text-4xl font-bold">{opening.disciplineName}</p>
 			<a class="underline" href={`/company/${opening.company.id}`}>{opening.company.companyName}</a>
 			<div class="flex flex-col gap-2">
-				<div class="flex items-center gap-1">
-					<MapPin size={18} class="text-gray-500" />
-					<p class="text-sm">{opening.location.city}, {opening.location.state}</p>
+				<div class="flex items-start gap-1">
+					<MapPin size={18} class="text-gray-500 shrink-0 mt-0.5" />
+					<p class="text-sm">{opening.location.completeAddress}</p>
 				</div>
 				<div class="flex items-center gap-1">
 					<Calendar size={18} class="text-gray-500" />
