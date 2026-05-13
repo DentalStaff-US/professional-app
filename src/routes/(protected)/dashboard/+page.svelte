@@ -23,9 +23,11 @@
 		Building,
 		CircleDollarSign,
 		GraduationCap,
+		LifeBuoy,
 		MapPin,
 		Tag
 	} from 'lucide-svelte';
+	import NewSupportTicketDialog from '$lib/components/new-support-ticket-dialog.svelte';
 	import type { PageData } from './$types';
 	import { format, isPast } from 'date-fns';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -79,6 +81,7 @@
 	// Mock data - replace with your actual data
 	export let data: PageData;
 	let dialogOpen: boolean = false;
+	let supportDialogOpen: boolean = false;
 
 	let selectedShift: any = null;
 	$: user = data.user;
@@ -534,7 +537,7 @@
 								<span>View Shift Calendar</span>
 							</Button>
 						</a>
-						<a href="/timesheets/new">
+						<a href="/timesheets">
 							<Button
 								variant="ghost"
 								class="flex justify-start items-center h-12 px-6 py-8 rounded-none w-full hover:bg-gray-50"
@@ -543,6 +546,14 @@
 								<span>Submit Timesheet</span>
 							</Button>
 						</a>
+						<Button
+							variant="ghost"
+							on:click={() => (supportDialogOpen = true)}
+							class="flex justify-start items-center h-12 px-6 py-8 rounded-none w-full hover:bg-gray-50"
+						>
+							<LifeBuoy class="h-5 w-5 mr-3 text-blue-600" />
+							<span>Contact Support</span>
+						</Button>
 					</div>
 				</CardContent>
 			</Card>
@@ -579,6 +590,8 @@
 		</div>
 	</div>
 </section>
+
+<NewSupportTicketDialog bind:open={supportDialogOpen} />
 
 <Dialog.Root open={dialogOpen} onOpenChange={() => (dialogOpen = !dialogOpen)}>
 		<Dialog.Content class="max-w-xl overflow-auto h-full md:h-auto">

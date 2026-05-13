@@ -1,5 +1,13 @@
 <script lang="ts">
-	import { Briefcase, ChevronRight, File, FileCheck, SquareAsterisk, UserCog } from 'lucide-svelte';
+	import {
+		Briefcase,
+		ChevronRight,
+		File,
+		FileCheck,
+		LifeBuoy,
+		SquareAsterisk,
+		UserCog
+	} from 'lucide-svelte';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import { Card } from '$lib/components/ui/card';
 	import type { PageData } from './$types';
@@ -20,7 +28,8 @@
 		{ href: '/settings/resume', icon: FileCheck, label: 'Resume', desc: 'Upload and update your resume' },
 		{ href: '/settings/experience', icon: Briefcase, label: 'Experience', desc: 'Disciplines and experience levels' },
 		{ href: '/settings/documents', icon: File, label: 'Documents', desc: 'Certifications, IDs, and other files' },
-		{ href: '/auth/password/reset', icon: SquareAsterisk, label: 'Password', desc: 'Change your password' }
+		{ href: '/auth/password/reset', icon: SquareAsterisk, label: 'Password', desc: 'Change your password' },
+		{ href: '/settings/support', icon: LifeBuoy, label: 'Support', desc: 'View your tickets and contact our team' }
 	];
 </script>
 
