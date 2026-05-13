@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { generateToken } from '$lib/server/utils';
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
 
 export const load: PageServerLoad = async (event) => {
 	event.setHeaders({
@@ -17,19 +17,13 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const token = generateToken(user.id);
-
-	const timesheetsReq = await fetch(
-		`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/timesheets/getTimesheetsForUser`,
-		{
-			method: 'GET',
-			headers: { Authorization: `Bearer ${token}` }
-		}
-	);
-
-	const timesheets = await timesheetsReq.json();
+	const res = await fetchAdmin<{ data: any[] }>('/api/external/timesheets/getTimesheetsForUser', {
+		token
+	});
 
 	return {
 		user,
-		timesheets: timesheets.data || []
+		timesheets: res.ok ? (res.data.data ?? []) : [],
+		loadError: res.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
 	};
 };

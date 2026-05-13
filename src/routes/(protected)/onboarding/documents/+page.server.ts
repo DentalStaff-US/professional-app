@@ -6,6 +6,8 @@ import { superValidate, message, setError } from 'sveltekit-superforms/server';
 import { documentUrlSchema } from '$lib/config/zod-schemas';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { z } from 'zod';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { logger } from '$lib/server/logger';
 
 export const load: PageServerLoad = async (event) => {
 	const { user } = event.locals;
@@ -13,38 +15,22 @@ export const load: PageServerLoad = async (event) => {
 	if (!user) {
 		return redirect(302, '/sign-in');
 	}
-	const userId = user.id;
 
 	if (!user.completedOnboarding && user.onboardingStep > 4) {
 		redirect(302, '/onboarding/awaiting-approval');
 	}
 
-	const token = generateToken(userId);
-
-	// Fetch candidate profile
-	const profileReq = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getCandidateProfile`, {
-		method: 'GET',
-		headers: { Authorization: `Bearer ${token}` }
-	});
-
-	if (!profileReq.ok) {
-		if (profileReq.status === 401) {
-			throw error(401, 'Authentication failed');
-		}
-		throw error(profileReq.status, 'Failed to fetch profile');
-	}
-
-	// Parse all responses
-	const profile = await profileReq.json();
+	const token = generateToken(user.id);
+	const res = await fetchAdmin<any>('/api/external/getCandidateProfile', { token });
 	const documentsForm = await superValidate(event, documentUrlSchema);
 	const skipForm = await superValidate({ userId: user.id }, z.object({ userId: z.string() }));
 
-	// Return all data needed for the page
 	return {
 		user,
-		profile,
+		profile: res.ok ? res.data : null,
 		documentsForm,
-		skipForm
+		skipForm,
+		loadError: res.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
 	};
 };
 
@@ -87,7 +73,7 @@ export const actions: Actions = {
 
 			setFlash({ type: 'success', message: 'Skipped document upload' }, event);
 		} catch (err) {
-			console.error('Error skipping document upload:', err);
+			logger.error('Failed to skip onboarding documents', { error: err, distinctId: user.id });
 			setFlash({ type: 'error', message: 'Failed to skip document upload' }, event);
 			return fail(500, { message: 'Failed to skip document upload' });
 		}
@@ -128,7 +114,12 @@ export const actions: Actions = {
 			);
 
 			if (!response.ok) {
-				console.log(await response.text());
+				const body = await response.text();
+				logger.error('createCandidateDocument non-ok response', {
+					status: response.status,
+					body: body.slice(0, 500),
+					distinctId: user.id
+				});
 				throw new Error(`Failed to update resume: ${response.statusText}`);
 			}
 
@@ -145,14 +136,17 @@ export const actions: Actions = {
 				if (userResponse.status === 401) {
 					throw error(401, 'Authentication failed');
 				}
-				throw error(userResponse.status, 'Failed to update avatar');
+				throw error(userResponse.status, 'Failed to update onboarding step');
 			}
 
 			setFlash({ type: 'success', message: 'Documents uploaded successfully' }, event);
 		} catch (err) {
-			console.error('Error updating resume:', err);
-			setFlash({ type: 'error', message: 'Failed to update resume' }, event);
-			return setError(form, 'Failed to update resume');
+			logger.error('Failed to upload onboarding documents', {
+				error: err,
+				distinctId: user.id
+			});
+			setFlash({ type: 'error', message: 'Failed to update documents' }, event);
+			return setError(form, 'Failed to update documents');
 		}
 		redirect(302, '/onboarding/awaiting-approval');
 	}

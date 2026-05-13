@@ -1,0 +1,94 @@
+import { fail, redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { generateToken } from '$lib/server/utils';
+import { superValidate, message, setError } from 'sveltekit-superforms/server';
+import { newCandidateDisciplinesSchema } from '$lib/config/zod-schemas';
+import { setFlash } from 'sveltekit-flash-message/server';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { logger } from '$lib/server/logger';
+
+export const load: PageServerLoad = async (event) => {
+	const { user } = event.locals;
+	if (!user) {
+		return redirect(302, '/sign-in');
+	}
+
+	const token = generateToken(user.id);
+
+	const [profileRes, disciplinesRes, experienceRes, candidateDisciplinesRes] = await Promise.all([
+		fetchAdmin<unknown>('/api/external/getCandidateProfile', { token }),
+		fetchAdmin<{ disciplines: unknown[] }>('/api/external/getAllDisciplines'),
+		fetchAdmin<{ experienceLevels: unknown[] }>('/api/external/getExperienceLevels'),
+		fetchAdmin<{ disciplines: unknown[] }>('/api/external/getCandidateDisciplines', { token })
+	]);
+
+	const form = await superValidate(event, newCandidateDisciplinesSchema);
+	const allOk =
+		profileRes.ok && disciplinesRes.ok && experienceRes.ok && candidateDisciplinesRes.ok;
+
+	return {
+		user,
+		profile: profileRes.ok ? profileRes.data : null,
+		form,
+		disciplines: disciplinesRes.ok ? (disciplinesRes.data.disciplines ?? []) : [],
+		experienceLevels: experienceRes.ok ? (experienceRes.data.experienceLevels ?? []) : [],
+		candidateDisciplines: candidateDisciplinesRes.ok
+			? (candidateDisciplinesRes.data.disciplines ?? [])
+			: [],
+		loadError: allOk ? undefined : ADMIN_LOAD_ERROR_MESSAGE
+	};
+};
+
+export const actions: Actions = {
+	submitExperience: async (event) => {
+		const { locals, request } = event;
+		const { user } = locals;
+
+		if (!user) {
+			return redirect(302, '/sign-in');
+		}
+
+		const form = await superValidate(request, newCandidateDisciplinesSchema);
+
+		if (!form.valid) {
+			return fail(400, { form });
+		}
+
+		const disciplines = form.data.disciplines;
+
+		if (!disciplines || disciplines.length === 0) {
+			setError(form, 'Please select at least one discipline');
+			return fail(400, { form });
+		}
+
+		try {
+			const token = generateToken(user.id);
+			const response = await fetch(
+				`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/updateCandidateExperience`,
+				{
+					method: 'POST',
+					headers: {
+						Authorization: `Bearer ${token}`,
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({ disciplines })
+				}
+			);
+
+			if (!response.ok) {
+				return setError(form, `Failed to update disciplines: ${response.statusText}`);
+			}
+
+			setFlash({ type: 'success', message: 'Work experience updated successfully' }, event);
+		} catch (err) {
+			logger.error('Failed to update candidate disciplines', {
+				error: err,
+				distinctId: user.id
+			});
+			setFlash({ type: 'error', message: 'Failed to update work experience' }, event);
+			return setError(form, 'Failed to update work experience');
+		}
+		return message(form, 'Work experience updated successfully');
+	}
+};

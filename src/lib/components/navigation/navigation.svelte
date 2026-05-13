@@ -17,7 +17,7 @@
 	} from 'lucide-svelte';
 	import { APP_NAME } from '$lib/config/constants';
 	import Logo from '$lib/components/logo/logo.svelte';
-	import { goto } from '$app/navigation';
+	import { goto, afterNavigate } from '$app/navigation';
 	import convertNameToInitials from '$lib/_helpers/convertNameToInitials';
 	import {
 		Drawer,
@@ -32,12 +32,21 @@
 
 	export let user: any;
 	let hidden = true;
+	let mobileMenuOpen = false;
 	let transitionParams = {
 		x: -400,
 		duration: 200,
 		easing: sineIn
 	};
 	$: activeUrl = $page.url.pathname;
+
+	// Close the dropdown + drawer after every navigation. The DropdownMenu is
+	// portal'd to body so it survives the layout re-render — without this it
+	// lingers visibly over the new page.
+	afterNavigate(() => {
+		mobileMenuOpen = false;
+		hidden = true;
+	});
 
 	function signOut() {
 		// Create a form element
@@ -262,19 +271,51 @@
 						</SidebarWrapper>
 					</Sidebar>
 					{#if user}
-						<a href="/settings" class="mt-auto">
-							<div class="flex gap-4 items-center">
-								<Avatar.Root class="h-12 w-12">
-									<Avatar.Image src={user.avatarUrl} />
-									<Avatar.Fallback>{initials}</Avatar.Fallback>
-								</Avatar.Root>
-								<div class="space-y-2 text-white">
-									<p class="text-sm font-medium leading-none">{user?.firstName} {user?.lastName}</p>
-									<p class="text-xs leading-none text-gray-200">{user?.email}</p>
-								</div>
-								<ChevronRight class="text-white shrink-0" size={24} />
-							</div>
-						</a>
+						<DropdownMenu.Root bind:open={mobileMenuOpen} portal={null}>
+							<DropdownMenu.Trigger asChild let:builder>
+								<Button
+									variant="ghost"
+									builders={[builder]}
+									class="mt-auto h-auto w-full justify-start gap-4 rounded-lg p-2 text-left hover:bg-gray-100"
+								>
+									<Avatar.Root class="h-12 w-12">
+										<Avatar.Image src={user.avatarUrl} />
+										<Avatar.Fallback>{initials}</Avatar.Fallback>
+									</Avatar.Root>
+									<div class="flex-1 min-w-0">
+										<p class="text-sm font-medium leading-none truncate text-blue-900">
+											{user?.firstName}
+											{user?.lastName}
+										</p>
+										<p class="text-xs leading-none text-gray-600 mt-1 truncate">{user?.email}</p>
+									</div>
+									<ChevronRight class="text-blue-800 shrink-0" size={20} />
+								</Button>
+							</DropdownMenu.Trigger>
+							<DropdownMenu.Content class="w-56" align="end" side="top">
+								<DropdownMenu.Item
+									on:click={() => {
+										mobileMenuOpen = false;
+										hidden = true;
+										goto('/settings');
+									}}
+								>
+									<Cog class="mr-2 h-4 w-4" />
+									Settings
+								</DropdownMenu.Item>
+								<DropdownMenu.Separator />
+								<DropdownMenu.Item
+									on:click={() => {
+										mobileMenuOpen = false;
+										hidden = true;
+										signOut();
+									}}
+								>
+									<LogOut class="mr-2 h-4 w-4" />
+									Sign out
+								</DropdownMenu.Item>
+							</DropdownMenu.Content>
+						</DropdownMenu.Root>
 					{/if}
 				</Drawer>
 			</nav>

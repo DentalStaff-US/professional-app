@@ -1,9 +1,11 @@
 import type { PageServerLoad } from './$types';
-import { error, fail, redirect, type Actions } from '@sveltejs/kit';
+import { fail, redirect, type Actions } from '@sveltejs/kit';
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { generateToken } from '$lib/server/utils';
 import { superValidate } from 'sveltekit-superforms/server';
 import { z } from 'zod';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { logger } from '$lib/server/logger';
 
 const messageSchema = z.object({
 	body: z.string().min(1, 'Message cannot be empty'),
@@ -20,37 +22,17 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const token = generateToken(userId);
+	const res = await fetchAdmin<any>(`/api/external/inbox/getConversationDetails/${id}`, {
+		token
+	});
+	const form = await superValidate(event, messageSchema);
 
-	try {
-		const response = await fetch(
-			`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/inbox/getConversationDetails/${id}`,
-			{
-				method: 'GET',
-				headers: {
-					Authorization: `Bearer ${token}`
-				}
-			}
-		);
-
-		if (!response.ok) {
-			if (response.status === 401) {
-				throw error(401, 'Authentication failed');
-			}
-			throw error(response.status, 'Failed to fetch conversation');
-		}
-
-		const conversation = await response.json();
-		const form = await superValidate(event, messageSchema);
-
-		return {
-			user,
-			form,
-			conversation
-		};
-	} catch (err) {
-		console.error('Error loading requisitions:', err);
-		throw error(500, 'Internal server error');
-	}
+	return {
+		user,
+		form,
+		conversation: res.ok ? res.data : null,
+		loadError: res.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
+	};
 };
 
 export const actions = {
@@ -69,7 +51,7 @@ export const actions = {
 		if (!form.valid) {
 			return fail(400, { form });
 		}
-		console.log({ finalData: form.data });
+
 		try {
 			const response = await fetch(
 				`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/inbox/sendMessage/${id}`,
@@ -95,12 +77,15 @@ export const actions = {
 				});
 			}
 
-			// Reset form after successful submission
 			form.data.body = '';
 
 			return { form, success: true };
 		} catch (error) {
-			console.error('Error sending message:', error);
+			logger.error('Failed to send inbox message', {
+				error,
+				conversationId: id,
+				distinctId: userId
+			});
 			return fail(500, {
 				form,
 				error: 'Failed to send message. Please try again.'

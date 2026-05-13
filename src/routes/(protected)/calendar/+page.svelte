@@ -6,7 +6,9 @@
 	import { convertRecurrenceDayToEvent, type CalendarEvent } from '$lib/components/calendar/utils';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Button } from '$lib/components/ui/button';
-	import { CalendarDays, Clock, CircleDollarSign, MapPin, Tag, Building, Briefcase, GraduationCap } from 'lucide-svelte';	import { Badge } from '$lib/components/ui/badge';
+	import { CalendarDays, Clock, CircleDollarSign, MapPin, Tag, Building, Briefcase, GraduationCap } from 'lucide-svelte';
+	import { Badge } from '$lib/components/ui/badge';
+	import { StatusBadge } from '$lib/components/ui/status-badge';
 	import type { SuperValidated } from 'sveltekit-superforms';
 	import type { RecurrenceDayClaimSchema } from '$lib/config/zod-schemas.js';
 	import { superForm } from 'sveltekit-superforms/client';
@@ -191,13 +193,7 @@
 							</div>
 							<div class="flex items-center gap-2 text-gray-600">
 								<Tag size={18} />
-								<Badge
-									variant={selectedEvent.extendedProps.recurrenceDay.status === 'OPEN'
-										? 'default'
-										: 'secondary'}
-								>
-									{selectedEvent.extendedProps.recurrenceDay.status}
-								</Badge>
+								<StatusBadge status={selectedEvent.extendedProps.recurrenceDay.status} />
 							</div>
 						</div>
 					</div>

@@ -1,0 +1,94 @@
+import { fail, redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { generateToken } from '$lib/server/utils';
+import { superValidate, message, setError } from 'sveltekit-superforms/server';
+import { documentUrlSchema } from '$lib/config/zod-schemas';
+import { setFlash } from 'sveltekit-flash-message/server';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { logger } from '$lib/server/logger';
+
+export const load: PageServerLoad = async (event) => {
+	const { user } = event.locals;
+	if (!user) {
+		return redirect(302, '/sign-in');
+	}
+
+	const token = generateToken(user.id);
+
+	const [profileRes, resumeRes] = await Promise.all([
+		fetchAdmin<unknown>('/api/external/getCandidateProfile', { token }),
+		fetchAdmin<{ resume: unknown }>('/api/external/getRecentCandidateResume', { token })
+	]);
+
+	const resumeForm = await superValidate(event, documentUrlSchema);
+
+	return {
+		user,
+		resumeForm,
+		resume: resumeRes.ok ? resumeRes.data.resume : null,
+		loadError: profileRes.ok && resumeRes.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
+	};
+};
+
+export const actions: Actions = {
+	resumeUpload: async (event) => {
+		const { locals, request } = event;
+		const { user } = locals;
+
+		if (!user) {
+			return redirect(302, '/sign-in');
+		}
+
+		const form = await superValidate(request, documentUrlSchema);
+
+		if (!form.valid) {
+			return fail(400, { form });
+		}
+
+		const url = form.data.url;
+		const filename = form.data.filename;
+
+		try {
+			const token = generateToken(user.id);
+
+			const response = await fetch(
+				`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/createCandidateDocument`,
+				{
+					method: 'POST',
+					headers: {
+						Authorization: `Bearer ${token}`,
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						url: url,
+						type: 'RESUME',
+						filename: filename
+					})
+				}
+			);
+
+			if (!response.ok) {
+				throw new Error(`Failed to update resume: ${response.statusText}`);
+			}
+
+			setFlash({ type: 'success', message: 'Resume uploaded successfully' }, event);
+			return message(
+				{
+					...form,
+					data: {
+						url: undefined,
+						filename: undefined,
+						type: undefined,
+						createdAt: undefined
+					}
+				},
+				'Resume uploaded successfully'
+			);
+		} catch (err) {
+			logger.error('Failed to upload resume', { error: err, distinctId: user.id });
+			setFlash({ type: 'error', message: 'Failed to update resume' }, event);
+			return setError(form, 'Failed to update resume');
+		}
+	}
+};

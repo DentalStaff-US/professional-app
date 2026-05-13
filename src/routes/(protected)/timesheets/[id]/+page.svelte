@@ -8,6 +8,7 @@
 	} from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
+	import { StatusBadge } from '$lib/components/ui/status-badge';
 	import { Separator } from '$lib/components/ui/separator';
 	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
 	import { Input } from '$lib/components/ui/input';
@@ -273,9 +274,36 @@
   $: isVoid = timesheet?.status === 'VOID';
   $: isRejected = timesheet?.status === 'REJECTED';
 
-  // ✅ Can edit if DRAFT or DISCREPANCY (when editing mode is on)
-  $: canEdit = isDraft || (isDiscrepancy && isEditing);
-  $: showEditButton = isDiscrepancy && !isEditing;
+  // Candidates only edit DRAFT timesheets. DISCREPANCY hand-off is admin-driven —
+  // the candidate sees the status but does not get an Edit button. (Previously
+  // candidates could re-enter DISCREPANCY via an Edit button; that capability
+  // moved to the admin app.)
+  $: canEdit = isDraft;
+
+  // Per-row gate: a workday's inputs only become editable after that shift has
+  // ended. The candidate can amend the day's hours each evening; rows for
+  // future shifts stay locked. Build a date→dayEnd map from data.workdays
+  // (the recurrence day's dayEnd is a UTC timestamp; comparing two Dates is
+  // timezone-agnostic).
+  $: shiftEndByDate = (data.workdays ?? []).reduce(
+    (acc: Record<string, string>, wd: any) => {
+      const date = wd?.recurrenceDay?.date;
+      const end = wd?.recurrenceDay?.dayEnd;
+      if (date && end) acc[date] = end;
+      return acc;
+    },
+    {}
+  );
+  const isShiftOver = (dateKey: string): boolean => {
+    const end = shiftEndByDate[dateKey];
+    if (!end) return false;
+    return new Date() > new Date(end);
+  };
+
+  // Save-draft is available whenever the timesheet is editable. Unlike Submit,
+  // it has no "last shift ended" requirement — the candidate can save partial
+  // hours each evening as their shifts end and come back later for the rest.
+  $: canSaveDraft = canEdit;
 
   function updateTimeEntry(
     dateKey: string,
@@ -408,10 +436,8 @@
 	<div>
 		<div class="flex flex-wrap items-center gap-3">
 			<h1 class="text-2xl font-bold">Timesheet</h1>
-			<Badge variant="default" class={cn(statusBadge.class, 'gap-1')}>
-				<svelte:component this={statusBadge.icon} class="h-3 w-3" />
-				{statusBadge.text}
-			</Badge>
+			<StatusBadge status={timesheet?.status} />
+
 		</div>
 		<p class="text-muted-foreground flex items-center mt-1">
 			<Calendar class="h-4 w-4 mr-1" />
@@ -501,12 +527,9 @@
 									Editable
 								</Badge>
 							{/if}
-							{#if showEditButton}
-								<Button size="sm" variant="outline" on:click={enableEditing}>
-									<Edit class="h-4 w-4 mr-2" />
-									Edit Hours
-								</Button>
-							{/if}
+							<!-- DISCREPANCY edits are handled by admins now; no Edit
+							     button on the candidate side. -->
+
 						</div>
 					</div>
 				</CardHeader>
@@ -518,6 +541,7 @@
                     <div class="space-y-4">
                         {#each scheduledWorkDays as { dateKey, dayString }}
                         {#if timeEntries[dateKey]}
+                            {@const shiftEnded = isShiftOver(dateKey)}
                             <div class="p-3 bg-gray-50 rounded-lg space-y-3">
                             <!-- Date Header -->
                             <div class="flex items-center justify-between">
@@ -527,6 +551,12 @@
                                 </p>
                             </div>
 
+                            {#if !shiftEnded}
+                                <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                    You can enter your hours once this shift has ended.
+                                </p>
+                            {/if}
+
                             <!-- Work Hours Row -->
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
@@ -535,6 +565,7 @@
                                     id="{dateKey}-start"
                                     type="time"
                                     class="text-sm mt-1"
+                                    disabled={!shiftEnded}
                                     value={timeEntries[dateKey].startTime}
                                     on:input={(e) => updateTimeEntry(dateKey, 'startTime', e.currentTarget.value)}
                                 />
@@ -545,6 +576,7 @@
                                     id="{dateKey}-end"
                                     type="time"
                                     class="text-sm mt-1"
+                                    disabled={!shiftEnded}
                                     value={timeEntries[dateKey].endTime}
                                     on:input={(e) => updateTimeEntry(dateKey, 'endTime', e.currentTarget.value)}
                                 />
@@ -562,6 +594,7 @@
                                     type="time"
                                     class="text-sm mt-1"
                                     placeholder="Optional"
+                                    disabled={!shiftEnded}
                                     value={timeEntries[dateKey].lunchStartTime}
                                     on:input={(e) => updateTimeEntry(dateKey, 'lunchStartTime', e.currentTarget.value)}
                                 />
@@ -575,6 +608,7 @@
                                     type="time"
                                     class="text-sm mt-1"
                                     placeholder="Optional"
+                                    disabled={!shiftEnded}
                                     value={timeEntries[dateKey].lunchEndTime}
                                     on:input={(e) => updateTimeEntry(dateKey, 'lunchEndTime', e.currentTarget.value)}
                                 />
@@ -596,13 +630,10 @@
                         {/if}
                         {/each}
 
-                        {#if isDiscrepancy && isEditing}
-                        <div class="flex justify-end pt-2">
-                            <Button variant="outline" size="sm" on:click={cancelEditing}>
-                            Cancel Editing
-                            </Button>
-                        </div>
-                        {/if}
+                        <!-- Discrepancy editing is handled by admin now; no
+                             "Cancel Editing" affordance needed on the
+                             candidate side. -->
+
                     </div>
 
                     <!-- ✅ Helper text -->
@@ -748,12 +779,13 @@
 				<CardContent class="space-y-4">
 					<p class="text-sm text-muted-foreground">
 						{#if isDraft}
-							Fill in your hours and submit your timesheet for approval.
+							Save your hours each day as your shifts end. Submit when the last
+							shift of the week has finished and you're ready for approval.
 						{:else if isPending}
 							This timesheet is pending approval.
 						{:else if isDiscrepancy}
-							This timesheet has discrepancies. Please review and correct your hours, then
-							resubmit.
+							This timesheet was returned for review. An admin will follow up
+							with corrections — no action needed from you here.
 						{:else if isVoid}
 							This timesheet has been voided.
 						{:else if isRejected}
@@ -764,8 +796,25 @@
 					</p>
 
 					<div class="space-y-2">
-						<!-- ✅ SUBMIT BUTTON (for DRAFT) -->
+						<!-- ✅ SAVE DRAFT + SUBMIT BUTTONS (for DRAFT only) -->
 						{#if isDraft}
+							<!-- Save Draft: persist current entries without changing
+							     status. No "last shift ended" requirement — the
+							     candidate can save partial hours each evening. -->
+							<form action="?/saveDraftTimesheet" method="POST" use:enhance>
+								<input type="hidden" name="entries" value={JSON.stringify(timeEntries)} />
+								<input type="hidden" name="totalHours" value={totalHours} />
+								<Button
+									type="submit"
+									variant="outline"
+									disabled={!canSaveDraft}
+									class="w-full gap-2"
+								>
+									<Save class="h-4 w-4" />
+									<span>Save Draft</span>
+								</Button>
+							</form>
+
 							<AlertDialog.Root bind:open={submitDialogOpen}>
 								<AlertDialog.Trigger asChild>
 									<Button
@@ -773,7 +822,7 @@
 										disabled={!canSubmit}
 										class="w-full gap-2 bg-blue-700 hover:bg-blue-800"
 									>
-										<Save class="h-4 w-4" />
+										<CheckCircle2 class="h-4 w-4" />
 										<span>Submit Timesheet</span>
 									</Button>
 								</AlertDialog.Trigger>
@@ -782,7 +831,7 @@
 										<AlertDialog.Title>Submit Timesheet</AlertDialog.Title>
 										<AlertDialog.Description>
 											You're submitting {totalHours.toFixed(2)} hours for the week of {formattedWeekRange}.
-											This will send your timesheet for approval.
+											This will send your timesheet for approval and lock further edits.
 										</AlertDialog.Description>
 									</AlertDialog.Header>
 									<AlertDialog.Footer>
@@ -807,56 +856,6 @@
                                 <p class="text-sm text-amber-600 mt-2">
                                 <AlertCircle class="h-4 w-4 inline mr-1" />
                                 You can submit this timesheet after your last shift of the week has ended.
-                                </p>
-                            {/if}
-						{/if}
-
-						<!-- ✅ RESUBMIT BUTTON (for DISCREPANCY after editing) -->
-						{#if isDiscrepancy}
-							<AlertDialog.Root bind:open={verifyDialogOpen}>
-								<AlertDialog.Trigger asChild>
-									<Button
-										on:click={() => (verifyDialogOpen = true)}
-										disabled={!isEditing || !canSubmit}
-										class="w-full gap-2 bg-green-600 hover:bg-green-700"
-									>
-										<CheckCircle2 class="h-4 w-4" />
-										<span>Resubmit for Validation</span>
-									</Button>
-								</AlertDialog.Trigger>
-								<AlertDialog.Content>
-									<AlertDialog.Header>
-										<AlertDialog.Title>Resubmit Timesheet</AlertDialog.Title>
-										<AlertDialog.Description>
-											You're resubmitting {totalHours.toFixed(2)} hours for the week of {formattedWeekRange}.
-											This will send your corrected timesheet for validation.
-										</AlertDialog.Description>
-									</AlertDialog.Header>
-									<AlertDialog.Footer>
-										<Button variant="outline" on:click={() => (verifyDialogOpen = false)}>
-											Cancel
-										</Button>
-										<form action="?/resubmitTimesheet" method="POST" use:enhance>
-											<input type="hidden" name="entries" value={JSON.stringify(timeEntries)} />
-											<input type="hidden" name="totalHours" value={totalHours} />
-											<Button
-												type="submit"
-												on:click={() => {
-													verifyDialogOpen = false;
-													isEditing = false;
-												}}
-												class="ml-2 bg-green-600 hover:bg-green-700"
-											>
-												Resubmit
-											</Button>
-										</form>
-									</AlertDialog.Footer>
-								</AlertDialog.Content>
-							</AlertDialog.Root>
-        				    {#if isEditing && hasHoursEntered && totalHours > 0 && !latestShiftEnded}
-                                <p class="text-sm text-amber-600 mt-2">
-                                <AlertCircle class="h-4 w-4 inline mr-1" />
-                                You can resubmit this timesheet after your last shift of the week has ended.
                                 </p>
                             {/if}
 						{/if}

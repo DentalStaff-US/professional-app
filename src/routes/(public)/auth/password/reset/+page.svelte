@@ -46,7 +46,7 @@
 			</Card.Content>
 			<Card.Footer>
 				<div class="w-full">
-					<Form.Button class="w-full" disabled={submitting}
+					<Form.Button class="w-full bg-blue-500 hover:bg-blue-600" disabled={submitting}
 						>{#if submitting}
 							<Loader2 class="mr-2 h-4 w-4 animate-spin" />
 							Please wait{:else}Send Password Reset Email{/if}

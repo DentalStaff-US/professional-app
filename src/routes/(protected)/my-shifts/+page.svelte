@@ -9,6 +9,7 @@
 	} from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
+	import { StatusBadge } from '$lib/components/ui/status-badge';
 	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import {
 		Select,
@@ -200,17 +201,13 @@
 			{:else}
 				<div class="space-y-4">
 					{#each upcomingWorkdays as shift}
-						{@const statusBadge = getStatusBadge(shift.recurrenceDay.status)}
 						<Card>
 							<CardContent class="p-0">
 								<!-- Date Header -->
 								<div class="bg-muted px-6 py-3 rounded-t-lg">
 									<div class="flex justify-between items-center">
 										<div class="font-medium">{format(shift.recurrenceDay.dayStart, 'PP')}</div>
-										<Badge variant="default" class={statusBadge.class}>
-											<svelte:component this={statusBadge.icon} class="h-3 w-3 mr-1" />
-											{statusBadge.text}
-										</Badge>
+										<StatusBadge status={shift.recurrenceDay.status} />
 									</div>
 								</div>
 

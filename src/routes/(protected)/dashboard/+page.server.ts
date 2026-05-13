@@ -5,6 +5,9 @@ import { fail, redirect } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms/server';
 import type { RequestEvent } from './$types';
 import { setFlash } from 'sveltekit-flash-message/server';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { logger } from '$lib/server/logger';
+
 export const load = async (event) => {
 	event.setHeaders({
 		'cache-control': 'max-age=60'
@@ -19,74 +22,42 @@ export const load = async (event) => {
 	}
 	const token = generateToken(user.id);
 
-	const [workdays, timesheets, requisitions] = await Promise.all([
-		fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getUpcomingWorkdaysForCandidate`, {
-			method: 'GET',
-			headers: { Authorization: `Bearer ${token}` }
-		}).then(async (res) => {
-			if (!res.ok) throw new Error(`Workdays API failed: ${res.status}`);
-			const result = await res.json();
-			// console.log(result);
-			return result;
+	const [workdaysRes, timesheetsRes, requisitionsRes] = await Promise.all([
+		fetchAdmin<{ data: any[] }>('/api/external/getUpcomingWorkdaysForCandidate', { token }),
+		fetchAdmin<{ data: any[] }>('/api/external/timesheets/getPendingTimesheetsForUser', {
+			token
 		}),
-
-		fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/timesheets/getPendingTimesheetsForUser`, {
-			method: 'GET',
-			headers: { Authorization: `Bearer ${token}` }
-		}).then(async (res) => {
-			if (!res.ok) throw new Error(`Timesheets API failed: ${res.status}`);
-			const result = await res.json();
-			// console.log(result);
-			return result;
-		}),
-		fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getUpcomingTempRequisitionsForCandidate`, {
-			method: 'GET',
-			headers: { Authorization: `Bearer ${token}` }
-		}).then(async (res) => {
-			if (!res.ok) throw new Error(`Requisitions API failed: ${res.status}`);
-			const result = await res.json();
-			// console.log(JSON.stringify(result, null, 2));
-			return result;
+		fetchAdmin<{ recurrenceDays: any[] }>('/api/external/getUpcomingTempRequisitionsForCandidate', {
+			token
 		})
 	]);
 
 	return {
 		user,
-		workdays: workdays.data,
-		timesheets: timesheets.data,
-		requisitions: requisitions.recurrenceDays
+		workdays: workdaysRes.ok ? (workdaysRes.data.data ?? []) : [],
+		timesheets: timesheetsRes.ok ? (timesheetsRes.data.data ?? []) : [],
+		requisitions: requisitionsRes.ok ? (requisitionsRes.data.recurrenceDays ?? []) : [],
+		loadError:
+			workdaysRes.ok && timesheetsRes.ok && requisitionsRes.ok
+				? undefined
+				: ADMIN_LOAD_ERROR_MESSAGE
 	};
 };
 
 export const actions = {
 	claimWorkdayShift: async (event: RequestEvent) => {
-		console.log('Starting workday claim process', {
-			timestamp: new Date().toISOString()
-		});
-
 		const userId = event.locals.user?.id;
 		const token = generateToken(userId);
 		const form = await superValidate(event, recurrenceDayClaimSchema);
 		const recurrenceDayId = form.data.recurrenceDayId;
 
-		console.log('Form validation:', {
-			isValid: form.valid,
-			recurrenceDayId,
-			formErrors: form.errors
-		});
-
 		if (!userId || !recurrenceDayId) {
-			console.log('Missing required data:', {
-				userId: !!userId,
-				recurrenceDayId: !!recurrenceDayId
-			});
 			return fail(400, {
 				form: { ...form, errors: { message: 'Missing required information' } }
 			});
 		}
 
 		if (!form.valid) {
-			console.log('Form validation failed:', form.errors);
 			return fail(400, { form });
 		}
 
@@ -121,12 +92,11 @@ export const actions = {
 				event
 			);
 			return message(form, 'Successfully claimed shift!');
-		} catch (err) {
-			console.error('Server Error:', {
-				error: err,
-				userId,
+		} catch (error) {
+			logger.error('Failed to claim workday shift', {
+				error,
 				recurrenceDayId,
-				timestamp: new Date().toISOString()
+				distinctId: userId
 			});
 			setFlash(
 				{

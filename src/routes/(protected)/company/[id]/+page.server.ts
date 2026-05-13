@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types';
-import { error, redirect } from '@sveltejs/kit';
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { redirect } from '@sveltejs/kit';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
 
-export const load: PageServerLoad = async ({ fetch, params, locals }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
 	const user = locals.user;
 
 	if (!user) {
@@ -14,30 +14,13 @@ export const load: PageServerLoad = async ({ fetch, params, locals }) => {
 	}
 
 	const { id } = params;
+	const res = await fetchAdmin<{ company: any; requisitions: any[] }>(
+		`/api/external/getCompanyDetails/${id}`
+	);
 
-	try {
-		const response = await fetch(
-			`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getCompanyDetails/${id}`,
-			{
-				method: 'GET'
-			}
-		);
-
-		if (!response.ok) {
-			if (response.status === 401) {
-				throw error(401, 'Authentication failed');
-			}
-			throw error(response.status, 'Failed to fetch company');
-		}
-
-		const { company, requisitions } = await response.json();
-
-		return {
-			company,
-			requisitions
-		};
-	} catch (err) {
-		console.error('Error loading company details:', err);
-		throw error(500, 'Internal server error');
-	}
+	return {
+		company: res.ok ? (res.data.company ?? null) : null,
+		requisitions: res.ok ? (res.data.requisitions ?? []) : [],
+		loadError: res.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
+	};
 };

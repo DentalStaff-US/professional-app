@@ -229,9 +229,11 @@
 								maxResults={8}
 						/>
 					</div>
-					<input type="hidden" name="completeAddress" value={selectedAddress?.formatted_address}/>
-					<input type="hidden" name="lat" value={selectedAddress?.coordinates.lat}/>
-					<input type="hidden" name="lon" value={selectedAddress?.coordinates.lng}/>
+					{#if selectedAddress}
+						<input type="hidden" name="completeAddress" value={selectedAddress.formatted_address}/>
+						<input type="hidden" name="lat" value={selectedAddress.coordinates.lat}/>
+						<input type="hidden" name="lon" value={selectedAddress.coordinates.lng}/>
+					{/if}
 				</div>
 
 				<div class="flex justify-end pt-4">

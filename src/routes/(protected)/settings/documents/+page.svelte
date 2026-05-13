@@ -14,7 +14,7 @@
 		DropdownMenuItem,
 		DropdownMenuTrigger
 	} from '$lib/components/ui/dropdown-menu';
-	import { FileText, Trash2, Download, MoreHorizontal } from 'lucide-svelte';
+	import { FileText, Trash2, Download, MoreHorizontal, Lock } from 'lucide-svelte';
 	import FileDropzone from '$lib/components/general/file-dropzone.svelte';
 	import type { PageData } from './$types';
 	import { superForm } from 'sveltekit-superforms/client';
@@ -241,6 +241,9 @@
 							<tr class="border-b hover:bg-gray-50">
 								<td class="py-3 px-4">
 									<div class="flex items-center gap-2">
+										{#if doc.adminOnly}
+											<Lock class="h-5 w-5 text-red-600 shrink-0" />
+										{/if}
 										{#if getFileIcon(doc?.filename) === 'image'}
 											<svg
 												xmlns="http://www.w3.org/2000/svg"
@@ -289,18 +292,29 @@
 										</DropdownMenuTrigger>
 										<DropdownMenuContent align="end">
 											<DropdownMenuItem>
-												<a class="flex" href={doc.uploadUrl}
-													><Download class="h-4 w-4 mr-2" />
-													<span>Download</span></a
+												<a class="flex" href={doc.uploadUrl}>
+													<Download class="h-4 w-4 mr-2" />
+													<span>Download</span>
+												</a>
+											</DropdownMenuItem>
+											{#if doc.adminOnly}
+												<DropdownMenuItem
+													class="text-muted-foreground"
+													disabled
+													on:click={(e) => e.preventDefault()}
 												>
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												class="text-red-500 focus:text-red-500"
-												on:click={() => handleDeleteDocument(doc.id)}
-											>
-												<Trash2 class="h-4 w-4 mr-2" />
-												<span>Delete</span>
-											</DropdownMenuItem>
+													<Lock class="h-4 w-4 mr-2" />
+													<span>Locked by admin</span>
+												</DropdownMenuItem>
+											{:else}
+												<DropdownMenuItem
+													class="text-red-500 focus:text-red-500"
+													on:click={() => handleDeleteDocument(doc.id)}
+												>
+													<Trash2 class="h-4 w-4 mr-2" />
+													<span>Delete</span>
+												</DropdownMenuItem>
+											{/if}
 										</DropdownMenuContent>
 									</DropdownMenu>
 								</td>

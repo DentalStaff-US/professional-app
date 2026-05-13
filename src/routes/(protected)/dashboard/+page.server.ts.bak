@@ -1,0 +1,119 @@
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { recurrenceDayClaimSchema } from '$lib/config/zod-schemas.js';
+import { generateToken } from '$lib/server/utils.js';
+import { fail, redirect } from '@sveltejs/kit';
+import { message, superValidate } from 'sveltekit-superforms/server';
+import type { RequestEvent } from './$types';
+import { setFlash } from 'sveltekit-flash-message/server';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { logger } from '$lib/server/logger';
+
+export const load = async (event) => {
+	event.setHeaders({
+		'cache-control': 'max-age=60'
+	});
+	const user = event.locals.user;
+	if (!user) {
+		redirect(302, '/auth/sign-in');
+	}
+
+	if (!user.completedOnboarding) {
+		redirect(302, '/onboarding');
+	}
+	const token = generateToken(user.id);
+
+	const [workdaysRes, timesheetsRes, requisitionsRes] = await Promise.all([
+		fetchAdmin<{ data: unknown[] }>('/api/external/getUpcomingWorkdaysForCandidate', { token }),
+		fetchAdmin<{ data: unknown[] }>('/api/external/timesheets/getPendingTimesheetsForUser', {
+			token
+		}),
+		fetchAdmin<{ recurrenceDays: unknown[] }>(
+			'/api/external/getUpcomingTempRequisitionsForCandidate',
+			{ token }
+		)
+	]);
+
+	return {
+		user,
+		workdays: workdaysRes.ok ? (workdaysRes.data.data ?? []) : [],
+		timesheets: timesheetsRes.ok ? (timesheetsRes.data.data ?? []) : [],
+		requisitions: requisitionsRes.ok ? (requisitionsRes.data.recurrenceDays ?? []) : [],
+		loadError:
+			workdaysRes.ok && timesheetsRes.ok && requisitionsRes.ok
+				? undefined
+				: ADMIN_LOAD_ERROR_MESSAGE
+	};
+};
+
+export const actions = {
+	claimWorkdayShift: async (event: RequestEvent) => {
+		const userId = event.locals.user?.id;
+		const token = generateToken(userId);
+		const form = await superValidate(event, recurrenceDayClaimSchema);
+		const recurrenceDayId = form.data.recurrenceDayId;
+
+		if (!userId || !recurrenceDayId) {
+			return fail(400, {
+				form: { ...form, errors: { message: 'Missing required information' } }
+			});
+		}
+
+		if (!form.valid) {
+			return fail(400, { form });
+		}
+
+		try {
+			const req = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/applyForTempRequisition`, {
+				method: 'POST',
+				body: JSON.stringify({ recurrenceDayId }),
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				},
+				credentials: 'include'
+			});
+
+			const responseData = await req.json();
+
+			if (!req.ok || !responseData.success) {
+				return fail(req.status || 403, {
+					form: {
+						...form,
+						errors: {
+							message: responseData.message || 'Failed to claim shift'
+						}
+					}
+				});
+			}
+			setFlash(
+				{
+					type: 'success',
+					message: 'Successfully claimed shift.'
+				},
+				event
+			);
+			return message(form, 'Successfully claimed shift!');
+		} catch (error) {
+			logger.error('Failed to claim workday shift', {
+				error,
+				recurrenceDayId,
+				distinctId: userId
+			});
+			setFlash(
+				{
+					type: 'error',
+					message: 'Something went wrong while claiming the shift'
+				},
+				event
+			);
+			return fail(500, {
+				form: {
+					...form,
+					errors: {
+						message: 'Something went wrong while claiming the shift'
+					}
+				}
+			});
+		}
+	}
+};

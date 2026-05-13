@@ -5,44 +5,28 @@ import { generateToken } from '$lib/server/utils';
 import { superValidate, message, setError } from 'sveltekit-superforms/server';
 import { documentUrlSchema } from '$lib/config/zod-schemas';
 import { setFlash } from 'sveltekit-flash-message/server';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { logger } from '$lib/server/logger';
 
 export const load: PageServerLoad = async (event) => {
 	const { user } = event.locals;
 	if (!user) {
 		return redirect(302, '/sign-in');
 	}
-	const userId = user.id;
-
-	console.log(user);
 
 	if (!user.completedOnboarding && user.onboardingStep > 3) {
 		redirect(302, '/onboarding/documents');
 	}
 
-	const token = generateToken(userId);
-
-	// Fetch candidate profile
-	const profileReq = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getCandidateProfile`, {
-		method: 'GET',
-		headers: { Authorization: `Bearer ${token}` }
-	});
-
-	if (!profileReq.ok) {
-		if (profileReq.status === 401) {
-			throw error(401, 'Authentication failed');
-		}
-		throw error(profileReq.status, 'Failed to fetch profile');
-	}
-
-	// Parse all responses
-	const profile = await profileReq.json();
+	const token = generateToken(user.id);
+	const res = await fetchAdmin<any>('/api/external/getCandidateProfile', { token });
 	const resumeForm = await superValidate(event, documentUrlSchema);
 
-	// Return all data needed for the page
 	return {
 		user,
-		profile,
-		resumeForm
+		profile: res.ok ? res.data : null,
+		resumeForm,
+		loadError: res.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
 	};
 };
 
@@ -117,13 +101,13 @@ export const actions: Actions = {
 				if (userResponse.status === 401) {
 					throw error(401, 'Authentication failed');
 				}
-				throw error(userResponse.status, 'Failed to update avatar');
+				throw error(userResponse.status, 'Failed to update onboarding step');
 			}
 
 			setFlash({ type: 'success', message: 'Resume uploaded successfully' }, event);
 			return message(form, 'Resume uploaded successfully');
 		} catch (err) {
-			console.error('Error updating resume:', err);
+			logger.error('Failed to upload onboarding resume', { error: err, distinctId: user.id });
 			setFlash({ type: 'error', message: 'Failed to update resume' }, event);
 			return setError(form, 'Failed to update resume');
 		}

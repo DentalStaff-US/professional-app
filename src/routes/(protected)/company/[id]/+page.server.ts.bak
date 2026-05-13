@@ -1,0 +1,26 @@
+import type { PageServerLoad } from './$types';
+import { redirect } from '@sveltejs/kit';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const user = locals.user;
+
+	if (!user) {
+		redirect(302, '/auth/sign-in');
+	}
+
+	if (!user.completedOnboarding) {
+		redirect(302, '/onboarding');
+	}
+
+	const { id } = params;
+	const res = await fetchAdmin<{ company: unknown; requisitions: unknown[] }>(
+		`/api/external/getCompanyDetails/${id}`
+	);
+
+	return {
+		company: res.ok ? (res.data.company ?? null) : null,
+		requisitions: res.ok ? (res.data.requisitions ?? []) : [],
+		loadError: res.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
+	};
+};

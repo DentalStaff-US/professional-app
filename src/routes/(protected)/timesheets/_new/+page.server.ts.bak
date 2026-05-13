@@ -1,0 +1,106 @@
+import type { PageServerLoad, RequestEvent } from './$types';
+import { fail, redirect } from '@sveltejs/kit';
+import { generateToken } from '$lib/server/utils';
+import { setError, superValidate } from 'sveltekit-superforms/server';
+import { z } from 'zod';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { setFlash } from 'sveltekit-flash-message/server';
+import { zJsonString } from '$lib/config/zod-schemas';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+
+const newTimesheetSchema = z.object({
+	companyId: z.string().min(1, 'Company ID is required'),
+	weekStartDate: z.string().min(1, 'Week start date is required'),
+	entries: zJsonString,
+	totalHours: z.number().min(1, 'Total hours is required')
+});
+
+export const load: PageServerLoad = async (event) => {
+	event.setHeaders({
+		'cache-control': 'max-age=60'
+	});
+
+	const { user } = event.locals;
+
+	if (!user) {
+		return redirect(303, '/sign-in');
+	}
+
+	if (!user.completedOnboarding) {
+		redirect(302, '/onboarding');
+	}
+
+	const token = generateToken(user.id);
+	const form = await superValidate(event, newTimesheetSchema);
+
+	const [companiesRes, profileRes, workdaysRes, timesheetsRes] = await Promise.all([
+		fetchAdmin<{ data: { companies: unknown[] } }>(
+			'/api/external/timesheets/getCompaniesForCandidate',
+			{ token }
+		),
+		fetchAdmin<unknown>('/api/external/getCandidateProfile', { token }),
+		fetchAdmin<{ data: { workdays: unknown[] } }>(
+			'/api/external/timesheets/getWorkdaysForCandidate',
+			{ token }
+		),
+		fetchAdmin<{ data: unknown[] }>('/api/external/timesheets/getTimesheetsForUser', { token })
+	]);
+
+	const allOk = companiesRes.ok && profileRes.ok && workdaysRes.ok && timesheetsRes.ok;
+
+	return {
+		user,
+		form,
+		companies: companiesRes.ok ? (companiesRes.data.data?.companies ?? []) : [],
+		workdays: workdaysRes.ok ? (workdaysRes.data.data?.workdays ?? []) : [],
+		timesheets: timesheetsRes.ok ? (timesheetsRes.data.data ?? []) : [],
+		profile: profileRes.ok ? profileRes.data : null,
+		loadError: allOk ? undefined : ADMIN_LOAD_ERROR_MESSAGE
+	};
+};
+
+export const actions = {
+	submitTimesheet: async (event: RequestEvent) => {
+		const user = event.locals.user;
+		if (!user) {
+			throw redirect(302, '/auth/sign-in');
+		}
+		const token = generateToken(user.id);
+		const form = await superValidate(event, newTimesheetSchema);
+
+		if (!form.valid) {
+			return fail(400, { form });
+		}
+		const { companyId, weekStartDate, entries, totalHours } = form.data;
+
+		const timesheetData = {
+			companyId,
+			weekStartDate,
+			entries: entries,
+			userId: user.id,
+			totalHours
+		};
+
+		const response = await fetch(
+			`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/timesheets/submitTimesheetForCandidate`,
+			{
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(timesheetData)
+			}
+		);
+
+		if (!response.ok) {
+			const errorData = await response.json();
+			setError(form, errorData.message);
+			return fail(response.status, { form, error: errorData.message });
+		}
+		const responseData = await response.json();
+
+		setFlash({ type: 'success', message: 'Timesheet submitted' }, event);
+		return redirect(300, `/timesheets/${responseData.data.id}`);
+	}
+};

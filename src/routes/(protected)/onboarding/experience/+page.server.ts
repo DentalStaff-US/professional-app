@@ -5,68 +5,37 @@ import { generateToken } from '$lib/server/utils';
 import { superValidate, message, setError } from 'sveltekit-superforms/server';
 import { newCandidateDisciplinesSchema } from '$lib/config/zod-schemas';
 import { setFlash } from 'sveltekit-flash-message/server';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { logger } from '$lib/server/logger';
 
 export const load: PageServerLoad = async (event) => {
 	const { user } = event.locals;
 	if (!user) {
 		return redirect(302, '/sign-in');
 	}
-	const userId = user.id;
 
 	if (!user.completedOnboarding && user.onboardingStep > 2) {
 		redirect(302, '/onboarding/resume');
 	}
 
-	const token = generateToken(userId);
+	const token = generateToken(user.id);
 
-	// Fetch candidate profile
-	const profileReq = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getCandidateProfile`, {
-		method: 'GET',
-		headers: { Authorization: `Bearer ${token}` }
-	});
+	const [profileRes, disciplinesRes, experienceRes] = await Promise.all([
+		fetchAdmin<any>('/api/external/getCandidateProfile', { token }),
+		fetchAdmin<{ disciplines: any[] }>('/api/external/getAllDisciplines'),
+		fetchAdmin<{ experienceLevels: any[] }>('/api/external/getExperienceLevels')
+	]);
 
-	if (!profileReq.ok) {
-		if (profileReq.status === 401) {
-			throw error(401, 'Authentication failed');
-		}
-		throw error(profileReq.status, 'Failed to fetch profile');
-	}
-
-	// Fetch all disciplines
-	const disciplinesReq = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getAllDisciplines`);
-
-	if (!disciplinesReq.ok) {
-		if (disciplinesReq.status === 401) {
-			throw error(401, 'Authentication failed');
-		}
-		throw error(disciplinesReq.status, 'Failed to fetch disciplines');
-	}
-
-	// Fetch experience levels
-	const experienceReq = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getExperienceLevels`);
-
-	if (!experienceReq.ok) {
-		if (experienceReq.status === 401) {
-			throw error(401, 'Authentication failed');
-		}
-		throw error(experienceReq.status, 'Failed to fetch experience levels');
-	}
-
-	// Parse all responses
-	const profile = await profileReq.json();
-	const disciplines = await disciplinesReq.json();
-	const experienceLevels = await experienceReq.json();
-
-	// Initialize forms
 	const form = await superValidate(event, newCandidateDisciplinesSchema);
+	const allOk = profileRes.ok && disciplinesRes.ok && experienceRes.ok;
 
-	// Return all data needed for the page
 	return {
 		user,
-		profile,
+		profile: profileRes.ok ? profileRes.data : null,
 		form,
-		disciplines: disciplines.disciplines,
-		experienceLevels: experienceLevels.experienceLevels
+		disciplines: disciplinesRes.ok ? (disciplinesRes.data.disciplines ?? []) : [],
+		experienceLevels: experienceRes.ok ? (experienceRes.data.experienceLevels ?? []) : [],
+		loadError: allOk ? undefined : ADMIN_LOAD_ERROR_MESSAGE
 	};
 };
 
@@ -81,15 +50,12 @@ export const actions: Actions = {
 
 		const form = await superValidate(request, newCandidateDisciplinesSchema);
 
-		console.log({ form: JSON.stringify(form) });
-
 		if (!form.valid) {
 			return fail(400, { form });
 		}
 
 		const disciplines = form.data.disciplines;
 
-		// Validate that at least one discipline is selected
 		if (!disciplines || disciplines.length === 0) {
 			setError(form, 'Please select at least one discipline');
 			return fail(400, { form });
@@ -126,12 +92,15 @@ export const actions: Actions = {
 				if (userResponse.status === 401) {
 					throw error(401, 'Authentication failed');
 				}
-				throw error(userResponse.status, 'Failed to update avatar');
+				throw error(userResponse.status, 'Failed to update onboarding step');
 			}
 
 			setFlash({ type: 'success', message: 'Work experience updated successfully' }, event);
 		} catch (err) {
-			console.error('Error updating disciplines:', err);
+			logger.error('Failed to update onboarding disciplines', {
+				error: err,
+				distinctId: user.id
+			});
 			setFlash({ type: 'error', message: 'Failed to update work experience' }, event);
 			return setError(form, 'Failed to update work experience');
 		}

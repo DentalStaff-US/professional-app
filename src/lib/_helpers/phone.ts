@@ -50,18 +50,16 @@ export function formatUSPhoneForDisplay(phone: string | null | undefined): strin
  * doesn't trip the regex; pair with .nullable() / .optional() as needed.
  */
 export function usPhoneField() {
-	return z
-		.string()
-		.transform((value, ctx) => {
-			if (value === '' || value == null) return null;
-			const normalized = normalizeUSPhone(value);
-			if (!normalized) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: 'Enter a valid US phone number (10 digits, or 11 starting with 1).'
-				});
-				return z.NEVER;
-			}
-			return normalized;
-		});
+	return z.string().transform((value, ctx) => {
+		if (value === '' || value == null) return null;
+		const normalized = normalizeUSPhone(value);
+		if (!normalized) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: 'Enter a valid US phone number (10 digits, or 11 starting with 1).'
+			});
+			return z.NEVER;
+		}
+		return normalized;
+	});
 }

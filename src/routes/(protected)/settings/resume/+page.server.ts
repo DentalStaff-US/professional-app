@@ -1,10 +1,12 @@
-import { error, fail, redirect } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { generateToken } from '$lib/server/utils';
 import { superValidate, message, setError } from 'sveltekit-superforms/server';
 import { documentUrlSchema } from '$lib/config/zod-schemas';
 import { setFlash } from 'sveltekit-flash-message/server';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { logger } from '$lib/server/logger';
 
 export const load: PageServerLoad = async (event) => {
 	const { user } = event.locals;
@@ -12,44 +14,20 @@ export const load: PageServerLoad = async (event) => {
 		return redirect(302, '/sign-in');
 	}
 
-	const userId = user.id;
+	const token = generateToken(user.id);
 
-	const token = generateToken(userId);
-
-	const profileReq = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getCandidateProfile`, {
-		method: 'GET',
-		headers: { Authorization: `Bearer ${token}` }
-	});
-
-	if (!profileReq.ok) {
-		if (profileReq.status === 401) {
-			throw error(401, 'Authentication failed');
-		}
-		throw error(profileReq.status, 'Failed to fetch profile');
-	}
-
-	const resumeReq = await fetch(
-		`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getRecentCandidateResume`,
-		{
-			headers: {
-				Authorization: `Bearer ${token}`
-			}
-		}
-	);
-
-	if (!resumeReq.ok) {
-		throw error(resumeReq.status, 'Failed to fetch resume');
-	}
-
-	const resume = await resumeReq.json();
+	const [profileRes, resumeRes] = await Promise.all([
+		fetchAdmin<any>('/api/external/getCandidateProfile', { token }),
+		fetchAdmin<{ resume: any }>('/api/external/getRecentCandidateResume', { token })
+	]);
 
 	const resumeForm = await superValidate(event, documentUrlSchema);
 
-	// Return all data needed for the page
 	return {
 		user,
 		resumeForm,
-		resume: resume.resume
+		resume: resumeRes.ok ? resumeRes.data.resume : null,
+		loadError: profileRes.ok && resumeRes.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
 	};
 };
 
@@ -89,7 +67,6 @@ export const actions: Actions = {
 					})
 				}
 			);
-			console.log(await response.text());
 
 			if (!response.ok) {
 				throw new Error(`Failed to update resume: ${response.statusText}`);
@@ -109,7 +86,7 @@ export const actions: Actions = {
 				'Resume uploaded successfully'
 			);
 		} catch (err) {
-			console.error('Error updating resume:', err);
+			logger.error('Failed to upload resume', { error: err, distinctId: user.id });
 			setFlash({ type: 'error', message: 'Failed to update resume' }, event);
 			return setError(form, 'Failed to update resume');
 		}

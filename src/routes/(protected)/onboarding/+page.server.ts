@@ -4,9 +4,8 @@ import { message, setError, superValidate } from 'sveltekit-superforms/server';
 import { newProfileSchema, avatarUrlSchema } from '$lib/config/zod-schemas';
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { generateToken } from '$lib/server/utils';
-import { STATES } from '$lib/config/constants';
-import { format } from 'date-fns';
 import { setFlash } from 'sveltekit-flash-message/server';
+import { logger } from '$lib/server/logger';
 
 export const load: PageServerLoad = async (event) => {
 	const { user } = event.locals;
@@ -20,7 +19,6 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const form = await superValidate(event, newProfileSchema);
-
 	const avatarForm = await superValidate(event, avatarUrlSchema);
 
 	return { user, form, avatarForm };
@@ -45,8 +43,6 @@ export const actions: Actions = {
 
 		const url = form.data.url;
 
-		console.log({ urlOnServer: url });
-
 		try {
 			const response = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/updateUserData`, {
 				method: 'POST',
@@ -57,8 +53,6 @@ export const actions: Actions = {
 				body: JSON.stringify({ avatarUrl: url })
 			});
 
-			const responseData = await response.json();
-			console.log({ response: JSON.stringify(responseData) });
 			if (!response.ok) {
 				if (response.status === 401) {
 					throw error(401, 'Authentication failed');
@@ -69,7 +63,7 @@ export const actions: Actions = {
 			setFlash({ type: 'success', message: 'Avatar updated Successfully' }, event);
 			return message(form, 'Avatar updated Successfully');
 		} catch (err) {
-			console.error(err);
+			logger.error('Failed to upload onboarding avatar', { error: err, distinctId: userId });
 			setFlash({ type: 'error', message: 'Failed to update profile.' }, event);
 			setError(form, 'Something went wrong');
 		}
@@ -83,7 +77,6 @@ export const actions: Actions = {
 		}
 
 		const userId = user.id;
-
 		const token = generateToken(userId);
 		const form = await superValidate(event, newProfileSchema);
 
@@ -119,7 +112,7 @@ export const actions: Actions = {
 			setFlash({ type: 'success', message: 'Profile updated Successfully' }, event);
 			status = true;
 		} catch (err) {
-			console.error(err);
+			logger.error('Failed to setup onboarding profile', { error: err, distinctId: userId });
 			setFlash({ type: 'error', message: 'Failed to update profile.' }, event);
 			setError(form, 'Something went wrong');
 		}

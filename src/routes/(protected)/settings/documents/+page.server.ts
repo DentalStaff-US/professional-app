@@ -5,6 +5,8 @@ import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { documentUrlSchema } from '$lib/config/zod-schemas';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { superValidate, message, setError } from 'sveltekit-superforms/server';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { logger } from '$lib/server/logger';
 
 export const load: PageServerLoad = async (event) => {
 	const user = event.locals.user;
@@ -12,26 +14,17 @@ export const load: PageServerLoad = async (event) => {
 		redirect(302, '/auth/sign-in');
 	}
 	const token = generateToken(user.id);
-	const documentsResponse = await fetch(
-		`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getCandidateDocuments`,
-		{
-			headers: {
-				Authorization: `Bearer ${token}`,
-				'Content-Type': 'application/json'
-			}
-		}
-	);
-	if (!documentsResponse.ok) {
-		throw new Error('Failed to fetch documents');
-	}
-	const documents = await documentsResponse.json();
+	const res = await fetchAdmin<{ documents: any[] }>('/api/external/getCandidateDocuments', {
+		token
+	});
 
 	const documentsForm = await superValidate(event, documentUrlSchema);
 
 	return {
 		user,
-		documents: documents.documents,
-		documentsForm
+		documents: res.ok ? (res.data.documents ?? []) : [],
+		documentsForm,
+		loadError: res.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
 	};
 };
 
@@ -71,7 +64,12 @@ export const actions = {
 			);
 
 			if (!response.ok) {
-				console.log(await response.text());
+				const body = await response.text();
+				logger.error('createCandidateDocument non-ok response', {
+					status: response.status,
+					body: body.slice(0, 500),
+					distinctId: user.id
+				});
 				throw new Error(`Failed to update resume: ${response.statusText}`);
 			}
 
@@ -88,7 +86,7 @@ export const actions = {
 				if (userResponse.status === 401) {
 					throw error(401, 'Authentication failed');
 				}
-				throw error(userResponse.status, 'Failed to update avatar');
+				throw error(userResponse.status, 'Failed to update user data');
 			}
 
 			setFlash({ type: 'success', message: 'Documents uploaded successfully' }, event);
@@ -104,9 +102,9 @@ export const actions = {
 				'Documents uploaded successfully'
 			);
 		} catch (err) {
-			console.error('Error updating resume:', err);
-			setFlash({ type: 'error', message: 'Failed to update resume' }, event);
-			return setError(form, 'Failed to update resume');
+			logger.error('Failed to upload documents', { error: err, distinctId: user.id });
+			setFlash({ type: 'error', message: 'Failed to update documents' }, event);
+			return setError(form, 'Failed to update documents');
 		}
 	}
 };

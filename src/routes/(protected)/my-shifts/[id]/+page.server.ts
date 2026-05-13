@@ -3,6 +3,8 @@ import type { PageServerLoad, RequestEvent } from './$types';
 import { generateToken } from '$lib/server/utils';
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { setFlash } from 'sveltekit-flash-message/server';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { logger } from '$lib/server/logger';
 
 export const load: PageServerLoad = async (event: RequestEvent) => {
 	event.setHeaders({
@@ -16,22 +18,15 @@ export const load: PageServerLoad = async (event: RequestEvent) => {
 
 	const token = generateToken(user.id);
 	const { id } = event.params;
-
-	const workdayReq = await fetch(
-		`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getWorkdayDetailsForCandidate/${id}`,
-		{
-			method: 'GET',
-			headers: { Authorization: `Bearer ${token}` }
-		}
+	const res = await fetchAdmin<{ data: unknown }>(
+		`/api/external/getWorkdayDetailsForCandidate/${id}`,
+		{ token }
 	);
-
-	const response = await workdayReq.json();
-
-	// console.log('Workday response:', response);
 
 	return {
 		user,
-		workday: response.data || null
+		workday: (res.ok ? (res.data.data ?? null) : null) as any,
+		loadError: res.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
 	};
 };
 
@@ -67,7 +62,11 @@ export const actions = {
 				);
 			}
 		} catch (error) {
-			console.error('Error cancelling workday shift:', error);
+			logger.error('Failed to cancel workday shift', {
+				error,
+				workdayId,
+				distinctId: event.locals.user.id
+			});
 			setFlash(
 				{
 					type: 'error',

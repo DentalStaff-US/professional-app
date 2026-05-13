@@ -1,95 +1,59 @@
 <script lang="ts">
-	import {
-	Briefcase,
-		ChevronRight,
-		File,
-		FileCheck,
-		LogOut,
-		SquareAsterisk,
-		UserCog
-	} from 'lucide-svelte';
+	import { Briefcase, ChevronRight, File, FileCheck, SquareAsterisk, UserCog } from 'lucide-svelte';
 	import * as Avatar from '$lib/components/ui/avatar';
+	import { Card } from '$lib/components/ui/card';
 	import type { PageData } from './$types';
 	import convertNameToInitials from '$lib/_helpers/convertNameToInitials';
 
 	export let data: PageData;
 	let initials: string = '';
 
-	$: user = data.user
+	$: user = data.user;
 	$: {
 		if (user) {
 			initials = convertNameToInitials(user.firstName, user.lastName);
 		}
 	}
 
-	function signOut() {
-		// Create a form element
-		var form = document.createElement('form');
-		form.method = 'POST';
-		form.action = '/auth/sign-out';
-		document.body.appendChild(form);
-		form.submit();
-	}
+	const items = [
+		{ href: '/settings/edit-profile', icon: UserCog, label: 'Edit Profile', desc: 'Personal information, contact, address' },
+		{ href: '/settings/resume', icon: FileCheck, label: 'Resume', desc: 'Upload and update your resume' },
+		{ href: '/settings/experience', icon: Briefcase, label: 'Experience', desc: 'Disciplines and experience levels' },
+		{ href: '/settings/documents', icon: File, label: 'Documents', desc: 'Certifications, IDs, and other files' },
+		{ href: '/auth/password/reset', icon: SquareAsterisk, label: 'Password', desc: 'Change your password' }
+	];
 </script>
 
 <svelte:head>
-  <title>My Settings | DentalStaff.US</title>
+	<title>My Settings | DentalStaff.US</title>
 </svelte:head>
 
-<section class="sm:container max-w-5xl mx-auto px-4">
-	<div class="mb-4 flex gap-4 items-end">
-		<Avatar.Root class="h-16 w-16 md:h-20 md:w-20">
+<section class="sm:container max-w-3xl mx-auto px-4 pb-12">
+	<div class="mb-8 flex gap-4 items-center">
+		<Avatar.Root class="h-14 w-14 md:h-20 md:w-20 shrink-0">
 			<Avatar.Image src={user?.avatarUrl} />
 			<Avatar.Fallback>{initials}</Avatar.Fallback>
 		</Avatar.Root>
-		<div>
-			<p class="text-2xl md:text-4xl font-bold">{user?.firstName} {user?.lastName}</p>
-			<p>{user.email}</p>
+		<div class="min-w-0">
+			<p class="text-xl md:text-3xl font-bold">{user?.firstName} {user?.lastName}</p>
+			<p class="text-sm text-muted-foreground truncate">{user?.email}</p>
 		</div>
 	</div>
-	<div class="py-2">
-		<a href="/settings/edit-profile" class="flex justify-between items-center my-6 md:my-8">
-			<div class="flex gap-2 items-center">
-				<UserCog />
-				<p>Edit Profile</p>
-			</div>
-			<ChevronRight />
-		</a>
-		<a href="/settings/resume" class="flex justify-between items-center my-6 md:my-8">
-			<div class="flex gap-2 items-center">
-				<FileCheck />
-				<p>Resume</p>
-			</div>
-			<ChevronRight />
-		</a>
 
-		<a href="/settings/experience" class="flex justify-between items-center my-6 md:my-8">
-			<div class="flex gap-2 items-center">
-				<Briefcase />
-				<p>Experience</p>
-			</div>
-			<ChevronRight />
-		</a>
-		<a href="/settings/documents" class="flex justify-between items-center my-6 md:my-8">
-			<div class="flex gap-2 items-center">
-				<File />
-				<p>Documents</p>
-			</div>
-			<ChevronRight />
-		</a>
-		<a href="/auth/password/reset" class="flex justify-between items-center my-6 md:my-8">
-			<div class="flex gap-2 items-center">
-				<SquareAsterisk />
-				<p>Password</p>
-			</div>
-			<ChevronRight />
-		</a>
-		<button on:click={signOut} class="w-full flex justify-between items-center my-6 md:my-8">
-			<div class="flex gap-2 items-center">
-				<LogOut />
-				<p>Log Out</p>
-			</div>
-			<ChevronRight />
-		</button>
-	</div>
+	<Card class="divide-y">
+		{#each items as item}
+			<a href={item.href} class="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
+				<div
+					class="flex items-center justify-center h-10 w-10 rounded-md bg-muted text-blue-800 shrink-0"
+				>
+					<svelte:component this={item.icon} class="h-5 w-5" />
+				</div>
+				<div class="flex-1 min-w-0">
+					<p class="font-medium">{item.label}</p>
+					<p class="text-sm text-muted-foreground">{item.desc}</p>
+				</div>
+				<ChevronRight class="text-muted-foreground shrink-0 h-5 w-5" />
+			</a>
+		{/each}
+	</Card>
 </section>

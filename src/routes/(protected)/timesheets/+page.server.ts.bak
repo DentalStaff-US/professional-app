@@ -1,0 +1,30 @@
+import { redirect } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
+import { generateToken } from '$lib/server/utils';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+
+export const load: PageServerLoad = async (event) => {
+	event.setHeaders({
+		'cache-control': 'max-age=60'
+	});
+	const user = event.locals.user;
+	if (!user) {
+		redirect(302, '/sign-in');
+	}
+
+	if (!user.completedOnboarding) {
+		redirect(302, '/onboarding');
+	}
+
+	const token = generateToken(user.id);
+	const res = await fetchAdmin<{ data: unknown[] }>(
+		'/api/external/timesheets/getTimesheetsForUser',
+		{ token }
+	);
+
+	return {
+		user,
+		timesheets: res.ok ? (res.data.data ?? []) : [],
+		loadError: res.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
+	};
+};

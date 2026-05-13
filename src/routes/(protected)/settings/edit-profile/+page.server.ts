@@ -9,6 +9,8 @@ import { format } from 'date-fns';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { updateUser } from '$lib/server/database/user-model';
 import { EmailService } from '$lib/server/email/emailService';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { logger } from '$lib/server/logger';
 
 export const load: PageServerLoad = async (event) => {
 	const { user } = event.locals;
@@ -17,24 +19,25 @@ export const load: PageServerLoad = async (event) => {
 		redirect(302, '/sign-in');
 	}
 
-	const userId = user.id;
-
-	const token = generateToken(userId);
-
-	const profileReq = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getCandidateProfile`, {
-		method: 'GET',
-		headers: { Authorization: `Bearer ${token}` }
+	const token = generateToken(user.id);
+	const profileRes = await fetchAdmin<any>('/api/external/getCandidateProfile', {
+		token
 	});
 
-	if (!profileReq.ok) {
-		if (profileReq.status === 401) {
-			throw error(401, 'Authentication failed');
-		}
-		throw error(profileReq.status, 'Failed to fetch profile');
+	const avatarForm = await superValidate(event, avatarUrlSchema);
+
+	if (!profileRes.ok) {
+		const form = await superValidate({}, updateProfileSchema);
+		return {
+			user,
+			form,
+			avatarForm,
+			profile: null,
+			loadError: ADMIN_LOAD_ERROR_MESSAGE
+		};
 	}
 
-	const profile = await profileReq.json();
-
+	const profile = profileRes.data;
 	const form = await superValidate(
 		{
 			firstName: user.firstName,
@@ -42,10 +45,10 @@ export const load: PageServerLoad = async (event) => {
 			email: user.email,
 			timezone: user.timezone,
 			...profile,
-			birthday: format(new Date(profile.birthday), 'yyyy-MM-dd'),
+			birthday: profile.birthday ? format(new Date(profile.birthday), 'yyyy-MM-dd') : '',
 			address: profile.address || '',
 			state:
-				profile.state?.length > 0
+				profile.state && profile.state.length > 0
 					? STATES.find(
 							(state) => state.name == profile.state || state.abbreviation === profile.state
 						)?.abbreviation
@@ -53,8 +56,6 @@ export const load: PageServerLoad = async (event) => {
 		},
 		updateProfileSchema
 	);
-
-	const avatarForm = await superValidate(event, avatarUrlSchema);
 
 	return { user, form, avatarForm, profile };
 };
@@ -78,8 +79,6 @@ export const actions: Actions = {
 
 		const url = form.data.url;
 
-		console.log({ urlOnServer: url });
-
 		try {
 			const response = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/updateUserData`, {
 				method: 'POST',
@@ -100,7 +99,7 @@ export const actions: Actions = {
 			setFlash({ type: 'success', message: 'Avatar updated Successfully' }, event);
 			return message(form, 'Avatar updated Successfully');
 		} catch (err) {
-			console.error(err);
+			logger.error('Failed to update avatar', { error: err, distinctId: userId });
 			setFlash({ type: 'error', message: 'Failed to update profile.' }, event);
 			setError(form, 'Something went wrong');
 		}
@@ -114,10 +113,8 @@ export const actions: Actions = {
 		}
 
 		const userId = user.id;
-
 		const token = generateToken(userId);
 		const form = await superValidate(event, updateProfileSchema);
-		console.log(form.data);
 
 		const emailService = new EmailService();
 
@@ -168,7 +165,7 @@ export const actions: Actions = {
 				if (userResponse.status === 401 || candidateResponse.status === 401) {
 					throw error(401, 'Authentication failed');
 				}
-				throw error(500, 'Failed to update avatar');
+				throw error(500, 'Failed to update profile');
 			}
 
 			if (userData.email && user.email !== userData.email) {
@@ -179,7 +176,7 @@ export const actions: Actions = {
 
 			setFlash({ type: 'success', message: 'Profile updated Successfully' }, event);
 		} catch (err) {
-			console.error(err);
+			logger.error('Failed to update profile', { error: err, distinctId: userId });
 			setFlash({ type: 'error', message: 'Failed to update profile.' }, event);
 			setError(form, 'Something went wrong');
 		}

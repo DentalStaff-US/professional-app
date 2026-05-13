@@ -2,27 +2,60 @@ import { lucia } from '$lib/server/lucia';
 import { redirect, type Handle } from '@sveltejs/kit';
 import type { HandleServerError } from '@sveltejs/kit';
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
-
-import log from '$lib/server/log';
+import { logger } from '$lib/server/logger';
 
 export const handleError: HandleServerError = async ({ error, event }) => {
 	const errorId = crypto.randomUUID();
-
-	event.locals.error = error?.toString() || '';
-	if (error instanceof Error) {
-		event.locals.errorStackTrace = error.stack || '';
-	} else {
-		event.locals.errorStackTrace = '';
-	}
-	event.locals.errorId = errorId;
-	log(500, event);
-
+	logger.error('uncaught server error', {
+		error,
+		errorId,
+		path: event.url.pathname,
+		method: event.request.method,
+		distinctId: event.locals.user?.id
+	});
 	return {
 		message: 'An unexpected error occurred.',
 		errorId
 	};
 };
+
 export const handle: Handle = async ({ event, resolve }) => {
+	const { pathname } = event.url;
+
+	// Reverse proxy for PostHog — route /ingest requests to PostHog servers.
+	// Mirrors the admin app so client-side posthog-js can post to a same-origin
+	// path and avoid ad-blockers.
+	if (pathname.startsWith('/ingest')) {
+		const useAssetHost =
+			pathname.startsWith('/ingest/static/') || pathname.startsWith('/ingest/array/');
+		const hostname = useAssetHost ? 'us-assets.i.posthog.com' : 'us.i.posthog.com';
+
+		const url = new URL(event.request.url);
+		url.protocol = 'https:';
+		url.hostname = hostname;
+		url.port = '443';
+		url.pathname = pathname.replace(/^\/ingest/, '');
+
+		const headers = new Headers(event.request.headers);
+		headers.set('host', hostname);
+		headers.set('accept-encoding', '');
+
+		const clientIp = event.request.headers.get('x-forwarded-for') || event.getClientAddress();
+		if (clientIp) {
+			headers.set('x-forwarded-for', clientIp);
+		}
+
+		const response = await fetch(url.toString(), {
+			method: event.request.method,
+			headers,
+			body: event.request.body,
+			// @ts-expect-error - duplex is required for streaming request bodies
+			duplex: 'half'
+		});
+
+		return response;
+	}
+
 	const startTimer = Date.now();
 	event.locals.startTimer = startTimer;
 
@@ -73,6 +106,5 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	const response = await resolve(event);
-	log(response.status, event);
 	return response;
 };

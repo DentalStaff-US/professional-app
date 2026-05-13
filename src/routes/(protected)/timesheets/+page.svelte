@@ -1,7 +1,6 @@
 <script lang="ts">
 	import * as Table from '$lib/components/ui/table';
-	import { cn } from '$lib/utils';
-	import Badge from '$lib/components/ui/badge/badge.svelte';
+	import { StatusBadge } from '$lib/components/ui/status-badge';
 	import { goto } from '$app/navigation';
 
 	export let data;
@@ -59,16 +58,7 @@
 					</Table.Cell>
 					<Table.Cell>{formatWorkWeek(data.timesheet.weekBeginDate)}</Table.Cell>
 					<Table.Cell>
-						<Badge
-							class={cn(
-								data?.timesheet?.status === 'PENDING' && 'bg-yellow-300 hover:bg-yellow-400',
-								data?.timesheet?.status === 'DISCREPANCY' && 'bg-orange-400 hover:bg-orange-500',
-								data?.timesheet?.status === 'APPROVED' && 'bg-green-400 hover:bg-green-600',
-								data?.timesheet?.status === 'VOID' && 'bg-gray-200 hover:bg-gray-300',
-								data?.timesheet?.status === 'REJECTED' && 'bg-red-500 hover:bg-red-600'
-							)}
-							variant="default">{data.timesheet.status}</Badge
-						>
+						<StatusBadge status={data.timesheet.status} />
 					</Table.Cell>
 				</Table.Row>
 			{/each}

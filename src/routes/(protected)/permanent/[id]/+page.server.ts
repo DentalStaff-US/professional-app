@@ -1,10 +1,12 @@
 import type { PageServerLoad } from './$types';
-import { error, fail, redirect, type RequestEvent } from '@sveltejs/kit';
+import { fail, redirect, type RequestEvent } from '@sveltejs/kit';
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { getSavedJobs } from '$lib/server/cache/cacheUtils';
 import { generateToken } from '$lib/server/utils';
 import { message, setError, superValidate } from 'sveltekit-superforms/server';
 import { requisitionApplicationSchema } from '$lib/config/zod-schemas';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { logger } from '$lib/server/logger';
 
 export const load: PageServerLoad = async (event) => {
 	const { id } = event.params;
@@ -20,67 +22,37 @@ export const load: PageServerLoad = async (event) => {
 		redirect(302, '/onboarding');
 	}
 
+	const [requisitionRes, appliedRes] = await Promise.all([
+		fetchAdmin<any>(`/api/external/getRequisitionDetails/${id}`),
+		fetchAdmin<any[]>('/api/external/getAppliedRequisitions', { token })
+	]);
+
+	let savedOpenings: number[] = [];
 	try {
-		const response = await fetch(
-			`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getRequisitionDetails/${id}`,
-			{
-				method: 'GET'
-			}
-		);
-
-		if (!response.ok) {
-			if (response.status === 401) {
-				throw error(401, 'Authentication failed');
-			}
-			throw error(response.status, 'Failed to fetch requisitions');
-		}
-
-		const requisition = await response.json();
-		const savedOpenings = await getSavedJobs(user.id, token);
-		const appliedReq = await fetch(
-			`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getAppliedRequisitions`,
-			{
-				headers: {
-					Authorization: `Bearer ${token}`
-				}
-			}
-		);
-
-		const appliedOpenings = await appliedReq.json();
-
-		console.log({ savedOpenings, appliedOpenings });
-
-		const applyForm = await superValidate(event, requisitionApplicationSchema);
-
-		return {
-			requisition,
-			saved: savedOpenings.includes(requisition.id),
-			appliedToOpening: appliedOpenings
-				?.map((opening) => opening.application.requisitionId)
-				.includes(requisition.id),
-			applyForm
-		};
-	} catch (err) {
-		console.error('Error loading requisitions:', err);
-		throw error(500, 'Internal server error');
+		savedOpenings = await getSavedJobs(user.id, token);
+	} catch (error) {
+		logger.error('Failed to load saved jobs', { error, distinctId: user.id });
 	}
+
+	const applyForm = await superValidate(event, requisitionApplicationSchema);
+	const requisition = requisitionRes.ok ? (requisitionRes.data as { id: number }) : null;
+	const appliedOpenings = appliedRes.ok ? (appliedRes.data ?? []) : [];
+
+	return {
+		requisition: requisition as any,
+		saved: requisition ? savedOpenings.includes(requisition.id) : false,
+		appliedToOpening: requisition
+			? (appliedOpenings as any[])
+					.map((opening) => opening?.application?.requisitionId)
+					.includes(requisition.id)
+			: false,
+		applyForm,
+		loadError: requisitionRes.ok && appliedRes.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
+	};
 };
 
 export const actions = {
-	// toggleSave: async (event: RequestEvent) => {
-	// 	const userId = event.locals.user?.id;
-	// 	const requisitionId = event.params.id;
-	// 	const token = generateToken(userId);
-	// 	if (!userId || !requisitionId) return;
-	// 	try {
-	// 		const result = await toggleSaveJob(userId, requisitionId, token);
-	// 	} catch (err) {
-	// 		console.log(err);
-	// 		throw error(500, 'error saving opening');
-	// 	}
-	// },
 	applyForOpening: async (event: RequestEvent) => {
-		console.log('applying to opening');
 		const userId = event.locals.user?.id;
 		const requisitionId = event.params.id;
 		const token = generateToken(userId);
@@ -106,17 +78,17 @@ export const actions = {
 					Authorization: `Bearer ${token}`,
 					'Content-Type': 'application/json'
 				},
-				// Add this to get a proper error response instead of HTML
 				credentials: 'include'
 			});
 
-			// Log the entire response for debugging
-			console.log('Response status:', req.status);
-			console.log('Response headers:', Object.fromEntries(req.headers.entries()));
-
 			if (!req.ok) {
 				const errorText = await req.text();
-				console.error('API Error Response:', errorText);
+				logger.error('applyForRequisition non-ok response', {
+					status: req.status,
+					body: errorText.slice(0, 500),
+					requisitionId: idAsNum,
+					distinctId: userId
+				});
 				return fail(req.status, {
 					form: { ...form, errors: { message: 'Failed to submit application' } }
 				});
@@ -130,13 +102,21 @@ export const actions = {
 					return setError(form, result.message || 'Application submission failed');
 				}
 			} catch (jsonError) {
-				console.error('JSON parsing error:', jsonError);
+				logger.error('applyForRequisition response JSON parse error', {
+					error: jsonError,
+					requisitionId: idAsNum,
+					distinctId: userId
+				});
 				return fail(500, {
 					form: { ...form, errors: { message: 'Invalid response from server' } }
 				});
 			}
-		} catch (err) {
-			console.error('Application submission error:', err);
+		} catch (error) {
+			logger.error('Application submission threw', {
+				error,
+				requisitionId: idAsNum,
+				distinctId: userId
+			});
 			return fail(500, {
 				form: { ...form, errors: { message: 'Something went wrong' } }
 			});

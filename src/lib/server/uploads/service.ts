@@ -1,5 +1,6 @@
 import { PutObjectCommand, type PutObjectCommandInput } from '@aws-sdk/client-s3';
 import { s3Client, BUCKET_NAME } from './config';
+import { logger } from '$lib/server/logger';
 
 export type FileType = {
 	mimetype: string;
@@ -25,11 +26,10 @@ export const uploadFile = async ({ file, location }: { file: FileType; location?
 	};
 
 	try {
-		const data = await s3Client.send(new PutObjectCommand(uploadParams));
-		console.log('Success', data);
+		await s3Client.send(new PutObjectCommand(uploadParams));
 		return `https://dentalstaffusdocs.nyc3.cdn.digitaloceanspaces.com/${key}`;
 	} catch (err) {
-		console.log('Error', err);
+		logger.error('S3 upload failed', { error: err, key, mimetype: file.mimetype });
 		throw err;
 	}
 };

@@ -8,6 +8,7 @@
 	} from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
+	import { StatusBadge } from '$lib/components/ui/status-badge';
 	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import {
 		CalendarDays,
@@ -196,11 +197,16 @@
 													>
 												</div>
 											</div>
-											<div class="flex items-center gap-2">
-												<Badge variant="default">
-													{requisition.recurrenceDay.status}
-												</Badge>
-												<Button on:click={() => viewShiftDetails(requisition)} variant="outline" size="sm">Details</Button>
+											<div class="flex items-center gap-2 w-full sm:w-auto">
+												<StatusBadge status={requisition.recurrenceDay.status} />
+												<Button
+													on:click={() => viewShiftDetails(requisition)}
+													variant="outline"
+													size="sm"
+													class="flex-1 sm:flex-none"
+												>
+													Details
+												</Button>
 											</div>
 										</div>
 									{/each}
@@ -248,11 +254,16 @@
 													</span>
 												</div>
 											</div>
-											<div class="flex items-center gap-2">
-												<Badge variant="default">
-													{shift.recurrenceDay.status}
-												</Badge>
-												<Button href={`/my-shifts/${shift.workday.id}`} variant="outline" size="sm">Details</Button>
+											<div class="flex items-center gap-2 w-full sm:w-auto">
+												<StatusBadge status={shift.recurrenceDay.status} />
+												<Button
+													href={`/my-shifts/${shift.workday.id}`}
+													variant="outline"
+													size="sm"
+													class="flex-1 sm:flex-none"
+												>
+													Details
+												</Button>
 											</div>
 										</div>
 									{/each}
@@ -291,14 +302,13 @@
 													<span>{timesheet.timesheet.totalHoursWorked} hours</span>
 												</div>
 											</div>
-											<div class="flex items-center gap-2">
-												<Badge variant="default">
-													{getStatusBadge(timesheet.timesheet.status).text}
-												</Badge>
+											<div class="flex items-center gap-2 w-full sm:w-auto">
+												<StatusBadge status={timesheet.timesheet.status} />
 												<Button
 													href={`/timesheets/${timesheet.timesheet.id}`}
 													variant="outline"
 													size="sm"
+													class="flex-1 sm:flex-none"
 												>
 													View
 												</Button>
