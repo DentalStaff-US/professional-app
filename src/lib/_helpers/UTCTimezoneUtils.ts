@@ -3,7 +3,7 @@
  * Using the actual function names from the date-fns-tz documentation
  */
 import { format, parse, isValid } from 'date-fns';
-import { toZonedTime, fromZonedTime, formatInTimeZone } from 'date-fns-tz';
+import { fromZonedTime, formatInTimeZone } from 'date-fns-tz';
 
 /**
  * Get user's current timezone from browser
@@ -33,74 +33,6 @@ export function formatTimezoneName(timezone: string): string {
 export function toUTCDateString(date: Date | string): string {
 	const d = typeof date === 'string' ? new Date(date) : date;
 	return d.toISOString().split('T')[0];
-}
-
-/**
- * Convert local time to UTC time
- *
- * @param timeString Local time string (HH:MM or HH:MM:SS)
- * @param dateString Date string (YYYY-MM-DD)
- * @param timezone Local timezone
- * @returns UTC time string (HH:MM)
- */
-export function localTimeToUTC(timeString: string, dateString: string, timezone: string): string {
-	if (!timeString || !dateString || !timezone) {
-		return timeString;
-	}
-
-	try {
-		// Create date in local timezone
-		const localDate = parse(`${dateString} ${timeString}`, 'yyyy-MM-dd HH:mm', new Date());
-
-		if (!isValid(localDate)) {
-			return timeString;
-		}
-
-		// Convert to UTC
-		const utcDate = fromZonedTime(localDate, timezone);
-
-		// Format time in HH:MM
-		return format(utcDate, 'HH:mm');
-	} catch (error) {
-		console.error('Error converting to UTC:', error);
-		return timeString;
-	}
-}
-
-/**
- * Convert UTC time to local time
- *
- * @param utcTimeString UTC time string (HH:MM or HH:MM:SS)
- * @param utcDateString UTC date string (YYYY-MM-DD)
- * @param timezone Target timezone
- * @returns Local time string (HH:MM)
- */
-export function utcToLocalTime(
-	utcTimeString: string,
-	utcDateString: string,
-	timezone: string
-): string {
-	if (!utcTimeString || !utcDateString || !timezone) {
-		return utcTimeString;
-	}
-
-	try {
-		// Create UTC date
-		const utcDate = parse(`${utcDateString} ${utcTimeString}`, 'yyyy-MM-dd HH:mm', new Date());
-
-		if (!isValid(utcDate)) {
-			return utcTimeString;
-		}
-
-		// Convert to target timezone
-		const localDate = toZonedTime(utcDate, timezone);
-
-		// Format time in HH:MM
-		return format(localDate, 'HH:mm');
-	} catch (error) {
-		console.error('Error converting from UTC:', error);
-		return utcTimeString;
-	}
 }
 
 /**
@@ -217,62 +149,6 @@ export function formatUTCDateForDisplay(
 		console.error('Error formatting UTC date:', error);
 		return utcDateString;
 	}
-}
-
-/**
- * Process timesheet entries with timezone conversion
- *
- * @param entries Timesheet entries with UTC times
- * @param targetTimezone Timezone to convert to (default: user's timezone)
- * @returns Processed entries with converted times and calculated hours
- */
-export function processUTCTimesheetEntries(
-	entries: Array<{
-		date: string; // UTC date
-		startTime: string; // UTC time
-		endTime: string; // UTC time
-		[key: string]: any;
-	}>,
-	targetTimezone: string = getUserTimezone()
-): Array<{
-	date: string;
-	startTime: string;
-	endTime: string;
-	localDate: string;
-	localStartTime: string;
-	localEndTime: string;
-	displayStartTime: string;
-	displayEndTime: string;
-	hours: number;
-	[key: string]: any;
-}> {
-	if (!entries || !Array.isArray(entries)) return [];
-
-	return entries.map((entry) => {
-		// Convert UTC times to local timezone
-		const localStartTime = utcToLocalTime(entry.startTime, entry.date, targetTimezone);
-		const localEndTime = utcToLocalTime(entry.endTime, entry.date, targetTimezone);
-
-		// Format local date
-		const localDate = formatInTimeZone(entry.date, targetTimezone, 'yyyy-MM-dd');
-
-		// Calculate hours based on UTC times
-		const hours = calculateHours(entry.startTime, entry.endTime);
-
-		// Format for display
-		const displayStartTime = formatTimeForDisplay(localStartTime);
-		const displayEndTime = formatTimeForDisplay(localEndTime);
-
-		return {
-			...entry,
-			localDate,
-			localStartTime,
-			localEndTime,
-			displayStartTime,
-			displayEndTime,
-			hours
-		};
-	});
 }
 
 /**
