@@ -790,15 +790,7 @@
 									<div class="font-mono text-sm font-semibold">
 										${(expense.amountCents / 100).toFixed(2)}
 									</div>
-									<Badge
-										variant={expense.status === 'APPROVED'
-											? 'default'
-											: expense.status === 'REJECTED'
-												? 'destructive'
-												: 'secondary'}
-									>
-										{expense.status}
-									</Badge>
+									<StatusBadge status={expense.status} />
 									{#if expense.status === 'PENDING' && canAddExpenses}
 										<form
 											method="POST"
