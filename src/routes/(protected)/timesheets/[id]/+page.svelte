@@ -30,8 +30,13 @@
 		AlertTriangle,
 		XCircle,
 		Edit,
-		Save
+		Save,
+		Plus,
+		Receipt,
+		Trash2,
+		Loader2
 	} from 'lucide-svelte';
+	import { superForm } from 'sveltekit-superforms/client';
 	import type { PageData } from './$types';
 	import {
 		format,
@@ -69,6 +74,27 @@
 	$: company = data.company;
 	$: recurrenceDay = data.recurrenceDay;
 	$: workday = data.workday;
+	$: expenses = (data.expenses ?? []) as Array<{
+		id: string;
+		description: string;
+		amountCents: number;
+		status: 'PENDING' | 'APPROVED' | 'REJECTED';
+		rejectionReason: string | null;
+	}>;
+	$: canAddExpenses =
+		timesheet?.status === 'DRAFT' ||
+		timesheet?.status === 'PENDING' ||
+		timesheet?.status === 'DISCREPANCY';
+
+	const addExpenseSF = superForm(data.addExpenseForm, {
+		resetForm: true,
+		taintedMessage: null
+	});
+	const {
+		enhance: addExpenseEnhance,
+		form: addExpenseFormData,
+		submitting: addExpenseSubmitting
+	} = addExpenseSF;
 
 	$: console.log(requisition)
 	// ✅ Initialize time entries from existing timesheet or create empty ones
@@ -680,6 +706,119 @@
                     {/if}
                 {/if}
                 </CardContent>
+			</Card>
+
+			<!-- Expenses & Incidentals -->
+			<Card>
+				<CardHeader>
+					<CardTitle class="flex items-center gap-2">
+						<Receipt class="h-5 w-5" />
+						Expenses & Incidentals
+					</CardTitle>
+					<CardDescription>
+						Submit reimbursable expenses tied to this week's work. An admin or client will
+						review each one before it's added to the invoice.
+					</CardDescription>
+				</CardHeader>
+				<CardContent class="space-y-4">
+					{#if canAddExpenses}
+						<form
+							method="POST"
+							action="?/addExpense"
+							use:addExpenseEnhance
+							class="flex flex-col gap-2 rounded-md border border-dashed p-3 sm:flex-row sm:items-end"
+						>
+							<div class="flex-1">
+								<Label for="addExpenseDescription" class="text-xs">Description</Label>
+								<Input
+									id="addExpenseDescription"
+									name="description"
+									bind:value={$addExpenseFormData.description}
+									placeholder="e.g. Parking, supplies, mileage"
+									disabled={$addExpenseSubmitting}
+									required
+								/>
+							</div>
+							<div class="w-full sm:w-32">
+								<Label for="addExpenseAmount" class="text-xs">Amount ($)</Label>
+								<Input
+									id="addExpenseAmount"
+									name="amountDollars"
+									type="number"
+									step="0.01"
+									min="0.01"
+									bind:value={$addExpenseFormData.amountDollars}
+									placeholder="0.00"
+									disabled={$addExpenseSubmitting}
+									required
+								/>
+							</div>
+							<Button
+								type="submit"
+								size="sm"
+								class="bg-blue-700 hover:bg-blue-800 sm:w-auto"
+								disabled={$addExpenseSubmitting}
+							>
+								{#if $addExpenseSubmitting}
+									<Loader2 class="h-4 w-4 animate-spin" />
+									Adding…
+								{:else}
+									<Plus class="h-4 w-4" />
+									Add Expense
+								{/if}
+							</Button>
+						</form>
+					{/if}
+
+					{#if expenses.length === 0}
+						<p class="text-sm text-gray-500">No expenses submitted for this timesheet.</p>
+					{:else}
+						<div class="space-y-2">
+							{#each expenses as expense (expense.id)}
+								<div
+									class="flex flex-wrap items-center gap-3 rounded-md border p-3 text-sm"
+									class:bg-amber-50={expense.status === 'PENDING'}
+									class:bg-green-50={expense.status === 'APPROVED'}
+									class:bg-red-50={expense.status === 'REJECTED'}
+								>
+									<div class="min-w-0 flex-1">
+										<p class="truncate font-medium">{expense.description}</p>
+										{#if expense.status === 'REJECTED' && expense.rejectionReason}
+											<p class="text-xs text-red-700">Rejected: {expense.rejectionReason}</p>
+										{/if}
+									</div>
+									<div class="font-mono text-sm font-semibold">
+										${(expense.amountCents / 100).toFixed(2)}
+									</div>
+									<Badge
+										variant={expense.status === 'APPROVED'
+											? 'default'
+											: expense.status === 'REJECTED'
+												? 'destructive'
+												: 'secondary'}
+									>
+										{expense.status}
+									</Badge>
+									{#if expense.status === 'PENDING' && canAddExpenses}
+										<form
+											method="POST"
+											action="?/deleteExpense"
+											use:enhance
+											on:submit={(e) => {
+												if (!confirm('Delete this expense?')) e.preventDefault();
+											}}
+										>
+											<input type="hidden" name="expenseId" value={expense.id} />
+											<Button type="submit" size="sm" variant="ghost" title="Delete">
+												<Trash2 class="h-4 w-4 text-red-700" />
+											</Button>
+										</form>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</CardContent>
 			</Card>
 
 			<!-- Shift Details -->
