@@ -776,10 +776,7 @@
 						<div class="space-y-2">
 							{#each expenses as expense (expense.id)}
 								<div
-									class="flex flex-wrap items-center gap-3 rounded-md border p-3 text-sm"
-									class:bg-amber-50={expense.status === 'PENDING'}
-									class:bg-green-50={expense.status === 'APPROVED'}
-									class:bg-red-50={expense.status === 'REJECTED'}
+									class="flex flex-wrap items-center gap-3 rounded-md border p-3 text-sm bg-gray-100"
 								>
 									<div class="min-w-0 flex-1">
 										<p class="truncate font-medium">{expense.description}</p>
