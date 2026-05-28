@@ -163,7 +163,7 @@
 </script>
 
 <svelte:head>
-  <title>Upload Your Documents | DentalStaff.US</title>
+  <title>Upload Your Documents | DTSS</title>
 </svelte:head>
 
 <section class="sm:container grid items-center gap-6 max-w-2xl">

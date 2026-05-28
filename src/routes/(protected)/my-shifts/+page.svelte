@@ -138,7 +138,7 @@
 </script>
 
 <svelte:head>
-	<title>My Shifts | DentalStaff.US</title>
+	<title>My Shifts | DTSS</title>
 </svelte:head>
 
 <section class="container mx-auto px-4 space-y-8">

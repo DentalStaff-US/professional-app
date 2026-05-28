@@ -135,7 +135,7 @@
 </script>
 
 <svelte:head>
-	<title>Dashboard | DentalStaff.US</title>
+	<title>Dashboard | DTSS</title>
 </svelte:head>
 
 <section class="container mx-auto px-4 space-y-8">

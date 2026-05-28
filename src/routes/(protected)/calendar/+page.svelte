@@ -70,7 +70,7 @@
 </script>
 
 <svelte:head>
-	<title>Temp Shift Calendar | DentalStaff.US</title>
+	<title>Temp Shift Calendar | DTSS</title>
 </svelte:head>
 
 <section class="container grid items-center gap-6 px-4">

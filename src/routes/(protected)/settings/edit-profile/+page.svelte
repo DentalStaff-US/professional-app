@@ -66,7 +66,7 @@
 </script>
 
 <svelte:head>
-	<title>Settings - Edit Profile | DentalStaff.US</title>
+	<title>Settings - Edit Profile | DTSS</title>
 </svelte:head>
 
 <section class="sm:container mx-auto px-4 py-6 space-y-8">

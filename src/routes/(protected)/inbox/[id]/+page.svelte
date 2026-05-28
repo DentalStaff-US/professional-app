@@ -51,7 +51,7 @@
 </script>
 
 <svelte:head>
-    <title>Conversation | DentalStaff.US</title>
+    <title>Conversation | DTSS</title>
 </svelte:head>
 
 <section class="container flex flex-col gap-6 max-w-2xl grow px-4">

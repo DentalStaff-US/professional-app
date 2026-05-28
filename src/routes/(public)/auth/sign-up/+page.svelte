@@ -23,7 +23,7 @@
 </script>
 
 <!--<Button on:click={() => goto('/auth/oauth/google')}>Sign up with Google</Button>-->
-<div class="flex items-center justify-center mx-auto max-w-2xl">
+<div class="flex items-center justify-center mx-auto max-w-2xl min-h-screen">
 	<Form.Root let:submitting let:errors method="POST" {form} schema={signUpSchema} let:config>
 		<Card.Root>
 			<Card.Header class="space-y-1">
@@ -87,7 +87,7 @@
 				</Form.Field>
 			</Card.Content>
 			<Card.Footer>
-				<Form.Button class="w-full" disabled={submitting}
+				<Form.Button class="w-full bg-blue-500 hover:bg-blue-600" disabled={submitting}
 					>{#if submitting}
 						<Loader2 class="mr-2 h-4 w-4 animate-spin" />
 						Please wait{:else}Sign Up{/if}

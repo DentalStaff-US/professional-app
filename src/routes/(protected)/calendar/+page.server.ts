@@ -6,6 +6,7 @@ import { recurrenceDayClaimSchema } from '$lib/config/zod-schemas';
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { getCandidateStatus, inactiveAccountMessage } from '$lib/server/candidateStatus';
 import { logger } from '$lib/server/logger';
 
 type RecurrenceDayEntry = any;
@@ -85,6 +86,14 @@ export const actions = {
 
 		if (!form.valid) {
 			return fail(400, { form });
+		}
+
+		// Block non-active candidates before the cross-app request.
+		const status = await getCandidateStatus(userId);
+		if (status !== 'ACTIVE') {
+			return fail(403, {
+				form: { ...form, errors: { message: inactiveAccountMessage(status) } }
+			});
 		}
 
 		try {

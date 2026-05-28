@@ -110,7 +110,7 @@
 </script>
 
 <svelte:head>
-	<title>Add Your Experience | DentalStaff.US</title>
+	<title>Add Your Experience | DTSS</title>
 </svelte:head>
 
 <section class="sm:container grid items-center gap-6 max-w-3xl">

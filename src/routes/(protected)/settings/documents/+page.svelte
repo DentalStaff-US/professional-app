@@ -210,7 +210,7 @@
 </script>
 
 <svelte:head>
-	<title>Settings - My Documents | DentalStaff.US</title>
+	<title>Settings - My Documents | DTSS</title>
 </svelte:head>
 
 <section class="sm:container mx-auto px-4 py-6 space-y-8">

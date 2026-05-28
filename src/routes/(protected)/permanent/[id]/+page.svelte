@@ -15,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>{opening.disciplineName} | DentalStaff.US</title>
+	<title>{opening.disciplineName} | DTSS</title>
 </svelte:head>
 
 <section class="container flex flex-col gap-6 pb-16 max-w-5xl px-4">

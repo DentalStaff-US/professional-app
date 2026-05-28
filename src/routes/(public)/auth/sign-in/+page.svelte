@@ -20,16 +20,16 @@
 </script>
 
 <svelte:head>
-  <title>Sign In | DentalStaff.US</title>
+  <title>Sign In | DTSS</title>
 </svelte:head>
 
 <div class="flex items-center justify-center w-full max-h-[calc(100vh_-_4rem)] h-screen overflow-scroll">
-	<div class="w-full md:w-1/2 flex items-center justify-center flex-col">
+	<div class="w-full px-4 flex items-center justify-center flex-col">
 	   <div>
 				<div>
-				<p class="text-2xl font-medium mb-2">DentalStaff.US</p>
-				<p class="text-lg text-gray-500 mb-2">Candidate Login</p>
-				<p class="text-sm text-gray-500 mb-4">Have a Client Account? <a class="underline" href="{PUBLIC_CLIENT_APP_DOMAIN}">Sign In Here</a></p>
+				<p class="text-2xl font-medium mb-2">Dental Temps Staffing Solutions</p>
+				<p class="text-lg text-gray-500 mb-2">Professionals Login</p>
+				<!-- <p class="text-sm text-gray-500 mb-4">Have a Client Account? <a class="underline" href="{PUBLIC_CLIENT_APP_DOMAIN}">Sign In Here</a></p> -->
 
 				</div>
 				<Form.Root let:submitting let:errors method="POST" {form} schema={signInSchema} let:config>
@@ -37,7 +37,7 @@
 						<Card.Header class="space-y-1">
 							<Card.Title class="text-2xl">Sign in</Card.Title>
 							<Card.Description
-								>Don't have an account yet? <a href="/auth/sign-up" class="underline">Sign up here.</a
+								>Don't have a Professional account yet? <a href="/auth/sign-up" class="underline">Sign up here.</a
 								></Card.Description
 							>
 						</Card.Header>
@@ -85,5 +85,4 @@
 				</Form.Root>
 				</div>
 	</div>
-	<div class="w-1/2 hidden md:block bg-blue-500 h-full"></div>
 </div>

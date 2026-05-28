@@ -122,7 +122,7 @@
 </script>
 
 <svelte:head>
-	<title>Manage Your Experience | DentalStaff.US</title>
+	<title>Manage Your Experience | DTSS</title>
 </svelte:head>
 
 <section class="sm:container mx-auto px-4 py-6 space-y-8">

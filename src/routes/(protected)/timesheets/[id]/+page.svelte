@@ -433,7 +433,7 @@
 </script>
 
 <svelte:head>
-	<title>Timesheet Details | DentalStaff.US</title>
+	<title>Timesheet Details | DTSS</title>
 </svelte:head>
 
 <section class="container mx-auto px-4 py-6 space-y-6">

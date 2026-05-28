@@ -65,7 +65,7 @@
 </script>
 
 <svelte:head>
-  <title>Profile Setup | DentalStaff.US</title>
+  <title>Profile Setup | DTSS</title>
 </svelte:head>
 
 <section class="sm:container grid items-center gap-6 max-w-2xl">

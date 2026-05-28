@@ -36,12 +36,18 @@ export const load: LayoutServerLoad = async (event) => {
 	if (routeId.startsWith('/(protected)/onboarding')) return {};
 
 	const result = await db.execute(
-		sql`SELECT 1 FROM candidate_profiles WHERE user_id = ${user.id} LIMIT 1`
+		sql`SELECT candidate_status FROM candidate_profiles WHERE user_id = ${user.id} LIMIT 1`
 	);
 
 	if (result.rows.length === 0) {
 		redirect(302, '/onboarding');
 	}
 
-	return {};
+	// Surface the candidate's account status so the layout can render a banner
+	// and child pages can gate interactions. Only ACTIVE candidates may see /
+	// apply to requisitions; PENDING/INACTIVE/DENIED are blocked server-side in
+	// the admin external API and shown a banner here.
+	const candidateStatus = (result.rows[0] as { candidate_status: string }).candidate_status;
+
+	return { candidateStatus };
 };

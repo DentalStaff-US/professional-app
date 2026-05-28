@@ -20,7 +20,7 @@
 </script>
 
 <svelte:head>
-	<title>Permanent Jobs | DentalStaff.US</title>
+	<title>Permanent Jobs | DTSS</title>
 </svelte:head>
 
 <section class="container grid items-center gap-6 px-4">

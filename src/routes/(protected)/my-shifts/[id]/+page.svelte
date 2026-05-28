@@ -132,7 +132,7 @@
 </script>
 
 <svelte:head>
-	<title>Shift Details | DentalStaff.US</title>
+	<title>Shift Details | DTSS</title>
 </svelte:head>
 
 <section class="container mx-auto px-4 py-6 space-y-6">

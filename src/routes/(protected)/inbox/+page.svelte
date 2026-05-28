@@ -10,7 +10,7 @@
 </script>
 
 <svelte:head>
-    <title>Inbox | DentalStaff.US</title>
+    <title>Inbox | DTSS</title>
 </svelte:head>
 
 <section class="container flex flex-col gap-6 pb-16 max-w-2xl px-4">

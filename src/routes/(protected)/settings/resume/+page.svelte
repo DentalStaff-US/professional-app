@@ -82,7 +82,7 @@
 </script>
 
 <svelte:head>
-  <title>Settings - Manage Resume | DentalStaff.US</title>
+  <title>Settings - Manage Resume | DTSS</title>
 </svelte:head>
 
 <section class="sm:container mx-auto px-4 py-6 space-y-8">

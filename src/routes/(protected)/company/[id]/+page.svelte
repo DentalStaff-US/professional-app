@@ -11,7 +11,7 @@
 </script>
 
 <svelte:head>
-  <title>{company.companyName} | DentalStaff.US</title>
+  <title>{company.companyName} | DTSS</title>
 </svelte:head>
 
 <section class="container flex flex-col gap-6 pb-16 max-w-5xl">

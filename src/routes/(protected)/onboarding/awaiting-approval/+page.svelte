@@ -35,7 +35,7 @@
 </script>
 
 <svelte:head>
-  <title>Awaiting Approval | DentalStaff.US</title>
+  <title>Awaiting Approval | DTSS</title>
 </svelte:head>
 
 <section class="sm:container max-w-4xl mx-auto px-4 py-8 space-y-8">

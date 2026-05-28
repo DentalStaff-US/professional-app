@@ -15,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>Support | DentalStaff.US</title>
+	<title>Support | DTSS</title>
 </svelte:head>
 
 <section class="sm:container max-w-3xl mx-auto px-4 py-6 pb-12">

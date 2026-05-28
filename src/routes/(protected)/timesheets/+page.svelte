@@ -24,7 +24,7 @@
 </script>
 
 <svelte:head>
-	<title>Timesheets | DentalStaff.US</title>
+	<title>Timesheets | DTSS</title>
 </svelte:head>
 
 <section class="container flex flex-col gap-6 pb-16 max-w-4xl px-4">

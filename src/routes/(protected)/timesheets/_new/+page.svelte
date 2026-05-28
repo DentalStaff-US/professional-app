@@ -208,7 +208,7 @@
 </script>
 
 <svelte:head>
-	<title>New Timesheet | DentalStaff.US</title>
+	<title>New Timesheet | DTSS</title>
 </svelte:head>
 
 <section class="container flex flex-col gap-6 pb-16 max-w-4xl px-4">

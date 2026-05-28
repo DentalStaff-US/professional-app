@@ -34,7 +34,7 @@
 </script>
 
 <svelte:head>
-	<title>Support Ticket | DentalStaff.US</title>
+	<title>Support Ticket | DTSS</title>
 </svelte:head>
 
 {#if !ticket}

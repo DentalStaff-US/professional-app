@@ -34,7 +34,7 @@
 </script>
 
 <svelte:head>
-	<title>My Settings | DentalStaff.US</title>
+	<title>My Settings | DTSS</title>
 </svelte:head>
 
 <section class="sm:container max-w-3xl mx-auto px-4 pb-12">
