@@ -48,6 +48,7 @@
 								</div>
 								<div>
 									<p class="font-semibold text-2xl">{opening.disciplineName}</p>
+									<p class="text-xs text-gray-500">Req #{opening.id}</p>
 									<p>{opening.company.companyName}</p>
 								</div>
 							</div>
@@ -99,6 +100,7 @@
 								</div>
 								<div>
 									<p class="font-semibold text-2xl">{appliedOpening?.disciplineName}</p>
+									<p class="text-xs text-gray-500">Req #{appliedOpening?.id}</p>
 									<p>{appliedOpening?.company.companyName}</p>
 								</div>
 							</div>

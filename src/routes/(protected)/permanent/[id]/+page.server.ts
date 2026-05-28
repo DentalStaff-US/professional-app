@@ -23,10 +23,15 @@ export const load: PageServerLoad = async (event) => {
 		redirect(302, '/onboarding');
 	}
 
-	const [requisitionRes, appliedRes] = await Promise.all([
-		fetchAdmin<any>(`/api/external/getRequisitionDetails/${id}`),
-		fetchAdmin<any[]>('/api/external/getAppliedRequisitions', { token })
-	]);
+	// getRequisitionDetails is now auth'd and returns `application` inline
+	// (the candidate's own application for this req, if any). Dropped the
+	// secondary getAppliedRequisitions call from this load — the new shape
+	// supersedes it.
+	const requisitionRes = await fetchAdmin<{
+		id: number;
+		status: string;
+		application: { id: string; status: string; createdAt: string } | null;
+	}>(`/api/external/getRequisitionDetails/${id}`, { token });
 
 	let savedOpenings: number[] = [];
 	try {
@@ -36,19 +41,24 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const applyForm = await superValidate(event, requisitionApplicationSchema);
-	const requisition = requisitionRes.ok ? (requisitionRes.data as { id: number }) : null;
-	const appliedOpenings = appliedRes.ok ? (appliedRes.data ?? []) : [];
+	const requisition = requisitionRes.ok ? requisitionRes.data : null;
+
+	const myApplicationStatus = (requisition?.application?.status ?? null) as
+		| 'PENDING'
+		| 'APPROVED'
+		| 'DENIED'
+		| null;
+	const reqStatus = requisition?.status ?? null;
+	const canApply = !!requisition && reqStatus === 'OPEN' && myApplicationStatus === null;
 
 	return {
 		requisition: requisition as any,
 		saved: requisition ? savedOpenings.includes(requisition.id) : false,
-		appliedToOpening: requisition
-			? (appliedOpenings as any[])
-					.map((opening) => opening?.application?.requisitionId)
-					.includes(requisition.id)
-			: false,
+		myApplicationStatus,
+		reqStatus,
+		canApply,
 		applyForm,
-		loadError: requisitionRes.ok && appliedRes.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
+		loadError: requisitionRes.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
 	};
 };
 
