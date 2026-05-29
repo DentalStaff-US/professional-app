@@ -32,7 +32,18 @@
 	$: browserTimezone = getUserTimezone();
 	$: userAddress = data.profile.completeAddress || "Not set";
 
-	const form = superForm(data.form);
+	const form = superForm(data.form, {
+		onResult: ({ result }) => {
+			// Clear the autocomplete selection on a successful save so the next
+			// visit/edit starts from a clean slate. Without this the previously
+			// picked address remains bound and the dropdown re-shows it instead
+			// of being ready for a fresh search. Mirrors the admin app's
+			// professionals/[id] page behaviour.
+			if (result.type === 'success') {
+				selectedAddress = null;
+			}
+		}
+	});
 	const avatarForm = superForm(data.avatarForm);
 	const { enhance, form: formData, errors, submitting } = form;
 	const { form: formAvatar, enhance: avatarEnhance, errors: avatarError } = avatarForm;
