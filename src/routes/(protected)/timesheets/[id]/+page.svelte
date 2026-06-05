@@ -97,8 +97,19 @@
 	} = addExpenseSF;
 
 	$: console.log(requisition)
-	// ✅ Initialize time entries from existing timesheet or create empty ones
-	let timeEntries: Record<string, { startTime: string; endTime: string; hours: number; lunchStartTime?: string; lunchEndTime?: string }> = {};
+	// ✅ Initialize time entries from existing timesheet or create empty ones.
+	// Each entry carries its own workdayId (looked up by date from data.workdays)
+	// so submission sends the correct workday per day — required by the API and
+	// avoids the "Workday ID is required" error when the timesheet has no single
+	// linked workday.
+	let timeEntries: Record<string, { startTime: string; endTime: string; hours: number; workdayId: string; lunchStartTime?: string; lunchEndTime?: string }> = {};
+
+	// date (YYYY-MM-DD) → workday.id, from the per-day workdays list.
+	$: workdayIdByDate = Object.fromEntries(
+		(data.workdays ?? [])
+			.filter((wd: any) => wd?.recurrenceDay?.date && wd?.workday?.id)
+			.map((wd: any) => [wd.recurrenceDay.date, wd.workday.id])
+	) as Record<string, string>;
 
 	// Match admin app: weekBeginDate is a YYYY-MM-DD string with no time.
 	// Compute end as start + 6 days using UTC math, format with timeZone: 'UTC'
@@ -148,8 +159,12 @@
             endTime: '',
             lunchStartTime: '',
             lunchEndTime: '',
-            hours: 0
+            hours: 0,
+            workdayId: workdayIdByDate[dateKey] ?? ''
           };
+        } else if (!timeEntries[dateKey].workdayId) {
+          // Backfill the workdayId onto an entry that was created from hoursRaw.
+          timeEntries[dateKey].workdayId = workdayIdByDate[dateKey] ?? '';
         }
       });
     }
@@ -218,7 +233,8 @@
         endTime: '',
         lunchStartTime: '',
         lunchEndTime: '',
-        hours: 0
+        hours: 0,
+        workdayId: workdayIdByDate[dateKey] ?? ''
       };
     });
 
@@ -244,7 +260,8 @@
             endTime,
             lunchStartTime,
             lunchEndTime,
-            hours: entry.hours || 0  // This already has lunch deducted
+            hours: entry.hours || 0,  // This already has lunch deducted
+            workdayId: workdayIdByDate[dateKey] ?? timeEntries[dateKey].workdayId ?? ''
           };
         }
       });
@@ -342,7 +359,8 @@
         endTime: '',
         lunchStartTime: '',
         lunchEndTime: '',
-        hours: 0
+        hours: 0,
+        workdayId: workdayIdByDate[dateKey] ?? ''
       };
     }
 
@@ -989,7 +1007,7 @@
 						{/if}
 
 						<!-- ✅ CANCEL BUTTON (for DRAFT or PENDING) -->
-						{#if isDraft || isPending}
+						<!-- {#if isDraft || isPending}
 							<AlertDialog.Root bind:open={cancelDialogOpen}>
 								<AlertDialog.Trigger asChild>
 									<Button
@@ -1025,7 +1043,7 @@
 									</AlertDialog.Footer>
 								</AlertDialog.Content>
 							</AlertDialog.Root>
-						{/if}
+						{/if} -->
 					</div>
 				</CardContent>
 			</Card>

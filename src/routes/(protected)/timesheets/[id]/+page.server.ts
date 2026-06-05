@@ -111,8 +111,25 @@ export const actions = {
 					lunchStartTime: value.lunchStartTime,
 					lunchEndTime: value.lunchEndTime,
 					hours: value.hours,
-					workdayId: value.workdayId || timesheetData.workday?.id || ''
-				}));
+					workdayId: value.workdayId || ''
+				}))
+				// Drop any day with no resolvable workday (e.g. a stale hoursRaw date
+				// whose workday was unassigned/cancelled). Submitting an empty
+				// workdayId would fail the API's required-workdayId check and 500 the
+				// whole timesheet.
+				.filter((entry) => entry.workdayId);
+
+			if (entriesArray.length === 0) {
+				setFlash(
+					{
+						type: 'error',
+						message:
+							'No schedulable workdays to submit. Your shifts may have changed — please refresh or contact support.'
+					},
+					event
+				);
+				return { success: false, error: 'No valid workdays to submit' };
+			}
 
 			const response = await fetch(
 				`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/timesheets/submitTimesheetForCandidate`,
@@ -196,8 +213,25 @@ export const actions = {
 					lunchStartTime: value.lunchStartTime,
 					lunchEndTime: value.lunchEndTime,
 					hours: value.hours,
-					workdayId: value.workdayId || timesheetData.workday?.id || ''
-				}));
+					workdayId: value.workdayId || ''
+				}))
+				// Drop any day with no resolvable workday (e.g. a stale hoursRaw date
+				// whose workday was unassigned/cancelled). Submitting an empty
+				// workdayId would fail the API's required-workdayId check and 500 the
+				// whole timesheet.
+				.filter((entry) => entry.workdayId);
+
+			if (entriesArray.length === 0) {
+				setFlash(
+					{
+						type: 'error',
+						message:
+							'No schedulable workdays to save. Your shifts may have changed — please refresh or contact support.'
+					},
+					event
+				);
+				return { success: false, error: 'No valid workdays to save' };
+			}
 
 			const response = await fetch(
 				`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/timesheets/saveDraftTimesheetForCandidate`,
@@ -317,8 +351,25 @@ export const actions = {
 					lunchStartTime: value.lunchStartTime,
 					lunchEndTime: value.lunchEndTime,
 					hours: value.hours,
-					workdayId: value.workdayId || timesheetData.workday?.id || ''
-				}));
+					workdayId: value.workdayId || ''
+				}))
+				// Drop any day with no resolvable workday (e.g. a stale hoursRaw date
+				// whose workday was unassigned/cancelled). Submitting an empty
+				// workdayId would fail the API's required-workdayId check and 500 the
+				// whole timesheet.
+				.filter((entry) => entry.workdayId);
+
+			if (entriesArray.length === 0) {
+				setFlash(
+					{
+						type: 'error',
+						message:
+							'No schedulable workdays to submit. Your shifts may have changed — please refresh or contact support.'
+					},
+					event
+				);
+				return { success: false, error: 'No valid workdays to submit' };
+			}
 
 			const response = await fetch(
 				`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/timesheets/submitTimesheetForCandidate`,
