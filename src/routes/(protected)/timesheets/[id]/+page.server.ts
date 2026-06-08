@@ -45,6 +45,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			method: 'POST',
 			token,
 			body: {
+				// Scope to this timesheet's own workdays (e.g. a split-week second
+				// timesheet shows only its day(s), not the whole week).
+				timesheetId,
 				weekStartDate: data.timesheet.weekBeginDate,
 				requisitionId: data.requisition.id
 			}

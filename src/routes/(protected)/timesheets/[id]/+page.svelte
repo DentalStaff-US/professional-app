@@ -305,6 +305,14 @@
 	// ✅ Calculate total hours
 	$: totalHours = Object.values(timeEntries).reduce((sum, entry) => sum + (entry.hours || 0), 0);
 
+	// Overtime is per-WEEK (>40h). When a week is split across timesheets, some
+	// of the week's 40h regular allotment may already be used on another approved
+	// timesheet (priorWeekHours from the API), so this sheet's hours can be all
+	// overtime even though it's under 40 on its own.
+	$: priorWeekHours = Number((timesheet as any)?.priorWeekHours ?? 0);
+	$: regularHoursDisplay = Math.min(totalHours, Math.max(0, 40 - priorWeekHours));
+	$: overtimeHoursDisplay = Math.max(0, totalHours - regularHoursDisplay);
+
 	// ✅ Check if form is valid
   $: hasHoursEntered = Object.values(timeEntries).some((entry) => entry.hours > 0);
   $: latestShiftEnded = dataLoaded ? hasLatestShiftEnded() : false;
@@ -523,11 +531,11 @@
                             </div>
                             <div class="p-3 bg-gray-50 rounded-lg">
                                 <p class="text-sm text-gray-600">Regular Hours</p>
-                                <p class="text-xl font-bold">{Math.min(totalHours, 40).toFixed(2)}</p>
+                                <p class="text-xl font-bold">{regularHoursDisplay.toFixed(2)}</p>
                             </div>
                             <div class="p-3 bg-gray-50 rounded-lg">
                                 <p class="text-sm text-gray-600">Overtime</p>
-                                <p class="text-xl font-bold">{Math.max(0, totalHours - 40).toFixed(2)}</p>
+                                <p class="text-xl font-bold">{overtimeHoursDisplay.toFixed(2)}</p>
                             </div>
                         </div>
                     </div>
