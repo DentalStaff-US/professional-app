@@ -229,7 +229,7 @@
 								value={selectedEvent.extendedProps.recurrenceDay.id}
 							/>
 							<Button
-								class="bg-blue-800 hover:bg-blue-900 w-full md:w-fit"
+								class="bg-primary hover:bg-primary/90 w-full md:w-fit"
 								type="submit"
 								disabled={selectedEvent.extendedProps.recurrenceDay.status !== 'OPEN' ||
 									$submitting ||
@@ -248,7 +248,7 @@
 					{#if selectedEvent.extendedProps.recurrenceDay.status === 'FILLED'}
 						<Button
 							href={`/my-shifts/${selectedEvent.extendedProps?.workday?.id}`}
-							class="bg-blue-800 hover:bg-blue-900">View Shift</Button
+							class="bg-primary hover:bg-primary/90">View Shift</Button
 						>
 					{/if}
 				</Dialog.Footer>

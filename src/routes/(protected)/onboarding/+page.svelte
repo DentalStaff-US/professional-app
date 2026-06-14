@@ -166,7 +166,7 @@
     </form>
 	</Card.Content>
 	<Card.Footer>
-            <Button type="submit" form={"profileForm"} class="w-full sm:w-fit ml-auto bg-blue-800 hover:bg-blue-900">
+            <Button type="submit" form={"profileForm"} class="w-full sm:w-fit ml-auto bg-primary hover:bg-primary/90">
                 {#if $submitting}
                     <Loader class="animate-spin h-4 w-4 mr-2" />
                     Saving...

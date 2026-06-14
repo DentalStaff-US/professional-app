@@ -24,6 +24,8 @@
 	$: candidateStatus = ($page.data as { candidateStatus?: string } | undefined)?.candidateStatus;
 	$: accountBlocked = !!candidateStatus && candidateStatus !== 'ACTIVE';
 
+	$: impersonating = ($page.data as { impersonating?: boolean } | undefined)?.impersonating;
+
 	const flash = getFlash(page);
 	$: if ($flash) {
 		switch ($flash.type) {
@@ -35,6 +37,16 @@
 				break;
 		}
 	}
+	import { authClient } from '$lib/auth-client';
+	import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+	let exitingImpersonation = false;
+	async function endImpersonation() {
+		exitingImpersonation = true;
+		// No admin session exists on this (candidate) domain to restore, so simply
+		// end the impersonation session and return to the admin app.
+		await authClient.signOut();
+		window.location.href = PUBLIC_CLIENT_APP_DOMAIN;
+	}
 	import { setMode } from 'mode-watcher';
 	setMode('light');
 </script>
@@ -43,6 +55,21 @@
 <Toaster richColors />
 <div class="relative flex h-screen flex-col">
 	<Navigation {user} />
+	{#if impersonating}
+		<div
+			class="flex items-center justify-center gap-3 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950"
+			role="alert"
+		>
+			<span>Admin view — you are impersonating {user?.firstName} {user?.lastName}.</span>
+			<button
+				class="rounded bg-amber-950 px-3 py-1 text-amber-50 disabled:opacity-50"
+				on:click={endImpersonation}
+				disabled={exitingImpersonation}
+			>
+				{exitingImpersonation ? 'Exiting…' : 'End impersonation'}
+			</button>
+		</div>
+	{/if}
 	{#if accountBlocked}
 		<div
 			class="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"

@@ -24,7 +24,7 @@
 			<h1 class="text-2xl md:text-3xl font-bold leading-tight">Support</h1>
 			<p class="text-sm text-muted-foreground">View your tickets or open a new one.</p>
 		</div>
-		<Button on:click={() => (dialogOpen = true)} class="bg-blue-800 hover:bg-blue-900 shrink-0">
+		<Button on:click={() => (dialogOpen = true)} class="bg-primary hover:bg-primary/90 shrink-0">
 			<Plus class="h-4 w-4 mr-1.5" />
 			New Ticket
 		</Button>

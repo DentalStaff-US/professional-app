@@ -5,6 +5,7 @@
 		File,
 		FileCheck,
 		LifeBuoy,
+		ShieldCheck,
 		SquareAsterisk,
 		UserCog
 	} from 'lucide-svelte';
@@ -29,6 +30,7 @@
 		{ href: '/settings/experience', icon: Briefcase, label: 'Experience', desc: 'Disciplines and experience levels' },
 		{ href: '/settings/documents', icon: File, label: 'Documents', desc: 'Certifications, IDs, and other files' },
 		{ href: '/auth/password/reset', icon: SquareAsterisk, label: 'Password', desc: 'Change your password' },
+		{ href: '/settings/security', icon: ShieldCheck, label: 'Two-Factor Authentication', desc: 'Add an extra layer of security at sign in' },
 		{ href: '/settings/support', icon: LifeBuoy, label: 'Support', desc: 'View your tickets and contact our team' }
 	];
 </script>

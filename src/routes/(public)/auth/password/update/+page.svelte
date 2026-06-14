@@ -2,40 +2,38 @@
 	import * as Form from '$lib/components/ui/form';
 	import * as Card from '$lib/components/ui/card';
 	import * as Alert from '$lib/components/ui/alert';
-	import { userSchema } from '$lib/config/zod-schemas';
+	import { userUpdatePasswordSchema } from '$lib/config/zod-schemas';
 	import type { SuperValidated } from 'sveltekit-superforms';
 	import { Loader2, AlertCircle } from 'lucide-svelte';
 	import AuthShell from '$lib/components/auth/auth-shell.svelte';
 
-	const signInSchema = userSchema.pick({
-		email: true,
-		password: true
-	});
+	type UserUpdatePasswordSchema = typeof userUpdatePasswordSchema;
 
-	type SignInSchema = typeof signInSchema;
-
-	export let form: SuperValidated<SignInSchema>;
+	export let data: { form: SuperValidated<UserUpdatePasswordSchema>; hasToken: boolean };
+	$: form = data.form;
 </script>
 
-<svelte:head>
-	<title>Sign In | DTSS Professionals</title>
-</svelte:head>
-
 <AuthShell>
-	<Form.Root let:submitting let:errors method="POST" {form} schema={signInSchema} let:config>
+	<Form.Root let:submitting let:errors method="POST" {form} schema={userUpdatePasswordSchema} let:config>
 		<Card.Root class="border-slate-200/80 shadow-xl shadow-teal-900/5">
 			<Card.Header class="space-y-1">
-				<Card.Title class="text-2xl">Welcome back</Card.Title>
-				<Card.Description>
-					Don't have a professional account yet?
-					<a href="/auth/sign-up" class="font-medium text-primary hover:underline">Sign up</a>
-				</Card.Description>
+				<Card.Title class="text-2xl">Change your password</Card.Title>
+				<Card.Description>Choose a new password for your account.</Card.Description>
 			</Card.Header>
 			<Card.Content class="grid gap-4">
+				{#if !data.hasToken}
+					<Alert.Root variant="destructive">
+						<AlertCircle class="h-4 w-4" />
+						<Alert.Title>Invalid or expired link</Alert.Title>
+						<Alert.Description>
+							This password reset link is invalid or has expired. Please request a new one.
+						</Alert.Description>
+					</Alert.Root>
+				{/if}
 				{#if errors?._errors?.length}
 					<Alert.Root variant="destructive">
 						<AlertCircle class="h-4 w-4" />
-						<Alert.Title>Error</Alert.Title>
+						<Alert.Title>Change password problem</Alert.Title>
 						<Alert.Description>
 							{#each errors._errors as error}
 								{error}
@@ -43,25 +41,18 @@
 						</Alert.Description>
 					</Alert.Root>
 				{/if}
-				<Form.Field {config} name="email">
+
+				<Form.Field {config} name="password">
 					<Form.Item>
-						<Form.Label>Email</Form.Label>
-						<Form.Input type="email" autocomplete="email" placeholder="you@example.com" />
+						<Form.Label>New password</Form.Label>
+						<Form.Input type="password" autocomplete="new-password" />
 						<Form.Validation />
 					</Form.Item>
 				</Form.Field>
-				<Form.Field {config} name="password">
+				<Form.Field {config} name="confirmPassword">
 					<Form.Item>
-						<div class="flex items-center justify-between">
-							<Form.Label>Password</Form.Label>
-							<a
-								href="/auth/password/reset"
-								class="text-sm text-slate-500 hover:text-primary hover:underline"
-							>
-								Forgot password?
-							</a>
-						</div>
-						<Form.Input type="password" autocomplete="current-password" />
+						<Form.Label>Confirm new password</Form.Label>
+						<Form.Input type="password" autocomplete="new-password" />
 						<Form.Validation />
 					</Form.Item>
 				</Form.Field>
@@ -69,12 +60,12 @@
 			<Card.Footer>
 				<Form.Button
 					class="h-11 w-full bg-primary text-base hover:bg-primary/90"
-					disabled={submitting}
+					disabled={submitting || !data.hasToken}
 				>
 					{#if submitting}
 						<Loader2 class="mr-2 h-4 w-4 animate-spin" /> Please wait
 					{:else}
-						Sign in
+						Update password
 					{/if}
 				</Form.Button>
 			</Card.Footer>

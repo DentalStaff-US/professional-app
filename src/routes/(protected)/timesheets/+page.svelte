@@ -32,7 +32,7 @@
 		<h1 class="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">Timesheets</h1>
 		<!-- <Button
 			href="/timesheets/new"
-			class="bg-blue-800 hover:bg-blue-900 w-full md:w-fit flex-grow md:grow-0"
+			class="bg-primary hover:bg-primary/90 w-full md:w-fit flex-grow md:grow-0"
 			><PlusIcon size={24} class="mr-2" />New Timesheet</Button
 		> -->
 	</div>

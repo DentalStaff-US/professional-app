@@ -1,14 +1,11 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { setError, superValidate } from 'sveltekit-superforms/server';
-import { Argon2id } from 'oslo/password';
-import { lucia } from '$lib/server/lucia';
-import { createUser } from '$lib/server/database/user-model';
+import { auth } from '$lib/server/auth';
+import { APIError } from 'better-auth/api';
 
 import { userSchema } from '$lib/config/zod-schemas';
-import { EmailService } from '$lib/server/email/emailService';
 import type { PageServerLoad, PageServerLoadEvent, RequestEvent } from './$types';
-// import { sendVerificationEmail } from '$lib/config/email-messages';
 
 const signUpSchema = userSchema.pick({
 	firstName: true,
@@ -31,7 +28,6 @@ export const load: PageServerLoad = async (event: PageServerLoadEvent) => {
 export const actions = {
 	default: async (event: RequestEvent) => {
 		const form = await superValidate(event, signUpSchema);
-		//console.log(form);
 
 		if (!form.valid) {
 			return fail(400, {
@@ -40,47 +36,40 @@ export const actions = {
 		}
 
 		try {
-			const emailService = new EmailService();
-			const password = await new Argon2id().hash(form.data.password);
-			const token = crypto.randomUUID();
-			const id = crypto.randomUUID();
-			const user = {
-				id: id,
-				email: form.data.email.toLowerCase(),
-				firstName: form.data.firstName,
-				lastName: form.data.lastName,
-				password: password,
-				role: 'CANDIDATE',
-				verified: false,
-				receiveEmail: true,
-				token: token,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-			};
-			const newUser = await createUser(user);
-			if (newUser) {
-				// await sendVerificationEmail(newUser.email, token);
-				await emailService.sendVerificationEmail(newUser.email, token);
-				const session = await lucia.createSession(newUser.id, {});
-				const sessionCookie = lucia.createSessionCookie(session.id);
-				event.cookies.set(sessionCookie.name, sessionCookie.value, {
-					path: '.',
-					...sessionCookie.attributes
-				});
-				setFlash(
-					{
-						type: 'success',
-						message: 'Account created. Please check your email to verify your account.'
-					},
-					event
-				);
-			}
+			const email = form.data.email.toLowerCase();
+
+			// Creates the user (role defaults to CANDIDATE) + credential account +
+			// session via Better Auth; the custom Argon2id hasher hashes the password
+			// and sveltekitCookies sets the session cookie.
+			await auth.api.signUpEmail({
+				headers: event.request.headers,
+				body: {
+					email,
+					password: form.data.password,
+					name: `${form.data.firstName} ${form.data.lastName}`.trim(),
+					firstName: form.data.firstName,
+					lastName: form.data.lastName
+				}
+			});
+
+			// Send the verification email (Better Auth issues the link).
+			await auth.api.sendVerificationEmail({
+				headers: event.request.headers,
+				body: { email, callbackURL: '/auth/verify/success' }
+			});
+
+			setFlash(
+				{
+					type: 'success',
+					message: 'Account created. Please check your email to verify your account.'
+				},
+				event
+			);
 		} catch (e) {
-			console.error(e);
+			if (!(e instanceof APIError)) {
+				console.error(e);
+			}
 			setFlash({ type: 'error', message: 'Account was not able to be created.' }, event);
-			// email already in use
-			//might be other type of error but this is most common and this is how lucia docs sets the error to duplicate user
 			return setError(form, 'email', 'A user with that email already exists.');
 		}
 		return { form };

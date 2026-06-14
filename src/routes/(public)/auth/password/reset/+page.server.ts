@@ -1,9 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { setError, superValidate } from 'sveltekit-superforms/server';
+import { superValidate } from 'sveltekit-superforms/server';
 import { userSchema } from '$lib/config/zod-schemas';
-// import { sendPasswordResetEmail } from '$lib/config/email-messages';
-import { getUserByEmail, updateUser } from '$lib/server/database/user-model.js';
-import { EmailService } from '$lib/server/email/emailService';
+import { auth } from '$lib/server/auth';
+import { BASE_URL } from '$lib/config/constants';
 
 const resetPasswordSchema = userSchema.pick({ email: true });
 
@@ -23,23 +22,20 @@ export const actions = {
 				form
 			});
 		}
-		const emailService = new EmailService();
 
 		try {
-			const user = await getUserByEmail(form.data.email);
-			if (!user) {
-				return setError(form, 'The email address does not have an account.');
-			}
-			console.log('reset user password');
-			const token = crypto.randomUUID();
-			await updateUser(user.id, { token: token });
-			await emailService.sendPasswordResetEmail(form.data.email, token);
+			// Better Auth stores a reset token in the verification table and emails
+			// the link via sendResetPassword (auth.ts). Always returns success (no
+			// account enumeration); the link lands on /auth/password/update?token=...
+			await auth.api.requestPasswordReset({
+				headers: event.request.headers,
+				body: {
+					email: form.data.email.toLowerCase(),
+					redirectTo: `${BASE_URL}/auth/password/update`
+				}
+			});
 		} catch (e) {
 			console.error(e);
-			return setError(
-				form,
-				'The was a problem resetting your password. Please contact support if you need further help.'
-			);
 		}
 		redirect(302, '/auth/password/reset/success');
 	}

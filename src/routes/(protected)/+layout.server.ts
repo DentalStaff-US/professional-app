@@ -23,7 +23,9 @@ import { sql } from 'drizzle-orm';
 
 export const load: LayoutServerLoad = async (event) => {
 	const user = event.locals.user;
-	if (!user) return {};
+	// Surfaced so the layout can show an "admin is impersonating you" banner.
+	const impersonating = Boolean(event.locals.session?.impersonatedBy);
+	if (!user) return { impersonating };
 
 	// Role enforcement happens in hooks.server.ts (it invalidates the session
 	// and bounces non-CANDIDATE users to the admin app). By the time we get
@@ -33,7 +35,7 @@ export const load: LayoutServerLoad = async (event) => {
 	// itself — that's where we send users with no profile, and the
 	// setupCandidateProfile action handles the no-profile case explicitly.
 	const routeId = event.route.id ?? '';
-	if (routeId.startsWith('/(protected)/onboarding')) return {};
+	if (routeId.startsWith('/(protected)/onboarding')) return { impersonating };
 
 	const result = await db.execute(
 		sql`SELECT candidate_status FROM candidate_profiles WHERE user_id = ${user.id} LIMIT 1`
@@ -49,5 +51,5 @@ export const load: LayoutServerLoad = async (event) => {
 	// the admin external API and shown a banner here.
 	const candidateStatus = (result.rows[0] as { candidate_status: string }).candidate_status;
 
-	return { candidateStatus };
+	return { candidateStatus, impersonating };
 };

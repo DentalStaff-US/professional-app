@@ -1,14 +1,12 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import * as Form from '$lib/components/ui/form';
 	import * as Card from '$lib/components/ui/card';
-
 	import * as Alert from '$lib/components/ui/alert';
 	import { userSchema } from '$lib/config/zod-schemas';
 	import type { SuperValidated } from 'sveltekit-superforms';
-	import { Loader2 } from 'lucide-svelte';
-	import { AlertCircle } from 'lucide-svelte';
-	import { Button } from '$lib/components/ui/button';
+	import { Loader2, AlertCircle } from 'lucide-svelte';
+	import AuthShell from '$lib/components/auth/auth-shell.svelte';
+
 	const signUpSchema = userSchema.pick({
 		firstName: true,
 		lastName: true,
@@ -22,16 +20,19 @@
 	export let form: SuperValidated<SignUpSchema>;
 </script>
 
-<!--<Button on:click={() => goto('/auth/oauth/google')}>Sign up with Google</Button>-->
-<div class="flex items-center justify-center mx-auto max-w-2xl min-h-screen">
+<svelte:head>
+	<title>Sign Up | DTSS Professionals</title>
+</svelte:head>
+
+<AuthShell>
 	<Form.Root let:submitting let:errors method="POST" {form} schema={signUpSchema} let:config>
-		<Card.Root>
+		<Card.Root class="border-slate-200/80 shadow-xl shadow-teal-900/5">
 			<Card.Header class="space-y-1">
-				<Card.Title class="text-2xl">Create an account</Card.Title>
-				<Card.Description
-					>Already have an account? <a href="/auth/sign-in" class="underline">Sign in here.</a
-					></Card.Description
-				>
+				<Card.Title class="text-2xl">Create your account</Card.Title>
+				<Card.Description>
+					Already have an account?
+					<a href="/auth/sign-in" class="font-medium text-primary hover:underline">Sign in</a>
+				</Card.Description>
 			</Card.Header>
 			<Card.Content class="grid gap-4">
 				{#if errors?._errors?.length}
@@ -45,54 +46,63 @@
 						</Alert.Description>
 					</Alert.Root>
 				{/if}
-				<Form.Field {config} name="firstName">
-					<Form.Item>
-						<Form.Label>First Name</Form.Label>
-						<Form.Input />
-						<Form.Validation />
-					</Form.Item>
-				</Form.Field>
-				<Form.Field {config} name="lastName">
-					<Form.Item>
-						<Form.Label>Last Name</Form.Label>
-						<Form.Input />
-						<Form.Validation />
-					</Form.Item>
-				</Form.Field>
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+					<Form.Field {config} name="firstName">
+						<Form.Item>
+							<Form.Label>First name</Form.Label>
+							<Form.Input />
+							<Form.Validation />
+						</Form.Item>
+					</Form.Field>
+					<Form.Field {config} name="lastName">
+						<Form.Item>
+							<Form.Label>Last name</Form.Label>
+							<Form.Input />
+							<Form.Validation />
+						</Form.Item>
+					</Form.Field>
+				</div>
 				<Form.Field {config} name="email">
 					<Form.Item>
-						<Form.Label>Email</Form.Label>
-						<Form.Input />
+						<Form.Label>Email address</Form.Label>
+						<Form.Input type="email" autocomplete="email" placeholder="you@example.com" />
 						<Form.Validation />
 					</Form.Item>
 				</Form.Field>
 				<Form.Field {config} name="password">
 					<Form.Item>
 						<Form.Label>Password</Form.Label>
-						<Form.Input type="password" />
+						<Form.Input type="password" autocomplete="new-password" />
 						<Form.Validation />
 					</Form.Item>
 				</Form.Field>
 				<Form.Field {config} name="terms">
-					<Form.Item class="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+					<Form.Item
+						class="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-slate-200 p-4"
+					>
 						<Form.Checkbox />
 						<div class="space-y-1 leading-none">
-							<Form.Label>I Accept the terms and privacy policy.</Form.Label>
+							<Form.Label>I accept the terms and privacy policy.</Form.Label>
 							<Form.Description>
-								You agree to the <a href="/terms" class="text-primaryHover underline">terms</a> and
-								<a href="/privacy" class="text-primaryHover underline">privacy policy</a>.
+								You agree to the <a href="/terms" class="text-primary underline">terms</a> and
+								<a href="/privacy" class="text-primary underline">privacy policy</a>.
 							</Form.Description>
 						</div>
 					</Form.Item>
 				</Form.Field>
 			</Card.Content>
 			<Card.Footer>
-				<Form.Button class="w-full bg-blue-500 hover:bg-blue-600" disabled={submitting}
-					>{#if submitting}
-						<Loader2 class="mr-2 h-4 w-4 animate-spin" />
-						Please wait{:else}Sign Up{/if}
+				<Form.Button
+					class="h-11 w-full bg-primary text-base hover:bg-primary/90"
+					disabled={submitting}
+				>
+					{#if submitting}
+						<Loader2 class="mr-2 h-4 w-4 animate-spin" /> Please wait
+					{:else}
+						Create account
+					{/if}
 				</Form.Button>
 			</Card.Footer>
 		</Card.Root>
 	</Form.Root>
-</div>
+</AuthShell>

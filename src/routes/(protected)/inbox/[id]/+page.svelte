@@ -92,7 +92,7 @@
         {#each messages as message}
             {#if message.senderId === user.id}
                 <div class="self-end ml-auto flex flex-row-reverse gap-2 max-w-sm sm:max-w-md">
-                    <div class="p-2 rounded-lg rounded-tr-none bg-blue-500 text-white">
+                    <div class="p-2 rounded-lg rounded-tr-none bg-primary text-white">
                         {message.body}
                     </div>
                 </div>

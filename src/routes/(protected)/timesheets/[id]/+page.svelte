@@ -447,9 +447,9 @@
 				icon: AlertTriangle,
 				class: 'bg-orange-400 hover:bg-orange-500'
 			},
-			APPROVED: { text: 'APPROVED', icon: CheckCircle2, class: 'bg-green-400 hover:bg-green-600' },
+			APPROVED: { text: 'APPROVED', icon: CheckCircle2, class: 'bg-green-400 hover:bg-success/90' },
 			VOID: { text: 'VOID', icon: X, class: 'bg-gray-200 hover:bg-gray-300' },
-			REJECTED: { text: 'REJECTED', icon: XCircle, class: 'bg-red-500 hover:bg-red-600' }
+			REJECTED: { text: 'REJECTED', icon: XCircle, class: 'bg-destructive hover:bg-destructive/90' }
 		};
 
 		return badges[status] || badges.DRAFT;
@@ -782,7 +782,7 @@
 							<Button
 								type="submit"
 								size="sm"
-								class="bg-blue-700 hover:bg-blue-800 sm:w-auto"
+								class="bg-primary hover:bg-primary/90 sm:w-auto"
 								disabled={$addExpenseSubmitting}
 							>
 								{#if $addExpenseSubmitting}
@@ -974,7 +974,7 @@
 									<Button
 										on:click={() => (submitDialogOpen = true)}
 										disabled={!canSubmit}
-										class="w-full gap-2 bg-blue-700 hover:bg-blue-800"
+										class="w-full gap-2 bg-primary hover:bg-primary/90"
 									>
 										<CheckCircle2 class="h-4 w-4" />
 										<span>Submit Timesheet</span>
@@ -989,7 +989,7 @@
 										</AlertDialog.Description>
 									</AlertDialog.Header>
 									<AlertDialog.Footer>
-										<Button variant="outline" on:click={() => (submitDialogOpen = false)}>
+										<Button variant="destructiveOutline" on:click={() => (submitDialogOpen = false)}>
 											Cancel
 										</Button>
 										<form action="?/submitTimesheet" method="POST" use:enhance>
@@ -998,7 +998,7 @@
 											<Button
 												type="submit"
 												on:click={() => (submitDialogOpen = false)}
-												class="ml-2 bg-blue-700 hover:bg-blue-800"
+												class="ml-2 bg-primary hover:bg-primary/90"
 											>
 												Submit
 											</Button>
@@ -1020,7 +1020,7 @@
 								<AlertDialog.Trigger asChild>
 									<Button
 										on:click={() => (cancelDialogOpen = true)}
-										variant="outline"
+										variant="destructiveOutline"
 										class="w-full border-red-200 text-red-700 hover:bg-red-50 gap-2"
 									>
 										<XCircle class="h-4 w-4" />
@@ -1035,7 +1035,7 @@
 										</AlertDialog.Description>
 									</AlertDialog.Header>
 									<AlertDialog.Footer>
-										<Button variant="outline" on:click={() => (cancelDialogOpen = false)}>
+										<Button variant="destructiveOutline" on:click={() => (cancelDialogOpen = false)}>
 											Cancel
 										</Button>
 										<form action="?/cancelTimesheet" method="POST" use:enhance>

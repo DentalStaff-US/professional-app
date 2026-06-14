@@ -176,7 +176,7 @@
 						<div class="flex justify-end">
 							<Button
 								type="submit"
-								class="bg-blue-800 hover:bg-blue-900"
+								class="bg-primary hover:bg-primary/90"
 								disabled={postingComment || newComment.trim().length === 0}
 							>
 								{#if postingComment}
