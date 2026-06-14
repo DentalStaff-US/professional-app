@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import '../../app.pcss';
+	// Global CSS is imported once in the root layout (src/routes/+layout.svelte).
 	import { page } from '$app/stores';
 	// import { ModeWatcher } from 'mode-watcher';
 	import { getFlash } from 'sveltekit-flash-message';

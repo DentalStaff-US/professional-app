@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import '../../app.pcss';
+	// Global CSS is imported once in the root layout (src/routes/+layout.svelte).
 	import { page } from '$app/stores';
 	import { getFlash } from 'sveltekit-flash-message';
 	import { Toaster } from '$lib/components/ui/sonner';
@@ -51,7 +51,7 @@
 	setMode('light');
 </script>
 
-<ModeWatcher />
+<ModeWatcher defaultMode="light" />
 <Toaster richColors />
 <div class="relative flex h-screen flex-col">
 	<Navigation {user} />
