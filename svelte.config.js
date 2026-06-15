@@ -9,11 +9,6 @@ const config = {
 
 	kit: {
 		adapter: adapter(),
-		// Poll for new deploys every 60s. When a new build is detected the `updated`
-		// store flips true; the root layout then forces a full page load on the next
-		// navigation so the browser fetches fresh asset hashes instead of trying to
-		// preload immutable chunks from a prior deploy that no longer exist (the
-		// "Unable to preload CSS" 500s).
 		version: {
 			pollInterval: 60000
 		}
