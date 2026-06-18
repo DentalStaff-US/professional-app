@@ -1,13 +1,11 @@
 <script lang="ts">
 	import * as Form from '$lib/components/ui/form';
 	import * as Card from '$lib/components/ui/card';
-
 	import * as Alert from '$lib/components/ui/alert';
 	import { userSchema } from '$lib/config/zod-schemas';
 	import type { SuperValidated } from 'sveltekit-superforms';
-	import { Loader2 } from 'lucide-svelte';
-	import { AlertCircle } from 'lucide-svelte';
-	import {  PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+	import { Loader2, AlertCircle } from 'lucide-svelte';
+	import AuthShell from '$lib/components/auth/auth-shell.svelte';
 
 	const signInSchema = userSchema.pick({
 		email: true,
@@ -20,69 +18,66 @@
 </script>
 
 <svelte:head>
-  <title>Sign In | DTSS</title>
+	<title>Sign In | DTSS Professionals</title>
 </svelte:head>
 
-<div class="flex items-center justify-center w-full max-h-[calc(100vh_-_4rem)] h-screen overflow-scroll">
-	<div class="w-full px-4 flex items-center justify-center flex-col">
-	   <div>
-				<div>
-				<p class="text-2xl font-medium mb-2">Dental Temps Staffing Solutions</p>
-				<p class="text-lg text-gray-500 mb-2">Professionals Login</p>
-				<!-- <p class="text-sm text-gray-500 mb-4">Have a Client Account? <a class="underline" href="{PUBLIC_CLIENT_APP_DOMAIN}">Sign In Here</a></p> -->
-
-				</div>
-				<Form.Root let:submitting let:errors method="POST" {form} schema={signInSchema} let:config>
-					<Card.Root>
-						<Card.Header class="space-y-1">
-							<Card.Title class="text-2xl">Sign in</Card.Title>
-							<Card.Description
-								>Don't have a Professional account yet? <a href="/auth/sign-up" class="underline">Sign up here.</a
-								></Card.Description
+<AuthShell>
+	<Form.Root let:submitting let:errors method="POST" {form} schema={signInSchema} let:config>
+		<Card.Root class="border-slate-200/80 shadow-xl shadow-teal-900/5">
+			<Card.Header class="space-y-1">
+				<Card.Title class="text-2xl">Welcome back</Card.Title>
+				<Card.Description>
+					Don't have a professional account yet?
+					<a href="/auth/sign-up" class="font-medium text-primary hover:underline">Sign up</a>
+				</Card.Description>
+			</Card.Header>
+			<Card.Content class="grid gap-4">
+				{#if errors?._errors?.length}
+					<Alert.Root variant="destructive">
+						<AlertCircle class="h-4 w-4" />
+						<Alert.Title>Error</Alert.Title>
+						<Alert.Description>
+							{#each errors._errors as error}
+								{error}
+							{/each}
+						</Alert.Description>
+					</Alert.Root>
+				{/if}
+				<Form.Field {config} name="email">
+					<Form.Item>
+						<Form.Label>Email</Form.Label>
+						<Form.Input type="email" autocomplete="email" placeholder="you@example.com" />
+						<Form.Validation />
+					</Form.Item>
+				</Form.Field>
+				<Form.Field {config} name="password">
+					<Form.Item>
+						<div class="flex items-center justify-between">
+							<Form.Label>Password</Form.Label>
+							<a
+								href="/auth/password/reset"
+								class="text-sm text-slate-500 hover:text-primary hover:underline"
 							>
-						</Card.Header>
-						<Card.Content class="grid gap-4">
-							{#if errors?._errors?.length}
-								<Alert.Root variant="destructive">
-									<AlertCircle class="h-4 w-4" />
-									<Alert.Title>Error</Alert.Title>
-									<Alert.Description>
-										{#each errors._errors as error}
-											{error}
-										{/each}
-									</Alert.Description>
-								</Alert.Root>
-							{/if}
-							<Form.Field {config} name="email">
-								<Form.Item>
-									<Form.Label>Email</Form.Label>
-									<Form.Input />
-									<Form.Validation />
-								</Form.Item>
-							</Form.Field>
-							<Form.Field {config} name="password">
-								<Form.Item>
-									<Form.Label>Password</Form.Label>
-									<Form.Input type="password" />
-									<Form.Validation />
-								</Form.Item>
-							</Form.Field>
-						</Card.Content>
-						<Card.Footer>
-							<div class="block w-full">
-								<Form.Button class="w-full bg-blue-800 hover:bg-blue-900" disabled={submitting}
-									>{#if submitting}
-										<Loader2 class="mr-2 h-4 w-4 animate-spin" />
-										Please wait{:else}Sign In{/if}
-								</Form.Button>
-
-								<div class="mt-6 text-center text-sm">
-									<a href="/auth/password/reset" class="underline">Forgot your password?</a>
-								</div>
-							</div>
-						</Card.Footer>
-					</Card.Root>
-				</Form.Root>
-				</div>
-	</div>
-</div>
+								Forgot password?
+							</a>
+						</div>
+						<Form.Input type="password" autocomplete="current-password" />
+						<Form.Validation />
+					</Form.Item>
+				</Form.Field>
+			</Card.Content>
+			<Card.Footer>
+				<Form.Button
+					class="h-11 w-full bg-primary text-base hover:bg-primary/90"
+					disabled={submitting}
+				>
+					{#if submitting}
+						<Loader2 class="mr-2 h-4 w-4 animate-spin" /> Please wait
+					{:else}
+						Sign in
+					{/if}
+				</Form.Button>
+			</Card.Footer>
+		</Card.Root>
+	</Form.Root>
+</AuthShell>

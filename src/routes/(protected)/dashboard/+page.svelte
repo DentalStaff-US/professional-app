@@ -721,7 +721,7 @@
 								value={selectedShift?.recurrenceDay.id}
 							/>
 							<Button
-								class="bg-blue-800 hover:bg-blue-900 w-full md:w-fit"
+								class="bg-primary hover:bg-primary/90 w-full md:w-fit"
 								type="submit"
 								disabled={selectedShift?.recurrenceDay.status !== 'OPEN' ||
 									$submitting }

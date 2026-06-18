@@ -248,7 +248,7 @@
 				</div>
 
 				<div class="flex justify-end pt-4">
-					<Button disabled={$submitting} class="bg-green-400 hover:bg-green-500" type="submit">
+					<Button disabled={$submitting} class="bg-primary hover:bg-primary/90" type="submit">
 						{#if $submitting}
 							<Loader class="h-5 w-5 animate-spin" />
 							Saving...

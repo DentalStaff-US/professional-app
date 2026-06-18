@@ -69,7 +69,7 @@
 								</div>
 							</div>
 							<a class="w-full" href={`/permanent/${opening.id}`}
-								><Button class="w-full bg-blue-900 text-white hover:bg-blue-800">
+								><Button class="w-full bg-primary text-white hover:bg-primary/90">
 									View Opening
 								</Button></a
 							>
@@ -123,7 +123,7 @@
 								</div>
 							</div>
 							<a class="w-full" href={`/permanent/${appliedOpening?.id}`}
-								><Button class="w-full bg-blue-900 text-white hover:bg-blue-800">
+								><Button class="w-full bg-primary text-white hover:bg-primary/90">
 									View Opening
 								</Button></a
 							>

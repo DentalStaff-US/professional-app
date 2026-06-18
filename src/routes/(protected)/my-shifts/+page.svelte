@@ -127,7 +127,7 @@
 					variant: 'success',
 					text: 'Filled',
 					icon: CheckCircle2,
-					class: 'text-white bg-green-500'
+					class: 'text-white bg-success'
 				};
 			default:
 				return { variant: 'default', text: status, icon: Info, class: '' };
@@ -275,7 +275,7 @@
 										<input type="hidden" value={shift.workday.id} name="workdayId" />
 										<Button
 											type="submit"
-											variant="outline"
+											variant="destructiveOutline"
 											class="gap-2 border-red-200 text-red-700 hover:bg-red-50"
 										>
 											<X class="h-4 w-4" />

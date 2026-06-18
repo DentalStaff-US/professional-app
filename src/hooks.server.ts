@@ -1,8 +1,11 @@
-import { lucia } from '$lib/server/lucia';
+import { auth } from '$lib/server/auth';
+import { svelteKitHandler } from 'better-auth/svelte-kit';
+import { building } from '$app/environment';
 import { redirect, type Handle } from '@sveltejs/kit';
 import type { HandleServerError } from '@sveltejs/kit';
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { logger } from '$lib/server/logger';
+import type { AppUser } from '$lib/server/auth';
 
 export const handleError: HandleServerError = async ({ error, event }) => {
 	const errorId = crypto.randomUUID();
@@ -21,6 +24,15 @@ export const handleError: HandleServerError = async ({ error, event }) => {
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const { pathname } = event.url;
+
+	// Missing static-asset requests fall through to here. This is almost always a
+	// browser tab from a PRIOR deploy asking for an immutable Vite hash (e.g.
+	// /_app/immutable/assets/2.<hash>.css) that this newer container no longer
+	// ships. Return a clean 404 instead of running session/redirect logic on a
+	// non-route path, which would otherwise throw and surface as a noisy 500.
+	if (pathname.startsWith('/_app/')) {
+		return new Response('Not found', { status: 404 });
+	}
 
 	// Reverse proxy for PostHog — route /ingest requests to PostHog servers.
 	// Mirrors the admin app so client-side posthog-js can post to a same-origin
@@ -59,43 +71,48 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const startTimer = Date.now();
 	event.locals.startTimer = startTimer;
 
-	const sessionId = event.cookies.get(lucia.sessionCookieName);
-	const { session, user } = sessionId
-		? await lucia.validateSession(sessionId)
-		: { session: null, user: null };
+	if (building) {
+		return svelteKitHandler({ event, resolve, auth, building });
+	}
 
-	// Symmetric to the admin app's CANDIDATE-redirect guard. The candidate
-	// app must only host candidate sessions; if a CLIENT, CLIENT_STAFF, or
-	// SUPERADMIN somehow ends up with a session here, kill it on the way
-	// out and bounce them to the admin app. Without this, every protected
-	// page 500s when the candidate-only API endpoints look up a profile
-	// that doesn't exist for non-candidate users.
-	if (user && session && user.role !== 'CANDIDATE') {
-		await lucia.invalidateSession(session.id);
-		const sessionCookie = lucia.createBlankSessionCookie();
-		event.cookies.set(sessionCookie.name, sessionCookie.value, {
-			path: '.',
-			...sessionCookie.attributes
-		});
+	// Validate the Better Auth session and normalise into the Lucia-compatible
+	// shape (userId/verified/avatarUrl) the rest of the app expects.
+	const authSession = await auth.api.getSession({ headers: event.request.headers });
+	const baUser = authSession?.user ?? null;
+	const user: AppUser | null = baUser
+		? {
+				...baUser,
+				role: baUser.role ?? 'CANDIDATE',
+				onboardingStep: baUser.onboardingStep ?? 1,
+				completedOnboarding: baUser.completedOnboarding ?? false,
+				timezone: baUser.timezone ?? 'America/New_York',
+				userId: baUser.id,
+				verified: baUser.emailVerified,
+				avatarUrl: baUser.image ?? null
+			}
+		: null;
+
+	event.locals.user = user;
+	event.locals.session = authSession?.session ?? null;
+
+	// Let Better Auth own its endpoints (/api/auth/*).
+	if (event.url.pathname.startsWith('/api/auth')) {
+		return svelteKitHandler({ event, resolve, auth, building });
+	}
+
+	// Symmetric to the admin app's CANDIDATE-redirect guard: the candidate app
+	// must only host candidate sessions. Sign out any non-candidate and bounce
+	// them to the admin app, else candidate-only API lookups 500.
+	if (user && user.role !== 'CANDIDATE') {
+		try {
+			await auth.api.signOut({ headers: event.request.headers });
+		} catch {
+			// best-effort
+		}
+		event.locals.user = null;
+		event.locals.session = null;
 		redirect(302, PUBLIC_CLIENT_APP_DOMAIN);
 	}
-
-	if (session && session.fresh) {
-		const sessionCookie = lucia.createSessionCookie(session.id);
-		event.cookies.set(sessionCookie.name, sessionCookie.value, {
-			path: '.',
-			...sessionCookie.attributes
-		});
-	}
-	if (!session) {
-		const sessionCookie = lucia.createBlankSessionCookie();
-		event.cookies.set(sessionCookie.name, sessionCookie.value, {
-			path: '.',
-			...sessionCookie.attributes
-		});
-	}
-	event.locals.user = user;
-	event.locals.session = session;
 
 	if (event.route.id?.startsWith('/(protected)')) {
 		if (!user) redirect(302, '/auth/sign-in');
@@ -105,6 +122,5 @@ export const handle: Handle = async ({ event, resolve }) => {
 		if (user?.role !== 'ADMIN') redirect(302, '/auth/sign-in');
 	}
 
-	const response = await resolve(event);
-	return response;
+	return svelteKitHandler({ event, resolve, auth, building });
 };

@@ -3,6 +3,10 @@ import flowbitePlugin from 'flowbite/plugin'
 
 /** @type {import('tailwindcss').Config} */
 const config = {
+	// Dark mode is disabled. 'class' (not default 'media') means flowbite-svelte's
+	// built-in `dark:` utilities only apply under a `.dark` class — which we never
+	// add — instead of reacting to the user's OS prefers-color-scheme.
+	darkMode: 'class',
 	content: ["./src/**/*.{html,js,svelte,ts}", './node_modules/flowbite-svelte/**/*.{html,js,svelte,ts}'],
 
 	plugins: [flowbitePlugin],
@@ -32,6 +36,10 @@ const config = {
 				destructive: {
 					DEFAULT: "hsl(var(--destructive) / <alpha-value>)",
 					foreground: "hsl(var(--destructive-foreground) / <alpha-value>)"
+				},
+				success: {
+					DEFAULT: "hsl(var(--success) / <alpha-value>)",
+					foreground: "hsl(var(--success-foreground) / <alpha-value>)"
 				},
 				muted: {
 					DEFAULT: "hsl(var(--muted) / <alpha-value>)",

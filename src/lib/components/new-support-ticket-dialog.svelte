@@ -55,10 +55,10 @@
 				<Textarea id="stepsToReproduce" name="stepsToReproduce" />
 			</div>
 			<Dialog.Footer class="gap-2">
-				<Button type="button" variant="outline" on:click={() => (open = false)} disabled={submitting}>
+				<Button type="button" variant="destructiveOutline" on:click={() => (open = false)} disabled={submitting}>
 					Cancel
 				</Button>
-				<Button type="submit" class="bg-blue-800 hover:bg-blue-900" disabled={submitting}>
+				<Button type="submit" class="bg-primary hover:bg-primary/90" disabled={submitting}>
 					{#if submitting}
 						<Loader2 class="mr-2 h-4 w-4 animate-spin" />
 						Submitting...

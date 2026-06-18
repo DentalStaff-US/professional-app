@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { updateUser } from '$lib/server/database/user-model';
 import { EmailService } from '$lib/server/email/emailService';
+import { auth } from '$lib/server/auth';
 import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
 import { logger } from '$lib/server/logger';
 
@@ -169,9 +170,13 @@ export const actions: Actions = {
 			}
 
 			if (userData.email && user.email !== userData.email) {
-				await emailService.sendEmailAddressUpdateSuccessEmail(userData.email, user?.token);
-				await emailService.sendPossibleHijackEmail(userData.email, user.email);
 				await updateUser(user.id, { verified: false });
+				// New address must be re-verified — Better Auth issues the link.
+				await auth.api.sendVerificationEmail({
+					headers: event.request.headers,
+					body: { email: userData.email, callbackURL: '/auth/verify/success' }
+				});
+				await emailService.sendPossibleHijackEmail(userData.email, user.email);
 			}
 
 			setFlash({ type: 'success', message: 'Profile updated Successfully' }, event);

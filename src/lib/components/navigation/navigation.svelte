@@ -126,7 +126,7 @@
 			<nav class="md:flex items-center space-x-1 hidden">
 				{#if !user}
 					<Button
-						class="bg-blue-800 hover:bg-blue-900"
+						class="bg-primary hover:bg-primary/90"
 						on:click={() => goto('/auth/role-check?action=sign-up')}>Get Started</Button
 					>
 					<Button
@@ -257,7 +257,7 @@
 									></SidebarItem> -->
 									<div class="flex flex-col gap-4 w-full">
 										<Button
-											class="bg-blue-800 hover:bg-blue-900"
+											class="bg-primary hover:bg-primary/90"
 											on:click={() => goto('/auth/role-check?action=sign-up')}>Get Started</Button
 										>
 										<Button

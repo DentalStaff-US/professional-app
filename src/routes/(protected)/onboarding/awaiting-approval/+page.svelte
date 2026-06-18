@@ -57,7 +57,7 @@
             <p class="text-blue-700">Submitted on {formatDate(submissionData.submittedAt)}</p>
           </div>
         </div>
-        <a href={`mailto:${PUBLIC_SUPPORT_EMAIL}`}><Button variant="outline" class="border-blue-500 text-blue-700 hover:bg-blue-700 hover:text-white ">
+        <a href={`mailto:${PUBLIC_SUPPORT_EMAIL}`}><Button variant="outline" class="border-blue-500 text-blue-700 hover:bg-primary/90 hover:text-white ">
           <Mail class="mr-2 h-4 w-4" />
           Contact Support
         </Button></a>

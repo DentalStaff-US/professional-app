@@ -522,7 +522,7 @@
 				>
 					Keep Shift
 				</Button>
-				<Button type="submit" variant="destructive" disabled={isSubmitting}>
+				<Button type="submit" variant="destructiveOutline" disabled={isSubmitting}>
 					{#if isSubmitting}
 						<span class="animate-spin mr-2">⟳</span>
 						Cancelling...
