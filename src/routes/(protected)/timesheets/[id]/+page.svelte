@@ -1009,7 +1009,7 @@
     					    {#if hasHoursEntered && totalHours > 0 && !latestShiftEnded}
                                 <p class="text-sm text-amber-600 mt-2">
                                 <AlertCircle class="h-4 w-4 inline mr-1" />
-                                You can submit this timesheet after your last shift of the week has ended.
+                                You can submit this timesheet after your last shift on it has ended.
                                 </p>
                             {/if}
 						{/if}
