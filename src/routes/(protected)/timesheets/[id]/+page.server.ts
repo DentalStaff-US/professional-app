@@ -208,7 +208,11 @@ export const actions = {
 			const timesheetData = await timesheetResponse.json();
 
 			const entriesArray = Object.entries(entries)
-				.filter(([_, value]: [string, any]) => value.hours > 0)
+				// Draft save persists partial captures: keep any row the prof has
+				// started filling (a start time entered), even with no end time yet
+				// and hours still 0 — they can add the end time later. Rows that are
+				// completely empty are dropped.
+				.filter(([_, value]: [string, any]) => value.startTime)
 				.map(([date, value]: [string, any]) => ({
 					date,
 					startTime: value.startTime,
@@ -229,7 +233,7 @@ export const actions = {
 					{
 						type: 'error',
 						message:
-							'No schedulable workdays to save. Your shifts may have changed — please refresh or contact support.'
+							'Nothing to save yet — enter a start time for at least one day once your shift has started.'
 					},
 					event
 				);

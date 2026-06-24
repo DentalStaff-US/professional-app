@@ -331,24 +331,24 @@
   // moved to the admin app.)
   $: canEdit = isDraft;
 
-  // Per-row gate: a workday's inputs only become editable after that shift has
-  // ended. The candidate can amend the day's hours each evening; rows for
-  // future shifts stay locked. Build a date→dayEnd map from data.workdays
-  // (the recurrence day's dayEnd is a UTC timestamp; comparing two Dates is
-  // timezone-agnostic).
-  $: shiftEndByDate = (data.workdays ?? []).reduce(
+  // Per-row gate: a workday's inputs become editable once that shift has STARTED,
+  // so candidates can capture clock-in / lunch / clock-out as the day progresses
+  // and Save a draft. Rows for shifts that haven't started yet stay locked.
+  // (Submitting still waits for the last shift to END — see canSubmit.) dayStart
+  // is a UTC timestamp, so comparing two Dates is timezone-agnostic.
+  $: shiftStartByDate = (data.workdays ?? []).reduce(
     (acc: Record<string, string>, wd: any) => {
       const date = wd?.recurrenceDay?.date;
-      const end = wd?.recurrenceDay?.dayEnd;
-      if (date && end) acc[date] = end;
+      const start = wd?.recurrenceDay?.dayStart;
+      if (date && start) acc[date] = start;
       return acc;
     },
     {}
   );
-  const isShiftOver = (dateKey: string): boolean => {
-    const end = shiftEndByDate[dateKey];
-    if (!end) return false;
-    return new Date() > new Date(end);
+  const isShiftStarted = (dateKey: string): boolean => {
+    const start = shiftStartByDate[dateKey];
+    if (!start) return false;
+    return new Date() > new Date(start);
   };
 
   // Save-draft is available whenever the timesheet is editable. Unlike Submit,
@@ -593,7 +593,7 @@
                     <div class="space-y-4">
                         {#each scheduledWorkDays as { dateKey, dayString }}
                         {#if timeEntries[dateKey]}
-                            {@const shiftEnded = isShiftOver(dateKey)}
+                            {@const shiftStarted = isShiftStarted(dateKey)}
                             <div class="p-3 bg-gray-50 rounded-lg space-y-3">
                             <!-- Date Header -->
                             <div class="flex items-center justify-between">
@@ -603,9 +603,9 @@
                                 </p>
                             </div>
 
-                            {#if !shiftEnded}
+                            {#if !shiftStarted}
                                 <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                                    You can enter your hours once this shift has ended.
+                                    You can only enter times once your shift starts.
                                 </p>
                             {/if}
 
@@ -617,7 +617,7 @@
                                     id="{dateKey}-start"
                                     type="time"
                                     class="text-sm mt-1"
-                                    disabled={!shiftEnded}
+                                    disabled={!shiftStarted}
                                     value={timeEntries[dateKey].startTime}
                                     on:input={(e) => updateTimeEntry(dateKey, 'startTime', e.currentTarget.value)}
                                 />
@@ -628,7 +628,7 @@
                                     id="{dateKey}-end"
                                     type="time"
                                     class="text-sm mt-1"
-                                    disabled={!shiftEnded}
+                                    disabled={!shiftStarted}
                                     value={timeEntries[dateKey].endTime}
                                     on:input={(e) => updateTimeEntry(dateKey, 'endTime', e.currentTarget.value)}
                                 />
@@ -646,7 +646,7 @@
                                     type="time"
                                     class="text-sm mt-1"
                                     placeholder="Optional"
-                                    disabled={!shiftEnded}
+                                    disabled={!shiftStarted}
                                     value={timeEntries[dateKey].lunchStartTime}
                                     on:input={(e) => updateTimeEntry(dateKey, 'lunchStartTime', e.currentTarget.value)}
                                 />
@@ -660,7 +660,7 @@
                                     type="time"
                                     class="text-sm mt-1"
                                     placeholder="Optional"
-                                    disabled={!shiftEnded}
+                                    disabled={!shiftStarted}
                                     value={timeEntries[dateKey].lunchEndTime}
                                     on:input={(e) => updateTimeEntry(dateKey, 'lunchEndTime', e.currentTarget.value)}
                                 />
@@ -933,8 +933,9 @@
 				<CardContent class="space-y-4">
 					<p class="text-sm text-muted-foreground">
 						{#if isDraft}
-							Save your hours each day as your shifts end. Submit when the last
-							shift of the week has finished and you're ready for approval.
+							Save your hours each day once your shift starts — clock-in, lunch,
+							and clock-out as you go. Submit once your last shift has ended and
+							you're ready for approval.
 						{:else if isPending}
 							This timesheet is pending approval.
 						{:else if isDiscrepancy}
