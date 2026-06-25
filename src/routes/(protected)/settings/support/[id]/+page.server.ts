@@ -18,6 +18,7 @@ export type TicketDetailsResponse = {
 	details: {
 		ticket: {
 			id: string;
+			ticketNumber: number;
 			title: string;
 			status: 'NEW' | 'PENDING' | 'CLOSED' | null;
 			createdAt: string;
