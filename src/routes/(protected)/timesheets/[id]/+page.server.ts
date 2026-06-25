@@ -174,6 +174,50 @@ export const actions = {
 		}
 	},
 
+	// Post-submission "experience survey": the candidate answered that they
+	// would NOT keep working with this client. Blacklist the company for them so
+	// its future jobs stop surfacing and any future shifts they hold are cleared.
+	// The admin app resolves the candidate from the JWT, so we only pass the
+	// company id. Failure is swallowed to a flash — the timesheet already
+	// submitted successfully and shouldn't appear broken over a survey hiccup.
+	submitExperienceSurvey: async (event: RequestEvent) => {
+		const { user } = event.locals;
+		if (!user) {
+			throw error(401, 'Unauthorized');
+		}
+
+		const formData = await event.request.formData();
+		const companyId = String(formData.get('companyId') ?? '').trim();
+		if (!companyId) {
+			return { success: false, error: 'Missing company id' };
+		}
+
+		const token = generateToken(user.id);
+		const res = await fetchAdmin('/api/external/blacklist/addFromSurvey', {
+			method: 'POST',
+			token,
+			body: { companyId }
+		});
+
+		if (!res.ok) {
+			logger.error('Failed to record experience survey blacklist', {
+				companyId,
+				distinctId: user.id
+			});
+			setFlash(
+				{ type: 'error', message: 'Could not save your feedback. Please try again.' },
+				event
+			);
+			return { success: false };
+		}
+
+		setFlash(
+			{ type: 'success', message: "Thanks — we won't show you this client's jobs going forward." },
+			event
+		);
+		return { success: true };
+	},
+
 	// Save the current entries to hoursRaw without flipping status. Lets the
 	// candidate amend a single shift's hours at the end of the day and save
 	// progress, rather than waiting until the end of the work week. The

@@ -59,6 +59,8 @@
 	let cancelDialogOpen = false;
 	let verifyDialogOpen = false;
 	let submitDialogOpen = false;
+	// Post-submission experience survey: opened only after a successful submit.
+	let surveyDialogOpen = false;
 	let isEditing = false;
 	let initialLoadDone = false;
  let dataLoaded = false;
@@ -993,14 +995,25 @@
 										<Button variant="destructiveOutline" on:click={() => (submitDialogOpen = false)}>
 											Cancel
 										</Button>
-										<form action="?/submitTimesheet" method="POST" use:enhance>
+										<form
+											action="?/submitTimesheet"
+											method="POST"
+											use:enhance={() => {
+												return async ({ result, update }) => {
+													await update();
+													// Close the submit dialog here (not on click) so the form
+													// — and this callback — isn't unmounted before the request
+													// resolves. Then prompt the experience survey on success.
+													submitDialogOpen = false;
+													if (result.type === 'success') {
+														surveyDialogOpen = true;
+													}
+												};
+											}}
+										>
 											<input type="hidden" name="entries" value={JSON.stringify(timeEntries)} />
 											<input type="hidden" name="totalHours" value={totalHours} />
-											<Button
-												type="submit"
-												on:click={() => (submitDialogOpen = false)}
-												class="ml-2 bg-primary hover:bg-primary/90"
-											>
+											<Button type="submit" class="ml-2 bg-primary hover:bg-primary/90">
 												Submit
 											</Button>
 										</form>
@@ -1013,6 +1026,21 @@
                                 You can submit this timesheet after your last shift on it has ended.
                                 </p>
                             {/if}
+						{/if}
+
+						<!-- Experience-feedback entry point for submitted timesheets. The
+						     survey auto-opens right after submission; this keeps it
+						     reachable afterwards (e.g. if it was dismissed) and gives a
+						     visible action in the grid as a fallback. -->
+						{#if isPending}
+							<Button
+								variant="outline"
+								class="w-full gap-2"
+								on:click={() => (surveyDialogOpen = true)}
+							>
+								<AlertCircle class="h-4 w-4" />
+								<span>Rate your experience</span>
+							</Button>
 						{/if}
 
 						<!-- ✅ CANCEL BUTTON (for DRAFT or PENDING) -->
@@ -1073,3 +1101,34 @@
 		</div>
 	</div>
 </section>
+
+<!-- Post-submission experience survey. Kept at the top level (not inside the
+     DRAFT-only action block) so it survives the status flipping to PENDING
+     after submission. "No" blacklists this client so their jobs stop
+     surfacing for this candidate. -->
+<AlertDialog.Root bind:open={surveyDialogOpen}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>Quick question</AlertDialog.Title>
+			<AlertDialog.Description>
+				Would you continue working with {company?.name ?? 'this company'}?
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<AlertDialog.Footer class="gap-2">
+			<form action="?/submitExperienceSurvey" method="POST" use:enhance>
+				<input type="hidden" name="companyId" value={company?.id ?? ''} />
+				<Button
+					type="submit"
+					variant="destructiveOutline"
+					class="w-full"
+					on:click={() => (surveyDialogOpen = false)}
+				>
+					No, don't show me their jobs
+				</Button>
+			</form>
+			<Button on:click={() => (surveyDialogOpen = false)} class="ml-0 bg-primary hover:bg-primary/90">
+				Yes
+			</Button>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>

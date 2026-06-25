@@ -5,7 +5,12 @@
 
 	export let data;
 
-	$: timesheets = data.timesheets;
+	// Most recent week first. The source endpoint returns ascending by
+	// weekBeginDate (oldest first); sort descending here so the latest
+	// timesheet is at the top of the list.
+	$: timesheets = [...(data.timesheets ?? [])].sort((a, b) =>
+		(b.timesheet?.weekBeginDate ?? '').localeCompare(a.timesheet?.weekBeginDate ?? '')
+	);
 
 	// Render the work-week range from a YYYY-MM-DD weekBeginDate using the
 	// admin app's pattern: start + 6 days, formatted in UTC so the displayed
