@@ -54,7 +54,7 @@
 					<StatusBadge status={ticketStatus} />
 				</div>
 				<p class="text-xs text-muted-foreground mt-1">
-					Ticket #{ticket.details.ticket.id.slice(0, 8)} · Submitted {format(
+					Ticket #{ticket.details.ticket.ticketNumber} · Submitted {format(
 						new Date(ticket.details.ticket.createdAt),
 						'PPp'
 					)}

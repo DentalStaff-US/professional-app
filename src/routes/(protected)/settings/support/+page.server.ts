@@ -8,6 +8,7 @@ import { logger } from '$lib/server/logger';
 export type CandidateSupportTicket = {
 	supportTicket: {
 		id: string;
+		ticketNumber: number;
 		title: string;
 		status: 'NEW' | 'PENDING' | 'CLOSED' | null;
 		createdAt: string;
@@ -43,7 +44,7 @@ const newTicketSchema = z.object({
 	title: z.string().min(1, 'Title is required'),
 	expectedResults: z.string().min(1, 'Expected results are required'),
 	actualResults: z.string().min(1, 'Actual results are required'),
-	stepsToReproduce: z.string().optional().default('')
+	stepsToReproduce: z.string().min(1, 'Steps to reproduce are required')
 });
 
 export const actions: Actions = {

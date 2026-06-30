@@ -59,6 +59,8 @@
 	let cancelDialogOpen = false;
 	let verifyDialogOpen = false;
 	let submitDialogOpen = false;
+	// Post-submission experience survey: opened only after a successful submit.
+	let surveyDialogOpen = false;
 	let isEditing = false;
 	let initialLoadDone = false;
  let dataLoaded = false;
@@ -170,7 +172,10 @@
     }
   }
 
-	function hasLatestShiftEnded(): boolean {
+	// Submission unlocks once the last linked shift has STARTED — the prof can
+  // submit their hours while the final shift is underway, rather than waiting
+  // for it to end. (Admin approval/billing still waits for shifts to end.)
+  function hasLatestShiftStarted(): boolean {
     // Wait for data to be loaded
     if (!dataLoaded) {
       return false; // Disable submit until data loads
@@ -194,33 +199,21 @@
 
     const latestWorkday = sortedWorkdays[sortedWorkdays.length - 1];
 
-    if (!latestWorkday?.recurrenceDay?.dayEnd) {
+    if (!latestWorkday?.recurrenceDay?.dayStart) {
       return true;
     }
 
     try {
-      // Get current time
       const now = new Date();
-      console.log('Current time (UTC):', now.toISOString());
-
       const nowInReqZone = toZonedTime(now, requisition.referenceTimezone);
-      console.log('Current time in requisition zone:', nowInReqZone.toISOString());
 
-      // Parse the shift end time
-      const shiftEndTime = new Date(latestWorkday.recurrenceDay.dayEnd);
-      console.log('Shift end time (UTC):', shiftEndTime.toISOString());
-      console.log('Shift date:', latestWorkday.recurrenceDay.date);
+      // Parse the shift start time
+      const shiftStartTime = new Date(latestWorkday.recurrenceDay.dayStart);
+      const shiftStartInReqZone = toZonedTime(shiftStartTime, requisition.referenceTimezone);
 
-      const shiftEndInReqZone = toZonedTime(shiftEndTime, requisition.referenceTimezone);
-      console.log('Shift end time in requisition zone:', shiftEndInReqZone.toISOString());
-
-      const hasEnded = nowInReqZone >= shiftEndInReqZone;
-      console.log('Has shift ended?', hasEnded);
-      console.log('=== End check ===');
-
-      return hasEnded;
+      return nowInReqZone >= shiftStartInReqZone;
     } catch (error) {
-      console.error('Error checking shift end time:', error);
+      console.error('Error checking shift start time:', error);
       return true;
     }
   }
@@ -315,8 +308,8 @@
 
 	// ✅ Check if form is valid
   $: hasHoursEntered = Object.values(timeEntries).some((entry) => entry.hours > 0);
-  $: latestShiftEnded = dataLoaded ? hasLatestShiftEnded() : false;
-  $: canSubmit = hasHoursEntered && totalHours > 0 && latestShiftEnded;
+  $: latestShiftStarted = dataLoaded ? hasLatestShiftStarted() : false;
+  $: canSubmit = hasHoursEntered && totalHours > 0 && latestShiftStarted;
 
   $: isDraft = timesheet?.status === 'DRAFT';
   $: isPending = timesheet?.status === 'PENDING';
@@ -334,8 +327,8 @@
   // Per-row gate: a workday's inputs become editable once that shift has STARTED,
   // so candidates can capture clock-in / lunch / clock-out as the day progresses
   // and Save a draft. Rows for shifts that haven't started yet stay locked.
-  // (Submitting still waits for the last shift to END — see canSubmit.) dayStart
-  // is a UTC timestamp, so comparing two Dates is timezone-agnostic.
+  // (Submitting unlocks once the last shift has STARTED — see canSubmit.)
+  // dayStart is a UTC timestamp, so comparing two Dates is timezone-agnostic.
   $: shiftStartByDate = (data.workdays ?? []).reduce(
     (acc: Record<string, string>, wd: any) => {
       const date = wd?.recurrenceDay?.date;
@@ -351,9 +344,10 @@
     return new Date() > new Date(start);
   };
 
-  // Save-draft is available whenever the timesheet is editable. Unlike Submit,
-  // it has no "last shift ended" requirement — the candidate can save partial
-  // hours each evening as their shifts end and come back later for the rest.
+  // Save-draft is available whenever the timesheet is editable. Unlike Submit
+  // (which needs the last shift to have started), it has no shift-timing
+  // requirement — the candidate can save partial hours as their shifts progress
+  // and come back later for the rest.
   $: canSaveDraft = canEdit;
 
   function updateTimeEntry(
@@ -934,7 +928,7 @@
 					<p class="text-sm text-muted-foreground">
 						{#if isDraft}
 							Save your hours each day once your shift starts — clock-in, lunch,
-							and clock-out as you go. Submit once your last shift has ended and
+							and clock-out as you go. Submit once your last shift has started and
 							you're ready for approval.
 						{:else if isPending}
 							This timesheet is pending approval.
@@ -954,8 +948,8 @@
 						<!-- ✅ SAVE DRAFT + SUBMIT BUTTONS (for DRAFT only) -->
 						{#if isDraft}
 							<!-- Save Draft: persist current entries without changing
-							     status. No "last shift ended" requirement — the
-							     candidate can save partial hours each evening. -->
+							     status. No shift-timing requirement (unlike Submit) — the
+							     candidate can save partial hours as shifts progress. -->
 							<form action="?/saveDraftTimesheet" method="POST" use:enhance>
 								<input type="hidden" name="entries" value={JSON.stringify(timeEntries)} />
 								<input type="hidden" name="totalHours" value={totalHours} />
@@ -993,26 +987,52 @@
 										<Button variant="destructiveOutline" on:click={() => (submitDialogOpen = false)}>
 											Cancel
 										</Button>
-										<form action="?/submitTimesheet" method="POST" use:enhance>
+										<form
+											action="?/submitTimesheet"
+											method="POST"
+											use:enhance={() => {
+												return async ({ result, update }) => {
+													await update();
+													// Close the submit dialog here (not on click) so the form
+													// — and this callback — isn't unmounted before the request
+													// resolves. Then prompt the experience survey on success.
+													submitDialogOpen = false;
+													if (result.type === 'success') {
+														surveyDialogOpen = true;
+													}
+												};
+											}}
+										>
 											<input type="hidden" name="entries" value={JSON.stringify(timeEntries)} />
 											<input type="hidden" name="totalHours" value={totalHours} />
-											<Button
-												type="submit"
-												on:click={() => (submitDialogOpen = false)}
-												class="ml-2 bg-primary hover:bg-primary/90"
-											>
+											<Button type="submit" class="ml-2 bg-primary hover:bg-primary/90">
 												Submit
 											</Button>
 										</form>
 									</AlertDialog.Footer>
 								</AlertDialog.Content>
 							</AlertDialog.Root>
-    					    {#if hasHoursEntered && totalHours > 0 && !latestShiftEnded}
+    					    {#if hasHoursEntered && totalHours > 0 && !latestShiftStarted}
                                 <p class="text-sm text-amber-600 mt-2">
                                 <AlertCircle class="h-4 w-4 inline mr-1" />
-                                You can submit this timesheet after your last shift on it has ended.
+                                You can submit this timesheet once your last shift on it has started.
                                 </p>
                             {/if}
+						{/if}
+
+						<!-- Experience-feedback entry point for submitted timesheets. The
+						     survey auto-opens right after submission; this keeps it
+						     reachable afterwards (e.g. if it was dismissed) and gives a
+						     visible action in the grid as a fallback. -->
+						{#if isPending}
+							<Button
+								variant="outline"
+								class="w-full gap-2"
+								on:click={() => (surveyDialogOpen = true)}
+							>
+								<AlertCircle class="h-4 w-4" />
+								<span>Rate your experience</span>
+							</Button>
 						{/if}
 
 						<!-- ✅ CANCEL BUTTON (for DRAFT or PENDING) -->
@@ -1073,3 +1093,34 @@
 		</div>
 	</div>
 </section>
+
+<!-- Post-submission experience survey. Kept at the top level (not inside the
+     DRAFT-only action block) so it survives the status flipping to PENDING
+     after submission. "No" blacklists this client so their jobs stop
+     surfacing for this candidate. -->
+<AlertDialog.Root bind:open={surveyDialogOpen}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>Quick question</AlertDialog.Title>
+			<AlertDialog.Description>
+				Would you continue working with {company?.name ?? 'this company'}?
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<AlertDialog.Footer class="gap-2">
+			<form action="?/submitExperienceSurvey" method="POST" use:enhance>
+				<input type="hidden" name="companyId" value={company?.id ?? ''} />
+				<Button
+					type="submit"
+					variant="destructiveOutline"
+					class="w-full"
+					on:click={() => (surveyDialogOpen = false)}
+				>
+					No, don't show me their jobs
+				</Button>
+			</form>
+			<Button on:click={() => (surveyDialogOpen = false)} class="ml-0 bg-primary hover:bg-primary/90">
+				Yes
+			</Button>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>

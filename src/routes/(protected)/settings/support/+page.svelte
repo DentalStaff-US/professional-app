@@ -63,6 +63,9 @@
 				>
 					<div class="flex-1 min-w-0">
 						<div class="flex items-center gap-2 flex-wrap">
+							<span class="text-xs font-semibold text-muted-foreground"
+								>#{ticket.supportTicket.ticketNumber}</span
+							>
 							<p class="font-medium truncate">{ticket.supportTicket.title}</p>
 							<StatusBadge status={ticket.supportTicket.status ?? 'NEW'} />
 						</div>
