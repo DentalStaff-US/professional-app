@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {
+		Bell,
 		Briefcase,
 		ChevronRight,
 		File,
@@ -29,6 +30,7 @@
 		{ href: '/settings/resume', icon: FileCheck, label: 'Resume', desc: 'Upload and update your resume' },
 		{ href: '/settings/experience', icon: Briefcase, label: 'Experience', desc: 'Disciplines and experience levels' },
 		{ href: '/settings/documents', icon: File, label: 'Documents', desc: 'Certifications, IDs, and other files' },
+		{ href: '/settings/notifications', icon: Bell, label: 'Notifications', desc: 'Manage SMS & email preferences' },
 		{ href: '/auth/password/reset', icon: SquareAsterisk, label: 'Password', desc: 'Change your password' },
 		{ href: '/settings/security', icon: ShieldCheck, label: 'Two-Factor Authentication', desc: 'Add an extra layer of security at sign in' },
 		{ href: '/settings/support', icon: LifeBuoy, label: 'Support', desc: 'View your tickets and contact our team' }
