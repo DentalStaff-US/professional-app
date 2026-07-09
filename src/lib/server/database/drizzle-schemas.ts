@@ -13,6 +13,9 @@ export const userTable = pgTable('users', {
 	role: text('role').notNull().default('CANDIDATE'),
 	verified: boolean('verified').notNull().default(false),
 	receiveEmail: boolean('receive_email').notNull().default(true),
+	// Mirror of receiveEmail for SMS. Owned + migrated by the admin app on the
+	// shared DB; declared here so this app's queries see the column.
+	receiveSms: boolean('receive_sms').notNull().default(true),
 	password: text('password'),
 	token: text('token').unique(),
 	createdAt: timestamp('created_at', {
