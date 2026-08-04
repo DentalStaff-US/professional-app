@@ -16,6 +16,7 @@
 	import { formatInTimeZone } from 'date-fns-tz';
 	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
 	import LockedPracticeDetails from '$lib/components/general/LockedPracticeDetails.svelte';
+	import { isPracticeLocked } from '$lib/_helpers/practiceIdentity';
 
 	type FilterType = 'ALL' | 'OPEN' | 'APPLIED';
 	export let data: PageData;
@@ -98,7 +99,7 @@
 			<Dialog.Header>
 				<Dialog.Title class="text-xl text-left font-bold">{selectedEvent?.extendedProps.requisition.disciplineName}</Dialog.Title>
 				<Dialog.Description>
-					{#if selectedEvent?.extendedProps.identityLocked}
+					{#if isPracticeLocked(selectedEvent?.extendedProps)}
 						<div class="py-2">
 							<LockedPracticeDetails
 								city={selectedEvent?.extendedProps.location?.city}
@@ -210,7 +211,7 @@
 						</div>
 					</div>
 
-					{#if selectedEvent.extendedProps.location && !selectedEvent.extendedProps.identityLocked}
+					{#if selectedEvent.extendedProps.location && !isPracticeLocked(selectedEvent.extendedProps)}
 						<div class="space-y-3">
 							<p class="font-semibold text-lg">Location</p>
 							<div class="flex items-center gap-2 text-gray-600">
