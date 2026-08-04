@@ -126,8 +126,17 @@ export function convertRecurrenceDayToEvent(data: {
 		referenceTimezone?: string | null;
 	};
 	workday: any | null;
-	company: { id: string; name?: string; logo?: string };
-	location: { completeAddress: string };
+	company: { id: string | null; name?: string | null; logo?: string | null };
+	location: {
+		completeAddress?: string | null;
+		city?: string | null;
+		state?: string | null;
+		distanceMiles?: number | null;
+	};
+	// Set by the admin API when the practice's identity is withheld because the
+	// candidate doesn't hold this shift. Carried into extendedProps so the
+	// event dialog can render the locked panel instead of empty fields.
+	identityLocked?: boolean;
 }) {
 	const {
 		recurrenceDay: { id: recurrenceDayId, status },
@@ -156,9 +165,7 @@ export function convertRecurrenceDayToEvent(data: {
 	// name plus requisition ID — so the calendar grid is scannable at a glance.
 	// `requisition.title` is a deprecated column that's often null.
 	const disciplineLabel = requisition.disciplineName ?? requisition.title ?? '';
-	const title = requisition.id
-		? `#${requisition.id} ${disciplineLabel}`.trim()
-		: disciplineLabel;
+	const title = requisition.id ? `#${requisition.id} ${disciplineLabel}`.trim() : disciplineLabel;
 
 	return {
 		start: localDayStart, // Display the local start time
@@ -177,7 +184,8 @@ export function convertRecurrenceDayToEvent(data: {
 			recurrenceDay: { ...data.recurrenceDay, dayStart, dayEnd },
 			workday: { ...workday },
 			company: { ...company },
-			location: { ...location }
+			location: { ...location },
+			identityLocked: data.identityLocked ?? false
 		}
 	};
 }

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import * as Tabs from '$lib/components/ui/tabs';
-	import { Briefcase, CircleDollarSign, Heart, MapPin } from 'lucide-svelte';
+	import { Briefcase, CircleDollarSign, Heart, Lock, MapPin } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
+	import LockedPracticeDetails from '$lib/components/general/LockedPracticeDetails.svelte';
 
 	export let data;
 	$: requisitions = data.requisitions;
@@ -41,7 +42,15 @@
 						<div class="p-4 flex flex-col gap-6 border border-gray-300 rounded-md relative">
 							<div class="flex flex-col gap-4 w-full">
 								<div class="flex justify-between items-start">
-									<img alt="" class="h-24 w-24 rounded-md" src={opening.company.companyLogo} />
+									{#if opening.identityLocked}
+										<div
+											class="h-24 w-24 rounded-md bg-gray-100 flex items-center justify-center text-gray-400"
+										>
+											<Lock size={28} />
+										</div>
+									{:else}
+										<img alt="" class="h-24 w-24 rounded-md" src={opening.company.companyLogo} />
+									{/if}
 									<!-- <div class="hover:bg-gray-100 rounded-sm flex items-center justify-center p-2">
 										<Heart class="text-black" />
 									</div> -->
@@ -49,14 +58,25 @@
 								<div>
 									<p class="font-semibold text-2xl">{opening.disciplineName}</p>
 									<p class="text-xs text-gray-500">Req #{opening.id}</p>
-									<p>{opening.company.companyName}</p>
+									{#if !opening.identityLocked}
+										<p>{opening.company.companyName}</p>
+									{/if}
 								</div>
 							</div>
 							<div class="flex flex-col gap-2">
-								<div class="flex items-start gap-1">
-									<MapPin size={18} class="text-gray-500 shrink-0 mt-0.5" />
-									<p class="text-sm">{opening.location.completeAddress}</p>
-								</div>
+								{#if opening.identityLocked}
+									<LockedPracticeDetails
+										city={opening.location?.city}
+										state={opening.location?.state}
+										distanceMiles={opening.distanceMiles ?? opening.location?.distanceMiles}
+										unlockMessage="The practice is revealed once your application is approved."
+									/>
+								{:else}
+									<div class="flex items-start gap-1">
+										<MapPin size={18} class="text-gray-500 shrink-0 mt-0.5" />
+										<p class="text-sm">{opening.location.completeAddress}</p>
+									</div>
+								{/if}
 								<div class="flex items-center gap-1">
 									<CircleDollarSign size={18} class="text-gray-500" />
 									<p class="text-sm">${opening.hourlyRate}/hr</p>
@@ -89,11 +109,19 @@
 						<div class="p-4 flex flex-col gap-6 border border-gray-300 rounded-md relative">
 							<div class="flex flex-col gap-4 w-full">
 								<div class="flex justify-between items-start">
-									<img
-										alt=""
-										class="h-24 w-24 rounded-md"
-										src={appliedOpening?.company.companyLogo}
-									/>
+									{#if appliedOpening?.identityLocked}
+										<div
+											class="h-24 w-24 rounded-md bg-gray-100 flex items-center justify-center text-gray-400"
+										>
+											<Lock size={28} />
+										</div>
+									{:else}
+										<img
+											alt=""
+											class="h-24 w-24 rounded-md"
+											src={appliedOpening?.company.companyLogo}
+										/>
+									{/if}
 									<!-- <div class="hover:bg-gray-100 rounded-sm flex items-center justify-center p-2">
 										<Heart class="text-black" />
 									</div> -->
@@ -101,16 +129,27 @@
 								<div>
 									<p class="font-semibold text-2xl">{appliedOpening?.disciplineName}</p>
 									<p class="text-xs text-gray-500">Req #{appliedOpening?.id}</p>
-									<p>{appliedOpening?.company.companyName}</p>
+									{#if !appliedOpening?.identityLocked}
+										<p>{appliedOpening?.company.companyName}</p>
+									{/if}
 								</div>
 							</div>
 							<div class="flex flex-col gap-2">
-								<div class="flex items-start gap-1">
-									<MapPin size={18} class="text-gray-500 shrink-0 mt-0.5" />
-									<p class="text-sm">
-										{appliedOpening?.location.completeAddress}
-									</p>
-								</div>
+								{#if appliedOpening?.identityLocked}
+									<LockedPracticeDetails
+										city={appliedOpening?.location?.city}
+										state={appliedOpening?.location?.state}
+										distanceMiles={appliedOpening?.location?.distanceMiles}
+										unlockMessage="The practice is revealed once your application is approved."
+									/>
+								{:else}
+									<div class="flex items-start gap-1">
+										<MapPin size={18} class="text-gray-500 shrink-0 mt-0.5" />
+										<p class="text-sm">
+											{appliedOpening?.location.completeAddress}
+										</p>
+									</div>
+								{/if}
 								<div class="flex items-center gap-1">
 									<CircleDollarSign size={18} class="text-gray-500" />
 									<p class="text-sm">${appliedOpening?.hourlyRate}/hr</p>

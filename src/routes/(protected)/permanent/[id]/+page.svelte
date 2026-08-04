@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { superForm } from 'sveltekit-superforms/client';
-	import { Briefcase, CircleDollarSign, Heart, MapPin, Calendar } from 'lucide-svelte';
+	import { Briefcase, CircleDollarSign, Heart, Lock, MapPin, Calendar } from 'lucide-svelte';
+	import LockedPracticeDetails from '$lib/components/general/LockedPracticeDetails.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import type { SuperValidated } from 'sveltekit-superforms';
 	import type { RequisitionApplicationSchema } from '$lib/config/zod-schemas.js';
@@ -98,11 +99,19 @@
 
 		<div class="flex justify-between w-full">
 			<div class="space-y-4">
-				<img
-					class="h-12 w-12 md:h-20 md:w-20 rounded-sm"
-					alt="Company Logo"
-					src={opening.company.companyLogo}
-				/>
+				{#if opening.identityLocked}
+					<div
+						class="h-12 w-12 md:h-20 md:w-20 rounded-sm bg-gray-100 flex items-center justify-center text-gray-400"
+					>
+						<Lock size={24} />
+					</div>
+				{:else}
+					<img
+						class="h-12 w-12 md:h-20 md:w-20 rounded-sm"
+						alt="Company Logo"
+						src={opening.company.companyLogo}
+					/>
+				{/if}
 				<div>
 					<div class="flex items-center gap-2 flex-wrap">
 						<p class="text-2xl md:text-4xl font-bold">{opening.disciplineName}</p>
@@ -116,14 +125,25 @@
 					</div>
 					<p class="text-sm text-gray-500">Req #{opening.id}</p>
 				</div>
-				<a class="underline" href={`/company/${opening.company.id}`}
-					>{opening.company.companyName}</a
-				>
+				{#if !opening.identityLocked}
+					<a class="underline" href={`/company/${opening.company.id}`}
+						>{opening.company.companyName}</a
+					>
+				{/if}
 				<div class="flex flex-col gap-2">
-					<div class="flex items-start gap-1">
-						<MapPin size={18} class="text-gray-500 shrink-0 mt-0.5" />
-						<p class="text-sm">{opening.location.completeAddress}</p>
-					</div>
+					{#if opening.identityLocked}
+						<LockedPracticeDetails
+							city={opening.location?.city}
+							state={opening.location?.state}
+							distanceMiles={opening.location?.distanceMiles}
+							unlockMessage="The practice name and address are revealed once your application is approved."
+						/>
+					{:else}
+						<div class="flex items-start gap-1">
+							<MapPin size={18} class="text-gray-500 shrink-0 mt-0.5" />
+							<p class="text-sm">{opening.location.completeAddress}</p>
+						</div>
+					{/if}
 					<div class="flex items-center gap-1">
 						<Calendar size={18} class="text-gray-500" />
 						<p class="text-sm">Opening Date(s)</p>

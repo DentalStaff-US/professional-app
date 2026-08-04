@@ -36,6 +36,7 @@
 	import { superForm } from 'sveltekit-superforms/client';
 	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
 	import { formatInTimeZone } from 'date-fns-tz';
+	import LockedPracticeDetails from '$lib/components/general/LockedPracticeDetails.svelte';
 
 	// Render a YYYY-MM-DD as "Month d, yyyy" without applying any timezone shift.
 	const formatUtcDate = (value: string | Date | null | undefined) => {
@@ -182,9 +183,19 @@
 										>
 											<div class="space-y-1">
 												<div class="font-medium">{requisition.requisition.disciplineName} <span class="text-xs text-gray-500">#{requisition.requisition.id}</span></div>
-												<p class="text-sm text-muted-foreground">
-													{requisition.company.name} • {requisition.location?.name || 'Location Not Provided'}
-												</p>
+												{#if requisition.identityLocked}
+													<LockedPracticeDetails
+														compact
+														city={requisition.location?.city}
+														state={requisition.location?.state}
+														distanceMiles={requisition.location?.distanceMiles}
+													/>
+												{:else}
+													<p class="text-sm text-muted-foreground">
+														{requisition.company.name} • {requisition.location?.name ||
+															'Location Not Provided'}
+													</p>
+												{/if}
 												<div class="flex items-center gap-2 text-sm">
 													<CalendarDays class="h-3.5 w-3.5 text-muted-foreground" />
 													<span>{formatUtcDate(requisition.recurrenceDay.date)}</span>
@@ -598,6 +609,16 @@
 			<Dialog.Header>
 				<Dialog.Title class="text-xl text-left font-bold">{selectedShift?.requisition.disciplineName}</Dialog.Title>
 				<Dialog.Description>
+					{#if selectedShift?.identityLocked}
+						<div class="py-2">
+							<LockedPracticeDetails
+								city={selectedShift?.location?.city}
+								state={selectedShift?.location?.state}
+								distanceMiles={selectedShift?.location?.distanceMiles}
+								unlockMessage="Claim this shift to see the practice name, address and contact details."
+							/>
+						</div>
+					{:else}
 					<div class="flex items-center gap-3 py-2">
 						{#if selectedShift?.company.logo}
                            <img
@@ -614,6 +635,7 @@
 							<span class="font-medium">{selectedShift?.company.name}</span>
 						</div>
 					</div>
+					{/if}
 				</Dialog.Description>
 			</Dialog.Header>
 
@@ -691,7 +713,7 @@
 						</div>
 					</div>
 
-					{#if selectedShift?.location}
+					{#if selectedShift?.location && !selectedShift?.identityLocked}
 						<div class="space-y-3">
 							<p class="font-semibold text-lg">Location</p>
 							<div class="flex items-center gap-2 text-gray-600">
@@ -705,6 +727,24 @@
 									</p>
 								</div>
 							</div>
+						</div>
+					{:else if selectedShift?.location}
+						<div class="space-y-3">
+							<p class="font-semibold text-lg">Location</p>
+							<div class="flex items-center gap-2 text-gray-600">
+								<MapPin size={18} />
+								<p>
+									{[selectedShift.location.city, selectedShift.location.state]
+										.filter(Boolean)
+										.join(', ')}
+									{#if selectedShift.location.distanceMiles != null}
+										· ~{selectedShift.location.distanceMiles} mi away
+									{/if}
+								</p>
+							</div>
+							<p class="text-xs text-gray-500">
+								The exact address is shared as soon as you claim the shift.
+							</p>
 						</div>
 					{/if}
 				</div>
