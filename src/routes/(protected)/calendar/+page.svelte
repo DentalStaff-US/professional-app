@@ -15,6 +15,7 @@
 	import { isPast } from 'date-fns';
 	import { formatInTimeZone } from 'date-fns-tz';
 	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
+	import LockedPracticeDetails from '$lib/components/general/LockedPracticeDetails.svelte';
 
 	type FilterType = 'ALL' | 'OPEN' | 'APPLIED';
 	export let data: PageData;
@@ -97,6 +98,16 @@
 			<Dialog.Header>
 				<Dialog.Title class="text-xl text-left font-bold">{selectedEvent?.extendedProps.requisition.disciplineName}</Dialog.Title>
 				<Dialog.Description>
+					{#if selectedEvent?.extendedProps.identityLocked}
+						<div class="py-2">
+							<LockedPracticeDetails
+								city={selectedEvent?.extendedProps.location?.city}
+								state={selectedEvent?.extendedProps.location?.state}
+								distanceMiles={selectedEvent?.extendedProps.location?.distanceMiles}
+								unlockMessage="Claim this shift to see the practice name, address and contact details."
+							/>
+						</div>
+					{:else}
 					<div class="flex items-center gap-3 py-2">
 						{#if selectedEvent?.extendedProps.company.logo}
                             <img
@@ -113,6 +124,7 @@
 							<span class="font-medium">{selectedEvent?.extendedProps.company.name}</span>
 						</div>
 					</div>
+					{/if}
 				</Dialog.Description>
 			</Dialog.Header>
 
@@ -198,7 +210,7 @@
 						</div>
 					</div>
 
-					{#if selectedEvent.extendedProps.location}
+					{#if selectedEvent.extendedProps.location && !selectedEvent.extendedProps.identityLocked}
 						<div class="space-y-3">
 							<p class="font-semibold text-lg">Location</p>
 							<div class="flex items-center gap-2 text-gray-600">
@@ -213,6 +225,27 @@
 									</p>
 								</div>
 							</div>
+						</div>
+					{:else if selectedEvent.extendedProps.location}
+						<div class="space-y-3">
+							<p class="font-semibold text-lg">Location</p>
+							<div class="flex items-center gap-2 text-gray-600">
+								<MapPin size={18} />
+								<p>
+									{[
+										selectedEvent.extendedProps.location.city,
+										selectedEvent.extendedProps.location.state
+									]
+										.filter(Boolean)
+										.join(', ')}
+									{#if selectedEvent.extendedProps.location.distanceMiles != null}
+										· ~{selectedEvent.extendedProps.location.distanceMiles} mi away
+									{/if}
+								</p>
+							</div>
+							<p class="text-xs text-gray-500">
+								The exact address is shared as soon as you claim the shift.
+							</p>
 						</div>
 					{/if}
 				</div>
