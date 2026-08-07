@@ -3,6 +3,7 @@
 	import { Briefcase, CircleDollarSign, Heart, Lock, MapPin } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import LockedPracticeDetails from '$lib/components/general/LockedPracticeDetails.svelte';
+	import { isPracticeLocked } from '$lib/_helpers/practiceIdentity';
 
 	export let data;
 	$: requisitions = data.requisitions;
@@ -42,7 +43,7 @@
 						<div class="p-4 flex flex-col gap-6 border border-gray-300 rounded-md relative">
 							<div class="flex flex-col gap-4 w-full">
 								<div class="flex justify-between items-start">
-									{#if opening.identityLocked}
+									{#if isPracticeLocked(opening)}
 										<div
 											class="h-24 w-24 rounded-md bg-gray-100 flex items-center justify-center text-gray-400"
 										>
@@ -58,13 +59,13 @@
 								<div>
 									<p class="font-semibold text-2xl">{opening.disciplineName}</p>
 									<p class="text-xs text-gray-500">Req #{opening.id}</p>
-									{#if !opening.identityLocked}
+									{#if !isPracticeLocked(opening)}
 										<p>{opening.company.companyName}</p>
 									{/if}
 								</div>
 							</div>
 							<div class="flex flex-col gap-2">
-								{#if opening.identityLocked}
+								{#if isPracticeLocked(opening)}
 									<LockedPracticeDetails
 										city={opening.location?.city}
 										state={opening.location?.state}
@@ -109,7 +110,7 @@
 						<div class="p-4 flex flex-col gap-6 border border-gray-300 rounded-md relative">
 							<div class="flex flex-col gap-4 w-full">
 								<div class="flex justify-between items-start">
-									{#if appliedOpening?.identityLocked}
+									{#if isPracticeLocked(appliedOpening)}
 										<div
 											class="h-24 w-24 rounded-md bg-gray-100 flex items-center justify-center text-gray-400"
 										>
@@ -129,13 +130,13 @@
 								<div>
 									<p class="font-semibold text-2xl">{appliedOpening?.disciplineName}</p>
 									<p class="text-xs text-gray-500">Req #{appliedOpening?.id}</p>
-									{#if !appliedOpening?.identityLocked}
+									{#if !isPracticeLocked(appliedOpening)}
 										<p>{appliedOpening?.company.companyName}</p>
 									{/if}
 								</div>
 							</div>
 							<div class="flex flex-col gap-2">
-								{#if appliedOpening?.identityLocked}
+								{#if isPracticeLocked(appliedOpening)}
 									<LockedPracticeDetails
 										city={appliedOpening?.location?.city}
 										state={appliedOpening?.location?.state}

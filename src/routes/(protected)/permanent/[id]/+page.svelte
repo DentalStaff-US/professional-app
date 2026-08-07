@@ -2,6 +2,7 @@
 	import { superForm } from 'sveltekit-superforms/client';
 	import { Briefcase, CircleDollarSign, Heart, Lock, MapPin, Calendar } from 'lucide-svelte';
 	import LockedPracticeDetails from '$lib/components/general/LockedPracticeDetails.svelte';
+	import { isPracticeLocked } from '$lib/_helpers/practiceIdentity';
 	import { Button } from '$lib/components/ui/button';
 	import type { SuperValidated } from 'sveltekit-superforms';
 	import type { RequisitionApplicationSchema } from '$lib/config/zod-schemas.js';
@@ -99,7 +100,7 @@
 
 		<div class="flex justify-between w-full">
 			<div class="space-y-4">
-				{#if opening.identityLocked}
+				{#if isPracticeLocked(opening)}
 					<div
 						class="h-12 w-12 md:h-20 md:w-20 rounded-sm bg-gray-100 flex items-center justify-center text-gray-400"
 					>
@@ -125,13 +126,13 @@
 					</div>
 					<p class="text-sm text-gray-500">Req #{opening.id}</p>
 				</div>
-				{#if !opening.identityLocked}
+				{#if !isPracticeLocked(opening)}
 					<a class="underline" href={`/company/${opening.company.id}`}
 						>{opening.company.companyName}</a
 					>
 				{/if}
 				<div class="flex flex-col gap-2">
-					{#if opening.identityLocked}
+					{#if isPracticeLocked(opening)}
 						<LockedPracticeDetails
 							city={opening.location?.city}
 							state={opening.location?.state}

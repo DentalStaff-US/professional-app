@@ -135,6 +135,11 @@ export const actions: Actions = {
 			completeAddress: form.data.completeAddress,
 			lat: form.data.lat,
 			lon: form.data.lon,
+			// Granular components; the admin app normalizes and stores these.
+			address: form.data.address,
+			city: form.data.city,
+			state: form.data.state,
+			zipcode: form.data.zipcode,
 			cellPhone: form.data.cellPhone,
 			hourlyRateMin: form.data.hourlyRateMin,
 			hourlyRateMax: form.data.hourlyRateMax

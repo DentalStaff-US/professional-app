@@ -114,6 +114,26 @@
             <input type="hidden" name="completeAddress" value={selectedAddress?.formatted_address}/>
             <input type="hidden" name="lat" value={selectedAddress?.coordinates.lat}/>
             <input type="hidden" name="lon" value={selectedAddress?.coordinates.lng}/>
+            <!-- Granular components so the profile stays filterable in the admin app. -->
+            <input
+                    type="hidden"
+                    name="address"
+                    value={[
+                        selectedAddress?.address_components?.street_number,
+                        selectedAddress?.address_components?.street_name
+                    ].filter(Boolean).join(' ')}
+            />
+            <input
+                    type="hidden"
+                    name="city"
+                    value={selectedAddress?.context?.place || selectedAddress?.context?.locality || ''}
+            />
+            <input
+                    type="hidden"
+                    name="state"
+                    value={selectedAddress?.context?.region_code || selectedAddress?.context?.region || ''}
+            />
+            <input type="hidden" name="zipcode" value={selectedAddress?.context?.postcode || ''}/>
         </div>
 
         <div class="col-span-8 sm:col-span-4">

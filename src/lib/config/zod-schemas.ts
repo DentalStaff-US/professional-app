@@ -85,6 +85,12 @@ export const newProfileSchema = z.object({
 	completeAddress: z.string().optional(),
 	lat: z.string(),
 	lon: z.string(),
+	// Granular components from the address picker; the admin app normalizes and
+	// stores these so professionals can be filtered by city/state/zip.
+	address: z.string().optional(),
+	city: z.string().optional(),
+	state: z.string().optional(),
+	zipcode: z.string().optional(),
 	hourlyRateMin: z.number(),
 	hourlyRateMax: z.number(),
 	cellPhone: usPhoneField().nullable().optional(),
@@ -103,6 +109,10 @@ export const updateProfileSchema = z.object({
 	completeAddress: z.string().optional(),
 	lat: z.string().optional(),
 	lon: z.string().optional(),
+	address: z.string().optional(),
+	city: z.string().optional(),
+	state: z.string().optional(),
+	zipcode: z.string().optional(),
 	cellPhone: usPhoneField().nullable().optional(),
 	citizenship: z.string().optional(),
 	birthday: z.string().optional(),

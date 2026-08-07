@@ -37,6 +37,7 @@
 	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
 	import { formatInTimeZone } from 'date-fns-tz';
 	import LockedPracticeDetails from '$lib/components/general/LockedPracticeDetails.svelte';
+	import { isPracticeLocked } from '$lib/_helpers/practiceIdentity';
 
 	// Render a YYYY-MM-DD as "Month d, yyyy" without applying any timezone shift.
 	const formatUtcDate = (value: string | Date | null | undefined) => {
@@ -183,7 +184,7 @@
 										>
 											<div class="space-y-1">
 												<div class="font-medium">{requisition.requisition.disciplineName} <span class="text-xs text-gray-500">#{requisition.requisition.id}</span></div>
-												{#if requisition.identityLocked}
+												{#if isPracticeLocked(requisition)}
 													<LockedPracticeDetails
 														compact
 														city={requisition.location?.city}
@@ -609,7 +610,7 @@
 			<Dialog.Header>
 				<Dialog.Title class="text-xl text-left font-bold">{selectedShift?.requisition.disciplineName}</Dialog.Title>
 				<Dialog.Description>
-					{#if selectedShift?.identityLocked}
+					{#if isPracticeLocked(selectedShift)}
 						<div class="py-2">
 							<LockedPracticeDetails
 								city={selectedShift?.location?.city}
@@ -713,7 +714,7 @@
 						</div>
 					</div>
 
-					{#if selectedShift?.location && !selectedShift?.identityLocked}
+					{#if selectedShift?.location && !isPracticeLocked(selectedShift)}
 						<div class="space-y-3">
 							<p class="font-semibold text-lg">Location</p>
 							<div class="flex items-center gap-2 text-gray-600">
