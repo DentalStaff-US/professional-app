@@ -160,13 +160,45 @@ export const avatarUrlSchema = z.object({ url: z.string() });
 
 export type AvatarUrlSchema = typeof avatarUrlSchema;
 
+/** Document types a professional can pick for their own uploads. */
+export const CANDIDATE_DOCUMENT_TYPES = [
+	'RESUME',
+	'LICENSE',
+	'CERTIFICATE',
+	'AGREEMENT',
+	'OTHER'
+] as const;
+
+export const CANDIDATE_DOCUMENT_TYPE_LABELS: Record<
+	(typeof CANDIDATE_DOCUMENT_TYPES)[number],
+	string
+> = {
+	RESUME: 'Resume / CV',
+	LICENSE: 'License',
+	CERTIFICATE: 'Certification',
+	AGREEMENT: 'Agreement',
+	OTHER: 'Other'
+};
+
 export const documentUrlSchema = z.object({
-	type: z.enum(['RESUME', 'LICENSE', 'CERTIFICATE', 'OTHER']).optional(),
+	type: z.enum(CANDIDATE_DOCUMENT_TYPES).optional(),
+	/** Type chosen in the upload form; applied to every file in this submission. */
+	documentType: z.enum(CANDIDATE_DOCUMENT_TYPES).optional(),
 	filename: z.string().optional(),
 	url: z.string().optional(),
 	urls: z.array(z.string()).optional(),
 	createdAt: z.date().optional(),
 	filesData: zJsonString.optional()
+});
+
+/** Retype / rename an existing document from the settings page. */
+export const documentUpdateSchema = z.object({
+	documentId: z.string().uuid(),
+	type: z.enum(CANDIDATE_DOCUMENT_TYPES)
+});
+
+export const documentDeleteSchema = z.object({
+	documentId: z.string().uuid()
 });
 
 export const addExpenseSchema = z.object({

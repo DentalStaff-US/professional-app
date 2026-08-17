@@ -6,6 +6,7 @@
   import { superForm } from 'sveltekit-superforms/client';
   import Button from '$lib/components/ui/button/button.svelte';
   import FileDropzone from '$lib/components/general/file-dropzone.svelte';
+  import { CANDIDATE_DOCUMENT_TYPES, CANDIDATE_DOCUMENT_TYPE_LABELS } from '$lib/config/zod-schemas';
   import { tick } from 'svelte';
 
   export let data: PageData;
@@ -177,6 +178,22 @@
           <div class="space-y-2">
               <input type="hidden" name="urls" bind:value={urlStrings}/>
               <input type="hidden" name="filesData" bind:value={fileStrings}/>
+            <div class="space-y-1 mb-4">
+              <label for="documentType" class="text-sm font-medium">Document type</label>
+              <select
+                id="documentType"
+                name="documentType"
+                bind:value={$docsFormData.documentType}
+                class="w-full sm:w-64 border rounded-md px-3 py-2 text-sm bg-white"
+              >
+                {#each CANDIDATE_DOCUMENT_TYPES as t}
+                  <option value={t}>{CANDIDATE_DOCUMENT_TYPE_LABELS[t]}</option>
+                {/each}
+              </select>
+              <p class="text-xs text-muted-foreground">
+                Applied to every file you upload here. You can change it later in Settings.
+              </p>
+            </div>
             <FileDropzone
                   onFileDrop={handleDocumentsUpload}
                   accept={['image/*','.jpg', '.png', '.pdf', '.doc', '.docx', '.txt']}

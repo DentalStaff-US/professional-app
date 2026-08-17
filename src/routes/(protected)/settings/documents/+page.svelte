@@ -18,9 +18,14 @@
 	import FileDropzone from '$lib/components/general/file-dropzone.svelte';
 	import type { PageData } from './$types';
 	import { superForm } from 'sveltekit-superforms/client';
+	import { enhance } from '$app/forms';
 	import * as Alert from '$lib/components/ui/alert';
 	import { AlertCircle } from 'lucide-svelte';
 	import { tick } from 'svelte';
+	import {
+		CANDIDATE_DOCUMENT_TYPES,
+		CANDIDATE_DOCUMENT_TYPE_LABELS
+	} from '$lib/config/zod-schemas';
 
 	interface FileUploadResult {
 		filename: string;
@@ -60,11 +65,20 @@
 		}
 	}
 
-	// Handle document deletion
-	function handleDeleteDocument(documentId: string) {
-		console.log(`Deleting document ${documentId}`);
-		// Here you would normally delete the file from your server
-		// and update the documents list afterward
+	/**
+	 * Mirrors `assertCandidateDocumentEditable` on the server: an approved
+	 * account freezes every document, and an admin can lock an individual one.
+	 * The server is still the authority — this only decides whether we offer the
+	 * control, so the user isn't handed a button that will be refused.
+	 */
+	function canEdit(doc: { locked?: boolean; adminOnly?: boolean }) {
+		return data.editable && !doc.locked && !doc.adminOnly;
+	}
+
+	function typeLabel(t: string) {
+		return (
+			CANDIDATE_DOCUMENT_TYPE_LABELS[t as keyof typeof CANDIDATE_DOCUMENT_TYPE_LABELS] ?? t
+		);
 	}
 
 	async function handleDocumentsUpload(files: File[]) {
@@ -216,6 +230,17 @@
 <section class="sm:container mx-auto px-4 py-6 space-y-8">
 	<h1 class="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">Your Documents</h1>
 
+	{#if !data.editable}
+		<Alert.Root>
+			<Lock class="h-4 w-4" />
+			<Alert.Title>Your documents are locked</Alert.Title>
+			<Alert.Description>
+				Your account has been approved, so your documents can no longer be changed. Contact
+				support if something needs updating.
+			</Alert.Description>
+		</Alert.Root>
+	{/if}
+
 	<!-- Document Management Section -->
 	<Card>
 		<CardHeader>
@@ -232,6 +257,7 @@
 					<thead>
 						<tr class="border-b">
 							<th class="text-left py-3 px-4 font-medium">Document</th>
+							<th class="text-left py-3 px-4 font-medium">Type</th>
 							<th class="text-left py-3 px-4 font-medium">Uploaded</th>
 							<th class="text-right py-3 px-4 font-medium">Actions</th>
 						</tr>
@@ -282,6 +308,30 @@
 										<span class="font-medium">{doc?.filename}</span>
 									</div>
 								</td>
+								<td class="py-3 px-4 text-sm">
+									{#if canEdit(doc)}
+										<!-- Auto-submitting select: retyping is a single interaction,
+										     so there's no separate save button to forget. -->
+										<form method="POST" action="?/updateDocumentType" use:enhance>
+											<input type="hidden" name="documentId" value={doc.id} />
+											<select
+												name="type"
+												class="border rounded-md px-2 py-1 text-sm bg-white"
+												value={doc.type}
+												on:change={(e) => e.currentTarget.form?.requestSubmit()}
+											>
+												{#each CANDIDATE_DOCUMENT_TYPES as t}
+													<option value={t}>{CANDIDATE_DOCUMENT_TYPE_LABELS[t]}</option>
+												{/each}
+											</select>
+										</form>
+									{:else}
+										<span class="inline-flex items-center gap-1 text-muted-foreground">
+											{typeLabel(doc.type)}
+											<Lock class="h-3 w-3" />
+										</span>
+									{/if}
+								</td>
 								<td class="py-3 px-4 text-sm">{formatDate(doc.createdAt)}</td>
 								<td class="py-3 px-4 text-right">
 									<DropdownMenu>
@@ -297,22 +347,24 @@
 													<span>Download</span>
 												</a>
 											</DropdownMenuItem>
-											{#if doc.adminOnly}
+											{#if !canEdit(doc)}
 												<DropdownMenuItem
 													class="text-muted-foreground"
 													disabled
 													on:click={(e) => e.preventDefault()}
 												>
 													<Lock class="h-4 w-4 mr-2" />
-													<span>Locked by admin</span>
+													<span>{data.editable ? 'Locked by admin' : 'Locked — account approved'}</span>
 												</DropdownMenuItem>
 											{:else}
-												<DropdownMenuItem
-													class="text-red-500 focus:text-red-500"
-													on:click={() => handleDeleteDocument(doc.id)}
-												>
-													<Trash2 class="h-4 w-4 mr-2" />
-													<span>Delete</span>
+												<DropdownMenuItem class="p-0 text-red-500 focus:text-red-500">
+													<form method="POST" action="?/deleteDocument" use:enhance class="w-full">
+														<input type="hidden" name="documentId" value={doc.id} />
+														<button type="submit" class="flex w-full items-center px-2 py-1.5">
+															<Trash2 class="h-4 w-4 mr-2" />
+															<span>Delete</span>
+														</button>
+													</form>
 												</DropdownMenuItem>
 											{/if}
 										</DropdownMenuContent>
@@ -344,6 +396,22 @@
 					<div class="space-y-2">
 						<input type="hidden" name="urls" bind:value={urlStrings} />
 						<input type="hidden" name="filesData" bind:value={fileStrings} />
+						<div class="space-y-1">
+							<label for="documentType" class="text-sm font-medium">Document type</label>
+							<select
+								id="documentType"
+								name="documentType"
+								bind:value={$docsFormData.documentType}
+								class="w-full sm:w-64 border rounded-md px-3 py-2 text-sm bg-white"
+							>
+								{#each CANDIDATE_DOCUMENT_TYPES as t}
+									<option value={t}>{CANDIDATE_DOCUMENT_TYPE_LABELS[t]}</option>
+								{/each}
+							</select>
+							<p class="text-xs text-muted-foreground">
+								Applied to every file in this upload. You can change it afterwards.
+							</p>
+						</div>
 						<FileDropzone
 							onFileDrop={handleDocumentsUpload}
 							accept={['image/*', '.jpg', '.png', '.pdf', '.doc', '.docx', '.txt']}
