@@ -107,7 +107,10 @@ export const actions: Actions = {
 						'Content-Type': 'application/json'
 					},
 					body: JSON.stringify({
-						type: 'OTHER',
+						// Honour the type chosen on the upload step rather than filing
+						// everything as OTHER — licenses and certifications are what
+						// practices actually look for.
+						type: form.data.documentType ?? 'OTHER',
 						filesData: fileData
 					})
 				}

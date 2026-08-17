@@ -2,7 +2,11 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { generateToken } from '$lib/server/utils';
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
-import { documentUrlSchema } from '$lib/config/zod-schemas';
+import {
+	documentDeleteSchema,
+	documentUpdateSchema,
+	documentUrlSchema
+} from '$lib/config/zod-schemas';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { superValidate, message, setError } from 'sveltekit-superforms/server';
 import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
@@ -14,15 +18,21 @@ export const load: PageServerLoad = async (event) => {
 		redirect(302, '/auth/sign-in');
 	}
 	const token = generateToken(user.id);
-	const res = await fetchAdmin<{ documents: any[] }>('/api/external/getCandidateDocuments', {
-		token
-	});
+	const res = await fetchAdmin<{
+		documents: any[];
+		editable: boolean;
+		lockReason: string | null;
+	}>('/api/external/getCandidateDocuments', { token });
 
 	const documentsForm = await superValidate(event, documentUrlSchema);
 
 	return {
 		user,
 		documents: res.ok ? (res.data.documents ?? []) : [],
+		// Approved accounts get a read-only view rather than controls that the
+		// write endpoints would reject.
+		editable: res.ok ? Boolean(res.data.editable) : false,
+		lockReason: res.ok ? res.data.lockReason : null,
 		documentsForm,
 		loadError: res.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
 	};
@@ -57,7 +67,9 @@ export const actions = {
 						'Content-Type': 'application/json'
 					},
 					body: JSON.stringify({
-						type: 'OTHER',
+						// Honour the type the professional picked; the per-file value
+						// wins if the form supplied one.
+						type: form.data.documentType ?? 'OTHER',
 						filesData: fileData
 					})
 				}
@@ -106,5 +118,71 @@ export const actions = {
 			setFlash({ type: 'error', message: 'Failed to update documents' }, event);
 			return setError(form, 'Failed to update documents');
 		}
+	},
+
+	/**
+	 * Re-categorise an existing document. The admin API is the authority on
+	 * whether this is allowed (approved account or admin-locked document); a 403
+	 * comes back with a human-readable reason, which we surface verbatim.
+	 */
+	updateDocumentType: async (event) => {
+		const user = event.locals.user;
+		if (!user) return redirect(302, '/auth/sign-in');
+
+		const formData = await event.request.formData();
+		const parsed = documentUpdateSchema.safeParse({
+			documentId: formData.get('documentId'),
+			type: formData.get('type')
+		});
+
+		if (!parsed.success) {
+			setFlash({ type: 'error', message: 'Invalid document selection.' }, event);
+			return fail(400, { error: 'Invalid document selection' });
+		}
+
+		const token = generateToken(user.id);
+		const res = await fetchAdmin<{ message?: string }>('/api/external/updateCandidateDocument', {
+			method: 'POST',
+			token,
+			body: parsed.data
+		});
+
+		if (!res.ok) {
+			const msg = res.status === 403 ? res.error : 'Could not update this document.';
+			setFlash({ type: 'error', message: msg }, event);
+			return fail(res.status ?? 500, { error: msg });
+		}
+
+		setFlash({ type: 'success', message: 'Document updated.' }, event);
+		return { success: true };
+	},
+
+	deleteDocument: async (event) => {
+		const user = event.locals.user;
+		if (!user) return redirect(302, '/auth/sign-in');
+
+		const formData = await event.request.formData();
+		const parsed = documentDeleteSchema.safeParse({ documentId: formData.get('documentId') });
+
+		if (!parsed.success) {
+			setFlash({ type: 'error', message: 'Invalid document selection.' }, event);
+			return fail(400, { error: 'Invalid document selection' });
+		}
+
+		const token = generateToken(user.id);
+		const res = await fetchAdmin<{ message?: string }>('/api/external/deleteCandidateDocument', {
+			method: 'POST',
+			token,
+			body: parsed.data
+		});
+
+		if (!res.ok) {
+			const msg = res.status === 403 ? res.error : 'Could not delete this document.';
+			setFlash({ type: 'error', message: msg }, event);
+			return fail(res.status ?? 500, { error: msg });
+		}
+
+		setFlash({ type: 'success', message: 'Document deleted.' }, event);
+		return { success: true };
 	}
 };
