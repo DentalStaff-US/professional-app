@@ -14,10 +14,15 @@ export const SUPERADMIN = ac.newRole({ ...adminAc.statements });
 export const CLIENT = ac.newRole({});
 export const CLIENT_STAFF = ac.newRole({});
 export const CANDIDATE = ac.newRole({});
+// External affiliates (schools, suppliers, consultants, influencers). Never
+// hosted by this app — defined for parity with the admin app so the shared
+// `role` column resolves consistently.
+export const EXTERNAL_PARTNER = ac.newRole({});
 
 export const roles = {
 	SUPERADMIN,
 	CLIENT,
 	CLIENT_STAFF,
-	CANDIDATE
+	CANDIDATE,
+	EXTERNAL_PARTNER
 };

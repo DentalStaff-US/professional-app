@@ -1,4 +1,5 @@
 import { auth } from '$lib/server/auth';
+import { captureReferralCookie } from '$lib/server/affiliate/refCookie';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { building } from '$app/environment';
 import { redirect, type Handle } from '@sveltejs/kit';
@@ -70,6 +71,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	const startTimer = Date.now();
 	event.locals.startTimer = startTimer;
+
+	// Affiliate referral capture — before session resolution and before the
+	// non-CANDIDATE eviction below, so a practice user who clicks a referral link
+	// here still gets the cookie written before the 302 fires.
+	if (event.url.searchParams.has('ref')) {
+		captureReferralCookie(event);
+	}
 
 	if (building) {
 		return svelteKitHandler({ event, resolve, auth, building });
