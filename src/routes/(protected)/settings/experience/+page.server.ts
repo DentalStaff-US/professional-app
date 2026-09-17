@@ -5,7 +5,7 @@ import { generateToken } from '$lib/server/utils';
 import { superValidate, message, setError } from 'sveltekit-superforms/server';
 import { newCandidateDisciplinesSchema } from '$lib/config/zod-schemas';
 import { setFlash } from 'sveltekit-flash-message/server';
-import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE, adminForwardHeaders } from '$lib/server/fetchAdmin';
 import { logger } from '$lib/server/logger';
 
 export const load: PageServerLoad = async (event) => {
@@ -69,6 +69,7 @@ export const actions: Actions = {
 				{
 					method: 'POST',
 					headers: {
+						...adminForwardHeaders(),
 						Authorization: `Bearer ${token}`,
 						'Content-Type': 'application/json'
 					},

@@ -5,7 +5,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms/server';
 import type { RequestEvent } from './$types';
 import { setFlash } from 'sveltekit-flash-message/server';
-import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE, adminForwardHeaders } from '$lib/server/fetchAdmin';
 import { getCandidateStatus, inactiveAccountMessage } from '$lib/server/candidateStatus';
 import { logger } from '$lib/server/logger';
 
@@ -75,6 +75,7 @@ export const actions = {
 				method: 'POST',
 				body: JSON.stringify({ recurrenceDayId }),
 				headers: {
+					...adminForwardHeaders(),
 					Authorization: `Bearer ${token}`,
 					'Content-Type': 'application/json'
 				},

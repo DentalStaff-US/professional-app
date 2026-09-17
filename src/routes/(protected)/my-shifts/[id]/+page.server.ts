@@ -3,7 +3,7 @@ import type { PageServerLoad, RequestEvent } from './$types';
 import { generateToken } from '$lib/server/utils';
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { setFlash } from 'sveltekit-flash-message/server';
-import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE, adminForwardHeaders } from '$lib/server/fetchAdmin';
 import { logger } from '$lib/server/logger';
 
 export const load: PageServerLoad = async (event: RequestEvent) => {
@@ -44,7 +44,11 @@ export const actions = {
 				`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/cancelWorkdayForCandidate/${workdayId}`,
 				{
 					method: 'POST',
-					headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+					headers: {
+						...adminForwardHeaders(),
+						Authorization: `Bearer ${token}`,
+						'Content-Type': 'application/json'
+					}
 				}
 			);
 

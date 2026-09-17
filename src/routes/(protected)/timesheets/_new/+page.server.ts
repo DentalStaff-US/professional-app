@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { zJsonString } from '$lib/config/zod-schemas';
-import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE, adminForwardHeaders } from '$lib/server/fetchAdmin';
 
 const newTimesheetSchema = z.object({
 	companyId: z.string().min(1, 'Company ID is required'),
@@ -85,6 +85,7 @@ export const actions = {
 			{
 				method: 'POST',
 				headers: {
+					...adminForwardHeaders(),
 					Authorization: `Bearer ${token}`,
 					'Content-Type': 'application/json'
 				},
