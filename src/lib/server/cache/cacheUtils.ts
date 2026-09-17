@@ -2,6 +2,7 @@ import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { generateToken } from '../utils';
 import { error } from '@sveltejs/kit';
 import { logger } from '$lib/server/logger';
+import { adminForwardHeaders } from '$lib/server/fetchAdmin';
 
 export async function getSavedJobs(userId: string, token: string | undefined = undefined) {
 	try {
@@ -10,7 +11,7 @@ export async function getSavedJobs(userId: string, token: string | undefined = u
 		const res = await fetch(
 			`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/getSavedOpeningsForCandidate`,
 			{
-				headers: { Authorization: `Bearer ${token}` }
+				headers: { ...adminForwardHeaders(), Authorization: `Bearer ${token}` }
 			}
 		);
 

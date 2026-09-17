@@ -5,7 +5,7 @@ import { getSavedJobs } from '$lib/server/cache/cacheUtils';
 import { generateToken } from '$lib/server/utils';
 import { message, setError, superValidate } from 'sveltekit-superforms/server';
 import { requisitionApplicationSchema } from '$lib/config/zod-schemas';
-import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE, adminForwardHeaders } from '$lib/server/fetchAdmin';
 import { getCandidateStatus, inactiveAccountMessage } from '$lib/server/candidateStatus';
 import { logger } from '$lib/server/logger';
 
@@ -94,6 +94,7 @@ export const actions = {
 				method: 'POST',
 				body: JSON.stringify({ requisitionId: idAsNum }),
 				headers: {
+					...adminForwardHeaders(),
 					Authorization: `Bearer ${token}`,
 					'Content-Type': 'application/json'
 				},

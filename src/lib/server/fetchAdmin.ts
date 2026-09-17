@@ -1,5 +1,37 @@
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { getRequestEvent } from '$app/server';
 import { logger } from '$lib/server/logger';
+
+/**
+ * Headers that carry the professional's real browser IP and user agent across
+ * our server-to-server hop, so the admin app's ledger attributes candidate
+ * actions to the person, not to this server. The admin app only honours them
+ * on its JWT-guarded /api/external routes. Custom names (not X-Forwarded-For)
+ * because the platform proxy rewrites that header on the way in.
+ *
+ * Safe to call anywhere: outside a request it returns {}.
+ */
+export function adminForwardHeaders(): Record<string, string> {
+	try {
+		const event = getRequestEvent();
+		const forwarded = event.request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+		let ip: string | null = forwarded || null;
+		if (!ip) {
+			try {
+				ip = event.getClientAddress();
+			} catch {
+				ip = null;
+			}
+		}
+		const ua = event.request.headers.get('user-agent');
+		return {
+			...(ip ? { 'x-dtss-client-ip': ip } : {}),
+			...(ua ? { 'x-dtss-client-ua': ua } : {})
+		};
+	} catch {
+		return {};
+	}
+}
 
 /**
  * Default user-facing message for a page that couldn't load some of its data
@@ -36,7 +68,7 @@ export async function fetchAdmin<T = unknown>(
 ): Promise<FetchAdminResult<T>> {
 	const url = `${PUBLIC_CLIENT_APP_DOMAIN.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`;
 	const method = options.method ?? 'GET';
-	const headers: Record<string, string> = { ...(options.headers ?? {}) };
+	const headers: Record<string, string> = { ...adminForwardHeaders(), ...(options.headers ?? {}) };
 	if (options.token) headers['Authorization'] = `Bearer ${options.token}`;
 	if (options.body !== undefined && !headers['content-type'] && !headers['Content-Type']) {
 		headers['content-type'] = 'application/json';

@@ -1,3 +1,5 @@
+import { fetchAdmin } from '$lib/server/fetchAdmin';
+import { generateToken } from '$lib/server/utils';
 import { redirect } from '@sveltejs/kit';
 // import { userSchema } from '$lib/config/zod-schemas';
 // import { updateEmailAddressSuccessEmail } from '$lib/config/email-messages';
@@ -8,8 +10,24 @@ export const load = async (event) => {
 	if (!user) {
 		redirect(302, '/sign-in');
 	}
+	// Affiliate card data — status and link only; everything else is in the
+	// portal. Never blocks the settings page: fetchAdmin returns a result rather
+	// than throwing, and a failure just hides the entry.
+	const token = generateToken(user.id);
+	const affiliate = await fetchAdmin<{
+		programEnabled: boolean;
+		eligible: boolean;
+		enrolled: boolean;
+		status?: string;
+		linkActive?: boolean;
+		connectComplete?: boolean;
+		referralCode?: string | null;
+		referralUrl?: string | null;
+	}>('/api/external/affiliate/status', { token });
+
 	return {
-		user
+		user,
+		affiliateStatus: affiliate.ok ? affiliate.data : null
 	};
 };
 

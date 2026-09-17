@@ -6,7 +6,7 @@ import { superValidate, message, setError } from 'sveltekit-superforms/server';
 import { documentUrlSchema } from '$lib/config/zod-schemas';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { z } from 'zod';
-import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE, adminForwardHeaders } from '$lib/server/fetchAdmin';
 import { logger } from '$lib/server/logger';
 
 export const load: PageServerLoad = async (event) => {
@@ -58,6 +58,7 @@ export const actions: Actions = {
 			const response = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/updateUserData`, {
 				method: 'POST',
 				headers: {
+					...adminForwardHeaders(),
 					Authorization: `Bearer ${token}`,
 					'Content-Type': 'application/json'
 				},
@@ -103,6 +104,7 @@ export const actions: Actions = {
 				{
 					method: 'POST',
 					headers: {
+						...adminForwardHeaders(),
 						Authorization: `Bearer ${token}`,
 						'Content-Type': 'application/json'
 					},
@@ -129,6 +131,7 @@ export const actions: Actions = {
 			const userResponse = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/updateUserData`, {
 				method: 'POST',
 				headers: {
+					...adminForwardHeaders(),
 					Authorization: `Bearer ${token}`,
 					'Content-Type': 'application/json'
 				},

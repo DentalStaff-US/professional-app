@@ -1,5 +1,6 @@
 import { redirect } from 'sveltekit-flash-message/server';
 import { auth } from '$lib/server/auth';
+import { reportSessionEvent } from '$lib/server/auditReport';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
@@ -9,6 +10,10 @@ export const actions = {
 	default: async (event) => {
 		if (!event.locals.user) redirect(302, '/auth/sign-in');
 
+		// Report before the session is revoked so the row still has a session id.
+		reportSessionEvent(event.locals.user.id, 'SIGN_OUT', {
+			sessionId: event.locals.session?.id ?? null
+		});
 		// Revokes the session and clears the cookie (via the sveltekitCookies plugin).
 		await auth.api.signOut({ headers: event.request.headers });
 
