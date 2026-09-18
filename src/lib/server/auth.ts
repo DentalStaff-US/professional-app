@@ -22,6 +22,7 @@ import {
 import { ac, roles } from '$lib/permissions';
 import { EmailService } from '$lib/server/email/emailService';
 import { BASE_URL } from '$lib/config/constants';
+import { reportSessionEvent } from '$lib/server/auditReport';
 
 const SESSION_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 30; // 30 days (matches Lucia)
 
@@ -94,6 +95,21 @@ export const auth = betterAuth({
 					<p><a href="${url}">Click here to reset your password</a></p>
 					<p>If you did not request this, you can safely ignore this email.</p>`
 			});
+		}
+	},
+	databaseHooks: {
+		session: {
+			create: {
+				// Every sign-in flavour (password, 2FA verify, OAuth) creates a session
+				// here. Impersonation sessions are minted by the admin app and never
+				// pass through this hook, so nothing to filter.
+				after: async (session) => {
+					reportSessionEvent(session.userId, 'SIGN_IN', {
+						sessionId: session.id,
+						expiresAt: session.expiresAt
+					});
+				}
+			}
 		}
 	},
 	emailVerification: {

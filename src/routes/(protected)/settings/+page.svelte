@@ -5,6 +5,7 @@
 		ChevronRight,
 		File,
 		FileCheck,
+		Gift,
 		LifeBuoy,
 		ShieldCheck,
 		SquareAsterisk,
@@ -25,6 +26,18 @@
 		}
 	}
 
+	// Only shown when the program is on AND this account is eligible — a pending,
+	// inactive or denied professional never learns the program exists.
+	$: affiliate = data.affiliateStatus;
+	$: showAffiliate = Boolean(affiliate?.programEnabled && affiliate?.eligible);
+	$: affiliateDesc = !affiliate?.enrolled
+		? 'Earn commission for practices and professionals you refer'
+		: affiliate?.status !== 'ACTIVE'
+			? 'Your affiliate account is paused'
+			: affiliate?.connectComplete
+				? 'Your referral link, earnings and payouts'
+				: 'Finish setting up payouts to get paid';
+
 	const items = [
 		{ href: '/settings/edit-profile', icon: UserCog, label: 'Edit Profile', desc: 'Personal information, contact, address' },
 		{ href: '/settings/resume', icon: FileCheck, label: 'Resume', desc: 'Upload and update your resume' },
@@ -35,6 +48,20 @@
 		{ href: '/settings/security', icon: ShieldCheck, label: 'Two-Factor Authentication', desc: 'Add an extra layer of security at sign in' },
 		{ href: '/settings/support', icon: LifeBuoy, label: 'Support', desc: 'View your tickets and contact our team' }
 	];
+
+	// Routed through /affiliate-portal rather than straight at the portal URL, so
+	// the one-time-token handoff signs the user in on arrival.
+	$: allItems = showAffiliate
+		? [
+				...items,
+				{
+					href: '/affiliate-portal',
+					icon: Gift,
+					label: 'Affiliate Program',
+					desc: affiliateDesc
+				}
+			]
+		: items;
 </script>
 
 <svelte:head>
@@ -54,7 +81,7 @@
 	</div>
 
 	<Card class="divide-y">
-		{#each items as item}
+		{#each allItems as item}
 			<a href={item.href} class="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
 				<div
 					class="flex items-center justify-center h-10 w-10 rounded-md bg-muted text-blue-800 shrink-0"

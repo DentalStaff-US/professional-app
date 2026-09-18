@@ -20,11 +20,74 @@ vi.mock('$lib/server/logger', () => ({
 	}
 }));
 
-import { fetchAdmin } from './fetchAdmin';
+// `$app/server` pulls SvelteKit's client runtime into a node test. Stub it with
+// a request event so the forwarded client IP/UA headers can be asserted on.
+const { eventRef } = vi.hoisted(() => ({ eventRef: { current: null as unknown } }));
+vi.mock('$app/server', () => ({
+	getRequestEvent: () => {
+		if (!eventRef.current) throw new Error('no request');
+		return eventRef.current;
+	}
+}));
+
+import { fetchAdmin, adminForwardHeaders } from './fetchAdmin';
 
 beforeEach(() => {
 	vi.restoreAllMocks();
 	loggerError.mockClear();
+	eventRef.current = null;
+});
+
+describe('adminForwardHeaders', () => {
+	it('returns nothing outside a request', () => {
+		expect(adminForwardHeaders()).toEqual({});
+	});
+
+	it('forwards the first x-forwarded-for hop and the user agent', () => {
+		eventRef.current = {
+			request: new Request('https://pro.test/x', {
+				headers: { 'x-forwarded-for': '203.0.113.9, 10.0.0.1', 'user-agent': 'Mobile Safari' }
+			}),
+			getClientAddress: () => '10.9.9.9'
+		};
+		expect(adminForwardHeaders()).toEqual({
+			'x-dtss-client-ip': '203.0.113.9',
+			'x-dtss-client-ua': 'Mobile Safari'
+		});
+	});
+
+	it('falls back to getClientAddress and tolerates it throwing', () => {
+		eventRef.current = {
+			request: new Request('https://pro.test/x'),
+			getClientAddress: () => '198.51.100.4'
+		};
+		expect(adminForwardHeaders()).toEqual({ 'x-dtss-client-ip': '198.51.100.4' });
+
+		eventRef.current = {
+			request: new Request('https://pro.test/x'),
+			getClientAddress: () => {
+				throw new Error('no address');
+			}
+		};
+		expect(adminForwardHeaders()).toEqual({});
+	});
+
+	it('fetchAdmin sends them alongside the caller headers', async () => {
+		eventRef.current = {
+			request: new Request('https://pro.test/x', { headers: { 'user-agent': 'UA/1' } }),
+			getClientAddress: () => '192.0.2.1'
+		};
+		const spy = vi
+			.spyOn(globalThis, 'fetch')
+			.mockResolvedValue(new Response(JSON.stringify({ ok: 1 }), { status: 200 }));
+		await fetchAdmin('/api/external/x', { token: 't' });
+		const headers = spy.mock.calls[0][1]?.headers as Record<string, string>;
+		expect(headers).toMatchObject({
+			'x-dtss-client-ip': '192.0.2.1',
+			'x-dtss-client-ua': 'UA/1',
+			Authorization: 'Bearer t'
+		});
+	});
 });
 
 describe('fetchAdmin — happy path', () => {
@@ -106,10 +169,7 @@ describe('fetchAdmin — fail branches', () => {
 	it.each([400, 401, 403, 404, 500, 502, 503])(
 		'returns reason=http for status %s',
 		async (status) => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue(new Response('boom', { status }))
-			);
+			vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('boom', { status })));
 
 			const result = await fetchAdmin('/api/external/foo');
 

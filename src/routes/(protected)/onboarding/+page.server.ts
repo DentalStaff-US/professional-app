@@ -6,6 +6,7 @@ import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { generateToken } from '$lib/server/utils';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { logger } from '$lib/server/logger';
+import { adminForwardHeaders } from '$lib/server/fetchAdmin';
 
 export const load: PageServerLoad = async (event) => {
 	const { user } = event.locals;
@@ -47,6 +48,7 @@ export const actions: Actions = {
 			const response = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/updateUserData`, {
 				method: 'POST',
 				headers: {
+					...adminForwardHeaders(),
 					Authorization: `Bearer ${token}`,
 					'Content-Type': 'application/json'
 				},
@@ -96,6 +98,7 @@ export const actions: Actions = {
 				{
 					method: 'POST',
 					headers: {
+						...adminForwardHeaders(),
 						Authorization: `Bearer ${token}`,
 						'Content-Type': 'application/json'
 					},

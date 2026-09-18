@@ -3,7 +3,7 @@ import type { PageServerLoad, RequestEvent } from './$types';
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { generateToken } from '$lib/server/utils';
 import { setFlash } from 'sveltekit-flash-message/server';
-import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE, adminForwardHeaders } from '$lib/server/fetchAdmin';
 import { logger } from '$lib/server/logger';
 import { superValidate } from 'sveltekit-superforms/server';
 import { addExpenseSchema } from '$lib/config/zod-schemas';
@@ -94,7 +94,7 @@ export const actions = {
 				`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/timesheets/getTimesheetDetails/${timesheetId}`,
 				{
 					method: 'GET',
-					headers: { Authorization: `Bearer ${token}` }
+					headers: { ...adminForwardHeaders(), Authorization: `Bearer ${token}` }
 				}
 			);
 
@@ -139,6 +139,7 @@ export const actions = {
 				{
 					method: 'POST',
 					headers: {
+						...adminForwardHeaders(),
 						Authorization: `Bearer ${token}`,
 						'Content-Type': 'application/json'
 					},
@@ -241,7 +242,7 @@ export const actions = {
 				`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/timesheets/getTimesheetDetails/${timesheetId}`,
 				{
 					method: 'GET',
-					headers: { Authorization: `Bearer ${token}` }
+					headers: { ...adminForwardHeaders(), Authorization: `Bearer ${token}` }
 				}
 			);
 
@@ -289,6 +290,7 @@ export const actions = {
 				{
 					method: 'POST',
 					headers: {
+						...adminForwardHeaders(),
 						Authorization: `Bearer ${token}`,
 						'Content-Type': 'application/json'
 					},
@@ -340,6 +342,7 @@ export const actions = {
 				{
 					method: 'POST',
 					headers: {
+						...adminForwardHeaders(),
 						Authorization: `Bearer ${token}`,
 						'Content-Type': 'application/json'
 					},
@@ -383,7 +386,7 @@ export const actions = {
 				`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/timesheets/getTimesheetDetails/${timesheetId}`,
 				{
 					method: 'GET',
-					headers: { Authorization: `Bearer ${token}` }
+					headers: { ...adminForwardHeaders(), Authorization: `Bearer ${token}` }
 				}
 			);
 
@@ -427,6 +430,7 @@ export const actions = {
 				{
 					method: 'POST',
 					headers: {
+						...adminForwardHeaders(),
 						Authorization: `Bearer ${token}`,
 						'Content-Type': 'application/json'
 					},
@@ -482,6 +486,7 @@ export const actions = {
 				{
 					method: 'POST',
 					headers: {
+						...adminForwardHeaders(),
 						Authorization: `Bearer ${token}`,
 						'Content-Type': 'application/json'
 					},

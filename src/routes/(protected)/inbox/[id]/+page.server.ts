@@ -4,7 +4,7 @@ import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { generateToken } from '$lib/server/utils';
 import { superValidate } from 'sveltekit-superforms/server';
 import { z } from 'zod';
-import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE, adminForwardHeaders } from '$lib/server/fetchAdmin';
 import { logger } from '$lib/server/logger';
 
 const messageSchema = z.object({
@@ -59,6 +59,7 @@ export const actions = {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
+						...adminForwardHeaders(),
 						Authorization: `Bearer ${token}`
 					},
 					body: JSON.stringify({
