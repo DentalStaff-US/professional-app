@@ -23,7 +23,7 @@
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
 	import { FileText, Upload, AlertCircle } from 'lucide-svelte';
-	import { certBadge, certState, formatCertDate, todayInET } from '$lib/certStatus';
+	import { credentialBadge, credentialState, formatCertDate, todayInET } from '$lib/certStatus';
 
 	type DocOption = {
 		id: string;
@@ -38,7 +38,9 @@
 	export let disciplineId: string;
 	export let disciplineName: string;
 	export let abbreviation: string;
-	export let requiresCertification = false;
+	/** Which credential this slot manages. See the docstring. */
+	export let kind: 'LICENSE' | 'CERTIFICATION' = 'LICENSE';
+	export let required = false;
 	/** MAX(expiry_date) across credentials linked to this entry. */
 	export let effectiveExpiry: string | null = null;
 	/** Every document the professional has, for the "select an existing one" path. */
@@ -47,8 +49,14 @@
 	export let onUploadFile: ((file: File) => Promise<{ url: string; filename: string } | null>) | null =
 		null;
 
-	$: state = certState({ requiresCertification, effectiveExpiry });
-	$: badge = certBadge(state, effectiveExpiry);
+	/** LICENSE only: when the 30-day missing-license clock started. */
+	export let graceStartedOn: string | null = null;
+
+	$: input = { required, expiresOn: effectiveExpiry, graceStartedOn };
+	$: badge = credentialBadge(kind, input);
+	$: state = credentialState(input);
+	$: isLicense = kind === 'LICENSE';
+	$: noun = isLicense ? 'license' : 'certification';
 
 	// The credential currently backing this entry, if any.
 	$: linked = documents
@@ -97,19 +105,19 @@
 			{:else}
 				<FileText class="h-4 w-4 text-gray-500" />
 			{/if}
-			<span class="font-medium">Certificate</span>
+			<span class="font-medium">{isLicense ? 'License' : 'Certification'}</span>
 			{#if badge}
 				<span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium {badge.class}">
 					{badge.label}
 				</span>
 			{:else}
 				<span class="text-xs text-gray-600">
-					Not required for {disciplineName}
+					No {noun} required for {disciplineName}
 				</span>
 			{/if}
 		</div>
 
-		{#if requiresCertification}
+		{#if required}
 			<div class="flex gap-2">
 				<Button
 					size="sm"
@@ -139,7 +147,54 @@
 		</p>
 	{/if}
 
-	{#if requiresCertification && mode === 'select'}
+	{#if !isLicense}
+		<!-- Certifications have no document of their own: the date on the Experience &
+		     Rates entry IS the record, and a CERTIFICATE upload is optional evidence. -->
+		<form
+			method="POST"
+			action="?/setCertificationExpiry"
+			use:enhance={() => {
+				return async ({ update }) => {
+					await update();
+				};
+			}}
+			class="mt-3 space-y-2 border-t pt-3"
+		>
+			<input type="hidden" name="disciplineId" value={disciplineId} />
+			<div class="space-y-1">
+				<label class="text-xs font-medium text-gray-700" for="cert-exp-{disciplineId}">
+					{required ? 'Expires on' : 'Does your state require a certification for this discipline?'}
+				</label>
+				{#if !required}
+					<p class="text-xs text-gray-600">
+						If it does, add its expiration date below. <strong
+							>Once added, only DTSS staff can remove it</strong
+						> — contact support if you add it by mistake.
+					</p>
+				{/if}
+				<input
+					id="cert-exp-{disciplineId}"
+					name="expiryDate"
+					type="date"
+					class="w-full rounded-md border-gray-300 text-sm"
+					min={todayInET()}
+					bind:value={expiry}
+					required
+				/>
+			</div>
+			{#if required}
+				<p class="text-xs text-gray-600">
+					If this date passes without a renewal, {abbreviation} jobs will be hidden until you update
+					it.
+				</p>
+			{/if}
+			<Button type="submit" size="sm" disabled={!expiry}>
+				{required ? 'Update expiration' : 'Add certification'}
+			</Button>
+		</form>
+	{/if}
+
+	{#if required && isLicense && mode === 'select'}
 		<!-- Designation: sets type + link + expiry in one atomic write, which is the
 		     only way the approval freeze permits touching `type`. -->
 		<form
@@ -196,7 +251,7 @@
 		</form>
 	{/if}
 
-	{#if requiresCertification && mode === 'upload' && onUploadFile}
+	{#if required && isLicense && mode === 'upload' && onUploadFile}
 		<form
 			method="POST"
 			action="?/uploadCredential"

@@ -29,7 +29,7 @@
 	} from '$lib/config/zod-schemas';
 	import CredentialFields from '$lib/components/certifications/CredentialFields.svelte';
 	import type { CredentialDiscipline } from '$lib/components/certifications/types';
-	import { certBadge, certState, formatCertDate, todayInET } from '$lib/certStatus';
+	import { credentialBadge, formatCertDate, todayInET } from '$lib/certStatus';
 
 	interface FileUploadResult {
 		filename: string;
@@ -93,8 +93,11 @@
 		disciplineId: d.disciplineId,
 		name: d.name,
 		abbreviation: d.abbreviation,
-		requiresCertification: Boolean(d.requiresCertification),
-		effectiveExpiry: d.effectiveExpiry ?? null
+		requiresLicense: Boolean(d.requiresLicense),
+		effectiveLicenseExpiry: d.effectiveLicenseExpiry ?? null,
+		licenseGraceStartedOn: d.licenseGraceStartedOn ?? null,
+		requiresCert: Boolean(d.requiresCert),
+		certExpiresOn: d.certExpiresOn ?? null
 	}));
 
 	const isCredential = (t: string) =>
@@ -113,13 +116,12 @@
 	function docBadge(doc: { disciplineId?: string | null; expiryDate?: string | null }) {
 		if (!doc.expiryDate) return null;
 		const linked = disciplines.find((d) => d.disciplineId === doc.disciplineId);
-		return certBadge(
-			certState({
-				requiresCertification: Boolean(linked?.requiresCertification),
-				effectiveExpiry: expiryInputValue(doc.expiryDate)
-			}),
-			expiryInputValue(doc.expiryDate)
-		);
+		// Judged against the LICENSE track: a certification's date lives on the
+		// Experience & Rates entry, not on a document.
+		return credentialBadge('LICENSE', {
+			required: Boolean(linked?.requiresLicense),
+			expiresOn: expiryInputValue(doc.expiryDate)
+		});
 	}
 
 	function typeLabel(t: string) {

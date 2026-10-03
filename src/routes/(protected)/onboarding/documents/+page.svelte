@@ -18,8 +18,11 @@
 		disciplineId: d.disciplineId,
 		name: d.name,
 		abbreviation: d.abbreviation,
-		requiresCertification: Boolean(d.requiresCertification),
-		effectiveExpiry: d.effectiveExpiry ?? null
+		requiresLicense: Boolean(d.requiresLicense),
+		effectiveLicenseExpiry: d.effectiveLicenseExpiry ?? null,
+		licenseGraceStartedOn: d.licenseGraceStartedOn ?? null,
+		requiresCert: Boolean(d.requiresCert),
+		certExpiresOn: d.certExpiresOn ?? null
 	}));
 
   interface FileUploadResult {

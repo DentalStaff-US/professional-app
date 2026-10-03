@@ -2,33 +2,51 @@
 	/**
 	 * "Your RDH shifts are hidden" — the page-level notice on the job lists.
 	 *
-	 * This is the ONLY way a professional learns why shifts disappeared: per-listing
-	 * warnings were deliberately rejected, so the explanation has to live at page
-	 * level. It must render even when the list is non-empty — a professional with two
-	 * disciplines who lost one still needs telling, and that is the case most likely
-	 * to go unnoticed.
+	 * The ONLY way a professional learns why shifts disappeared: per-listing warnings
+	 * were deliberately rejected, so the explanation lives at page level. It must
+	 * render even when the list is non-empty — a professional with two disciplines who
+	 * lost one still needs telling, and that is the case most likely to go unnoticed.
 	 *
-	 * Fed by `certLocked` from the listing endpoints, which only ever contains
-	 * genuinely EXPIRED credentials. "No certificate on file yet" is chased separately
-	 * and never hides anything, so it must not appear here.
+	 * Names the credential that actually lapsed, and sends them to the right place:
+	 * a LICENSE is fixed by uploading a document, a CERTIFICATION by updating a date
+	 * on the Experience & Rates entry. Sending someone to the wrong page at the moment
+	 * their work disappears is the worst possible dead end.
 	 */
 	import * as Alert from '$lib/components/ui/alert';
 	import { Button } from '$lib/components/ui/button';
 	import { AlertCircle } from 'lucide-svelte';
 	import { formatCertDate } from '$lib/certStatus';
 
+	type Blocker = { track: 'LICENSE' | 'CERTIFICATION'; expiresOn: string | null };
 	type CertLocked = {
 		disciplineId: string;
 		disciplineName: string;
 		abbreviation: string;
-		expiresOn: string;
+		blockedBy?: Blocker[];
+		/** Pre-split shape. Kept so this app can deploy ahead of the admin app. */
+		expiresOn?: string | null;
 	};
 
 	export let certLocked: CertLocked[] = [];
-	/** Where to send them. Uploading a current certificate is the fix in every case. */
-	export let href = '/settings/documents';
 
+	/**
+	 * The admin app is deployed separately, so this component may run against either
+	 * shape for a short window. Falling back to a LICENSE blocker is right: before the
+	 * split every gated credential came from a document, which is the license track.
+	 */
+	const blockersOf = (c: CertLocked): Blocker[] =>
+		c.blockedBy ?? [{ track: 'LICENSE', expiresOn: c.expiresOn ?? null }];
+
+	$: anyLicense = certLocked.some((c) => blockersOf(c).some((b) => b.track === 'LICENSE'));
+	$: anyCert = certLocked.some((c) => blockersOf(c).some((b) => b.track === 'CERTIFICATION'));
+	// Licenses are fixed in Documents, certifications on the Experience page. When
+	// both are lapsed, Documents is the better landing spot — it is the slower of the
+	// two to resolve.
+	$: href = anyLicense ? '/settings/documents' : '/settings/experience';
+	$: ctaLabel = anyLicense ? 'Upload your license' : 'Update your certification';
 	$: names = certLocked.map((c) => `${c.disciplineName} (${c.abbreviation})`);
+
+	const noun = (t: Blocker['track']) => (t === 'LICENSE' ? 'license' : 'certification');
 </script>
 
 {#if certLocked.length > 0}
@@ -42,17 +60,30 @@
 		<Alert.Description class="space-y-3">
 			<div class="space-y-1">
 				{#each certLocked as c (c.disciplineId)}
-					<p>
-						Your <strong>{c.disciplineName} ({c.abbreviation})</strong> certification expired on
-						{formatCertDate(c.expiresOn)}.
-					</p>
+					{#each blockersOf(c) as b}
+						<p>
+							Your <strong>{c.disciplineName} ({c.abbreviation})</strong>
+							{noun(b.track)}
+							{#if b.expiresOn}
+								expired on {formatCertDate(b.expiresOn)}.
+							{:else}
+								is still outstanding.
+							{/if}
+						</p>
+					{/each}
 				{/each}
 				<p>
-					Upload a current certificate to see {names.length === 1 ? 'these' : 'those'} positions
-					again. Your other disciplines are unaffected.
+					{#if anyLicense && anyCert}
+						Upload a current license and update your certification date to see
+					{:else if anyLicense}
+						Upload a current license to see
+					{:else}
+						Update its expiration date to see
+					{/if}
+					{names.length === 1 ? 'these' : 'those'} positions again. Your other disciplines are unaffected.
 				</p>
 			</div>
-			<Button {href} size="sm" variant="outline">Upload certificate</Button>
+			<Button {href} size="sm" variant="outline">{ctaLabel}</Button>
 		</Alert.Description>
 	</Alert.Root>
 {/if}

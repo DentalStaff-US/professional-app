@@ -10,7 +10,7 @@
 	 * discipline on the platform — a credential can only prove a discipline they
 	 * actually hold, and the server rejects anything else.
 	 */
-	import { certBadge, certState, formatCertDate } from '$lib/certStatus';
+	import { credentialBadge } from '$lib/certStatus';
 	import { CREDENTIAL_DOCUMENT_TYPES } from '$lib/config/zod-schemas';
 
 	import type { CredentialDiscipline } from './types';
@@ -33,7 +33,7 @@
 	// that wants a certificate and has none on file, so the upload they came to make
 	// is almost certainly that one.
 	$: awaitingCredential = disciplines.filter(
-		(d) => d.requiresCertification && !d.effectiveExpiry
+		(d) => d.requiresLicense && !d.effectiveLicenseExpiry
 	);
 	let checked = false;
 	let userToggled = false;
@@ -50,13 +50,11 @@
 
 	$: selected = disciplines.find((d) => d.disciplineId === disciplineId);
 	$: currentBadge = selected
-		? certBadge(
-				certState({
-					requiresCertification: selected.requiresCertification,
-					effectiveExpiry: selected.effectiveExpiry
-				}),
-				selected.effectiveExpiry
-			)
+		? credentialBadge('LICENSE', {
+				required: selected.requiresLicense,
+				expiresOn: selected.effectiveLicenseExpiry,
+				graceStartedOn: selected.licenseGraceStartedOn
+			})
 		: null;
 
 	function onToggle(e: Event) {
@@ -75,7 +73,7 @@
 				{checked}
 				on:change={onToggle}
 			/>
-			<span>This is a credential for one of my disciplines</span>
+			<span>This is a license or certificate for one of my disciplines</span>
 		</label>
 
 		{#if checked}
@@ -95,8 +93,8 @@
 						<option value="">Select a discipline…</option>
 						{#each disciplines as d (d.disciplineId)}
 							<option value={d.disciplineId}>
-								{d.name} ({d.abbreviation}){d.requiresCertification && !d.effectiveExpiry
-									? ' — certificate needed'
+								{d.name} ({d.abbreviation}){d.requiresLicense && !d.effectiveLicenseExpiry
+									? ' — license needed'
 									: ''}
 							</option>
 						{/each}
@@ -105,9 +103,9 @@
 						<p class="text-xs text-gray-600">
 							Currently: <span class="font-medium">{currentBadge.label}</span>
 						</p>
-					{:else if selected && !selected.requiresCertification}
+					{:else if selected && !selected.requiresLicense}
 						<p class="text-xs text-gray-600">
-							This discipline does not require a certificate, so nothing will be hidden if this
+							This discipline does not require a license, so nothing will be hidden if this
 							one expires.
 						</p>
 					{/if}
@@ -127,9 +125,9 @@
 						{disabled}
 						required
 					/>
-					{#if selected?.requiresCertification}
+					{#if selected?.requiresLicense}
 						<p class="text-xs text-gray-600">
-							If this date passes without a newer certificate, {selected.abbreviation} jobs will be
+							If this date passes without a newer document, {selected.abbreviation} jobs will be
 							hidden until you renew.
 						</p>
 					{/if}

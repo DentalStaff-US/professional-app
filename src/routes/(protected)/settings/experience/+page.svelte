@@ -31,9 +31,12 @@
 	function certFor(disciplineId: string) {
 		const d = (data.candidateDisciplines ?? []).find((x: any) => x.disciplineId === disciplineId);
 		return {
-			requiresCertification: Boolean(d?.requiresCertification),
-			effectiveExpiry: (d?.effectiveExpiry ?? null) as string | null,
-			abbreviation: (d?.abbreviation ?? '') as string
+			abbreviation: (d?.abbreviation ?? '') as string,
+			requiresLicense: Boolean(d?.requiresLicense),
+			effectiveLicenseExpiry: (d?.effectiveLicenseExpiry ?? null) as string | null,
+			licenseGraceStartedOn: (d?.licenseGraceStartedOn ?? null) as string | null,
+			requiresCert: Boolean(d?.requiresCert),
+			certExpiresOn: (d?.certExpiresOn ?? null) as string | null
 		};
 	}
 
@@ -191,17 +194,35 @@
 
 				<!-- The ONE editable thing on this page once approved. It writes only to
 				     the document row, never to the experience entry above. -->
-				{#if certFor(discipline.disciplineId).requiresCertification}
+				<!-- The only editable things on this page once approved. The LICENSE slot
+				     writes documents only; the CERTIFICATION slot writes the single date
+				     on this entry through a narrow endpoint that can do nothing else. -->
+				{#if certFor(discipline.disciplineId).requiresLicense}
 					<CredentialSlot
+						kind="LICENSE"
 						disciplineId={discipline.disciplineId}
 						disciplineName={getDisciplineName(discipline.disciplineId)}
 						abbreviation={certFor(discipline.disciplineId).abbreviation}
-						requiresCertification={true}
-						effectiveExpiry={certFor(discipline.disciplineId).effectiveExpiry}
+						required={true}
+						effectiveExpiry={certFor(discipline.disciplineId).effectiveLicenseExpiry}
+						graceStartedOn={certFor(discipline.disciplineId).licenseGraceStartedOn}
 						documents={data.documents ?? []}
 						onUploadFile={uploadCredentialFile}
 					/>
 				{/if}
+
+				<!-- Rendered unconditionally: this is where a professional DECLARES that
+				     their state requires a certification, so hiding it until they have
+				     would make the opt-in unreachable. -->
+				<CredentialSlot
+					kind="CERTIFICATION"
+					disciplineId={discipline.disciplineId}
+					disciplineName={getDisciplineName(discipline.disciplineId)}
+					abbreviation={certFor(discipline.disciplineId).abbreviation}
+					required={certFor(discipline.disciplineId).requiresCert}
+					effectiveExpiry={certFor(discipline.disciplineId).certExpiresOn}
+					documents={data.documents ?? []}
+				/>
 			</div>
 		{/each}
 {:else}

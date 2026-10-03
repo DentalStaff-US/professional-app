@@ -121,7 +121,31 @@ export const updateProfileSchema = z.object({
 });
 export type UpdateProfileSchema = typeof newProfileSchema;
 
+/**
+ * A discipline cannot appear twice in one payload — the admin app writes the whole
+ * set in a single INSERT … ON CONFLICT DO UPDATE, and Postgres rejects a duplicate
+ * key within one statement (SQLSTATE 21000). The UI guards this client-side; this is
+ * the guard that actually holds.
+ *
+ * Mirrors `uniqueDisciplineIds` in dental-staff-app, which is the authority.
+ */
+function uniqueDisciplineIds<T extends { disciplineId: string }>(rows: T[], ctx: z.RefinementCtx) {
+	const seen = new Set<string>();
+	rows.forEach((row, i) => {
+		if (seen.has(row.disciplineId)) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: [i, 'disciplineId'],
+				message: 'This discipline is listed twice.'
+			});
+		}
+		seen.add(row.disciplineId);
+	});
+}
+
 export const newCandidateDisciplinesSchema = z.object({
+	// Carries no certification fields: those are written by their own single-row
+	// endpoint, so a rate edit cannot clear one. See replaceCandidateDisciplines.
 	disciplines: z
 		.array(
 			z
@@ -137,6 +161,7 @@ export const newCandidateDisciplinesSchema = z.object({
 				})
 		)
 		.min(1, 'Please select at least one discipline')
+		.superRefine(uniqueDisciplineIds)
 });
 
 export type NewCandidateDisciplinesSchema = typeof newCandidateDisciplinesSchema;

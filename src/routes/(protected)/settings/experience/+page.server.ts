@@ -49,6 +49,49 @@ export const load: PageServerLoad = async (event) => {
 
 export const actions: Actions = {
 	/**
+	 * Declare (or update) the certification requirement and expiry for ONE Experience
+	 * & Rates entry.
+	 *
+	 * Writes two columns on one row through
+	 * /api/external/updateCandidateDisciplineCertification, which cannot create an
+	 * entry, cannot turn tracking off, and cannot back-date. That narrowness is why it
+	 * is permitted after approval while the rest of this page stays locked.
+	 */
+	setCertificationExpiry: async (event) => {
+		const user = event.locals.user;
+		if (!user) return redirect(302, '/auth/sign-in');
+
+		const fd = await event.request.formData();
+		const disciplineId = String(fd.get('disciplineId') ?? '');
+		const certExpiresOn = String(fd.get('expiryDate') ?? '');
+		const documentId = String(fd.get('documentId') ?? '') || undefined;
+
+		if (!disciplineId || !certExpiresOn) {
+			setFlash({ type: 'error', message: 'Choose an expiration date.' }, event);
+			return fail(400, { error: 'Missing fields' });
+		}
+
+		const token = generateToken(user.id);
+		const res = await fetchAdmin<{ message?: string }>(
+			'/api/external/updateCandidateDisciplineCertification',
+			{
+				method: 'POST',
+				token,
+				body: { disciplineId, requiresCert: true, certExpiresOn, documentId }
+			}
+		);
+
+		if (!res.ok) {
+			const msg = res.error || 'Could not save that certification.';
+			setFlash({ type: 'error', message: msg }, event);
+			return fail(res.status ?? 500, { error: msg });
+		}
+
+		setFlash({ type: 'success', message: 'Certification saved.' }, event);
+		return { success: true };
+	},
+
+	/**
 	 * Designate a document the professional already uploaded as the certificate for one
 	 * Experience & Rates entry.
 	 *
