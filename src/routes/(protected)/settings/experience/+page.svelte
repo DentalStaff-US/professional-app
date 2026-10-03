@@ -9,6 +9,33 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { Separator } from '$lib/components/ui/separator';
 	import Label from '$lib/components/ui/label/label.svelte';
+	import CredentialSlot from '$lib/components/certifications/CredentialSlot.svelte';
+
+	/**
+	 * Upload a certificate file to storage, returning its URL for the form to post.
+	 * Same two-step shape the documents pages use: /api/uploadFile stores the bytes,
+	 * then a form action records the row via the admin API.
+	 */
+	async function uploadCredentialFile(file: File) {
+		const fd = new FormData();
+		fd.append('file', file);
+		fd.append('location', 'candidate-documents');
+		const res = await fetch('/api/uploadFile', { method: 'POST', body: fd });
+		if (!res.ok) return null;
+		const json = await res.json();
+		if (!json?.success || !json?.url) return null;
+		return { url: json.url as string, filename: (json.fileName ?? file.name) as string };
+	}
+
+	/** Credential state per entry, keyed by discipline, from getCandidateDisciplines. */
+	function certFor(disciplineId: string) {
+		const d = (data.candidateDisciplines ?? []).find((x: any) => x.disciplineId === disciplineId);
+		return {
+			requiresCertification: Boolean(d?.requiresCertification),
+			effectiveExpiry: (d?.effectiveExpiry ?? null) as string | null,
+			abbreviation: (d?.abbreviation ?? '') as string
+		};
+	}
 
 	export let data: PageData;
 	$: profile = data.profile;
@@ -131,7 +158,9 @@
 		<Alert.Root class="mb-4">
 			<Alert.Title class="text-lg font-semibold">Profile Approved</Alert.Title>
 			<Alert.Description>
-				Your profile has been approved. You cannot edit your experience at this time.
+				Your profile has been approved, so your disciplines, experience levels and rates are
+				locked. You can still keep your certificates up to date below — upload a renewal any
+				time, and contact support if anything else needs to change.
 			</Alert.Description>
 		</Alert.Root>
 
@@ -159,6 +188,20 @@
 						</div>
 					</div>
 				</div>
+
+				<!-- The ONE editable thing on this page once approved. It writes only to
+				     the document row, never to the experience entry above. -->
+				{#if certFor(discipline.disciplineId).requiresCertification}
+					<CredentialSlot
+						disciplineId={discipline.disciplineId}
+						disciplineName={getDisciplineName(discipline.disciplineId)}
+						abbreviation={certFor(discipline.disciplineId).abbreviation}
+						requiresCertification={true}
+						effectiveExpiry={certFor(discipline.disciplineId).effectiveExpiry}
+						documents={data.documents ?? []}
+						onUploadFile={uploadCredentialFile}
+					/>
+				{/if}
 			</div>
 		{/each}
 {:else}

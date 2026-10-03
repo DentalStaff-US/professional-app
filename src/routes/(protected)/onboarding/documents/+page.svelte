@@ -7,9 +7,20 @@
   import Button from '$lib/components/ui/button/button.svelte';
   import FileDropzone from '$lib/components/general/file-dropzone.svelte';
   import { CANDIDATE_DOCUMENT_TYPES, CANDIDATE_DOCUMENT_TYPE_LABELS } from '$lib/config/zod-schemas';
+	import CredentialFields from '$lib/components/certifications/CredentialFields.svelte';
+	import type { CredentialDiscipline } from '$lib/components/certifications/types';
+	import { todayInET } from '$lib/certStatus';
   import { tick } from 'svelte';
 
   export let data: PageData;
+
+	const disciplines: CredentialDiscipline[] = (data.disciplines ?? []).map((d: any) => ({
+		disciplineId: d.disciplineId,
+		name: d.name,
+		abbreviation: d.abbreviation,
+		requiresCertification: Boolean(d.requiresCertification),
+		effectiveExpiry: d.effectiveExpiry ?? null
+	}));
 
   interface FileUploadResult {
       filename: string;
@@ -193,6 +204,16 @@
               <p class="text-xs text-muted-foreground">
                 Applied to every file you upload here. You can change it later in Settings.
               </p>
+            </div>
+
+            <div class="mb-4">
+              <CredentialFields
+                documentType={$docsFormData.documentType}
+                {disciplines}
+                bind:disciplineId={$docsFormData.documentDisciplineId}
+                bind:expiryDate={$docsFormData.documentExpiryDate}
+                minDate={todayInET()}
+              />
             </div>
             <FileDropzone
                   onFileDrop={handleDocumentsUpload}

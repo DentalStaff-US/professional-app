@@ -180,6 +180,19 @@ export const CANDIDATE_DOCUMENT_TYPE_LABELS: Record<
 	OTHER: 'Other'
 };
 
+/** The two document types that can act as a credential for a discipline. */
+export const CREDENTIAL_DOCUMENT_TYPES = ['LICENSE', 'CERTIFICATE'] as const;
+
+/**
+ * A credential expiry as a calendar date — what `<input type="date">` submits.
+ * Normalised to midnight UTC server-side; the gate reads it back the same way.
+ */
+const credentialExpiry = z
+	.string()
+	.regex(/^\d{4}-\d{2}-\d{2}$/, 'Enter the expiration date.')
+	.optional()
+	.or(z.literal(''));
+
 export const documentUrlSchema = z.object({
 	type: z.enum(CANDIDATE_DOCUMENT_TYPES).optional(),
 	/** Type chosen in the upload form; applied to every file in this submission. */
@@ -188,14 +201,35 @@ export const documentUrlSchema = z.object({
 	url: z.string().optional(),
 	urls: z.array(z.string()).optional(),
 	createdAt: z.date().optional(),
-	filesData: zJsonString.optional()
+	filesData: zJsonString.optional(),
+	/**
+	 * Ticking "this is a credential for one of my disciplines" sends both of these.
+	 * The server additionally checks the professional holds the discipline and that
+	 * the type is a credential type — rules that need the database.
+	 */
+	documentDisciplineId: z.string().optional().or(z.literal('')),
+	documentExpiryDate: credentialExpiry
 });
 
-/** Retype / rename an existing document from the settings page. */
-export const documentUpdateSchema = z.object({
-	documentId: z.string().uuid(),
-	type: z.enum(CANDIDATE_DOCUMENT_TYPES)
-});
+/**
+ * Retype / rename an existing document, or set its credential link and expiry.
+ *
+ * Every field is optional so one form action can serve the type dropdown, the
+ * expiry cell and the discipline cell. `intent: 'DESIGNATE_CREDENTIAL'` is what lets
+ * an APPROVED professional promote an existing document (historically everything
+ * landed as type OTHER) into a credential — the admin API enforces the limits.
+ */
+export const documentUpdateSchema = z
+	.object({
+		documentId: z.string().uuid(),
+		type: z.enum(CANDIDATE_DOCUMENT_TYPES).optional(),
+		disciplineId: z.string().nullable().optional(),
+		expiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+		intent: z.literal('DESIGNATE_CREDENTIAL').optional()
+	})
+	.refine((d) => d.type !== undefined || d.disciplineId !== undefined || d.expiryDate !== undefined, {
+		message: 'Nothing to update.'
+	});
 
 export const documentDeleteSchema = z.object({
 	documentId: z.string().uuid()

@@ -38,6 +38,7 @@
 	import { formatInTimeZone } from 'date-fns-tz';
 	import LockedPracticeDetails from '$lib/components/general/LockedPracticeDetails.svelte';
 	import { isPracticeLocked } from '$lib/_helpers/practiceIdentity';
+	import CertLockedBanner from '$lib/components/certifications/CertLockedBanner.svelte';
 
 	// Render a YYYY-MM-DD as "Month d, yyyy" without applying any timezone shift.
 	const formatUtcDate = (value: string | Date | null | undefined) => {
@@ -147,6 +148,8 @@
 			Welcome back, {user?.firstName}
 		</p>
 	</div>
+
+	<CertLockedBanner certLocked={data.certLocked ?? []} />
 
 	<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 		<!-- Left Column -->

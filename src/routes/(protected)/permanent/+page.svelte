@@ -4,6 +4,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import LockedPracticeDetails from '$lib/components/general/LockedPracticeDetails.svelte';
 	import { isPracticeLocked } from '$lib/_helpers/practiceIdentity';
+	import CertLockedBanner from '$lib/components/certifications/CertLockedBanner.svelte';
 
 	export let data;
 	$: requisitions = data.requisitions;
@@ -29,6 +30,9 @@
 	<h1 class="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
 		Permanent Positions
 	</h1>
+
+	<CertLockedBanner certLocked={data.certLocked ?? []} />
+
 	<Tabs.Root value="Recommended">
 		<Tabs.List class="gap-6">
 			<Tabs.Trigger value="Recommended">Recommended</Tabs.Trigger>

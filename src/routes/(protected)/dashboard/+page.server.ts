@@ -28,9 +28,10 @@ export const load = async (event) => {
 		fetchAdmin<{ data: any[] }>('/api/external/timesheets/getPendingTimesheetsForUser', {
 			token
 		}),
-		fetchAdmin<{ recurrenceDays: any[] }>('/api/external/getUpcomingTempRequisitionsForCandidate', {
-			token
-		})
+		fetchAdmin<{ recurrenceDays: any[]; certLocked?: any[] }>(
+			'/api/external/getUpcomingTempRequisitionsForCandidate',
+			{ token }
+		)
 	]);
 
 	return {
@@ -38,6 +39,8 @@ export const load = async (event) => {
 		workdays: workdaysRes.ok ? (workdaysRes.data.data ?? []) : [],
 		timesheets: timesheetsRes.ok ? (timesheetsRes.data.data ?? []) : [],
 		requisitions: requisitionsRes.ok ? (requisitionsRes.data.recurrenceDays ?? []) : [],
+		// See permanent/+page.server.ts — drives the "shifts are hidden" banner.
+		certLocked: requisitionsRes.ok ? (requisitionsRes.data.certLocked ?? []) : [],
 		loadError:
 			workdaysRes.ok && timesheetsRes.ok && requisitionsRes.ok
 				? undefined

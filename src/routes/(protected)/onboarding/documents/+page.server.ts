@@ -21,13 +21,20 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const token = generateToken(user.id);
-	const res = await fetchAdmin<any>('/api/external/getCandidateProfile', { token });
+	// Disciplines are available here because onboarding sets them at step 3, two steps
+	// before this one — so a certificate uploaded now can be linked to the entry it
+	// proves without a second visit.
+	const [res, disciplinesRes] = await Promise.all([
+		fetchAdmin<any>('/api/external/getCandidateProfile', { token }),
+		fetchAdmin<{ disciplines: any[] }>('/api/external/getCandidateDisciplines', { token })
+	]);
 	const documentsForm = await superValidate(event, documentUrlSchema);
 	const skipForm = await superValidate({ userId: user.id }, z.object({ userId: z.string() }));
 
 	return {
 		user,
 		profile: res.ok ? res.data : null,
+		disciplines: disciplinesRes.ok ? (disciplinesRes.data.disciplines ?? []) : [],
 		documentsForm,
 		skipForm,
 		loadError: res.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
@@ -113,7 +120,12 @@ export const actions: Actions = {
 						// everything as OTHER — licenses and certifications are what
 						// practices actually look for.
 						type: form.data.documentType ?? 'OTHER',
-						filesData: fileData
+						filesData: fileData,
+						// Set only when the credential checkbox was ticked. The admin API
+						// rejects a link with no expiry, on a non-credential type, or to a
+						// discipline they don't hold.
+						disciplineId: form.data.documentDisciplineId || null,
+						expiryDate: form.data.documentExpiryDate || null
 					})
 				}
 			);
