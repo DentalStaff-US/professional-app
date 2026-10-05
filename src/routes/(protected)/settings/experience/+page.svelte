@@ -9,6 +9,36 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { Separator } from '$lib/components/ui/separator';
 	import Label from '$lib/components/ui/label/label.svelte';
+	import CredentialSlot from '$lib/components/certifications/CredentialSlot.svelte';
+
+	/**
+	 * Upload a certificate file to storage, returning its URL for the form to post.
+	 * Same two-step shape the documents pages use: /api/uploadFile stores the bytes,
+	 * then a form action records the row via the admin API.
+	 */
+	async function uploadCredentialFile(file: File) {
+		const fd = new FormData();
+		fd.append('file', file);
+		fd.append('location', 'candidate-documents');
+		const res = await fetch('/api/uploadFile', { method: 'POST', body: fd });
+		if (!res.ok) return null;
+		const json = await res.json();
+		if (!json?.success || !json?.url) return null;
+		return { url: json.url as string, filename: (json.fileName ?? file.name) as string };
+	}
+
+	/** Credential state per entry, keyed by discipline, from getCandidateDisciplines. */
+	function certFor(disciplineId: string) {
+		const d = (data.candidateDisciplines ?? []).find((x: any) => x.disciplineId === disciplineId);
+		return {
+			abbreviation: (d?.abbreviation ?? '') as string,
+			requiresLicense: Boolean(d?.requiresLicense),
+			effectiveLicenseExpiry: (d?.effectiveLicenseExpiry ?? null) as string | null,
+			licenseGraceStartedOn: (d?.licenseGraceStartedOn ?? null) as string | null,
+			requiresCert: Boolean(d?.requiresCert),
+			effectiveCertExpiry: (d?.effectiveCertExpiry ?? null) as string | null
+		};
+	}
 
 	export let data: PageData;
 	$: profile = data.profile;
@@ -131,7 +161,9 @@
 		<Alert.Root class="mb-4">
 			<Alert.Title class="text-lg font-semibold">Profile Approved</Alert.Title>
 			<Alert.Description>
-				Your profile has been approved. You cannot edit your experience at this time.
+				Your profile has been approved, so your disciplines, experience levels and rates are
+				locked. You can still keep your certificates up to date below — upload a renewal any
+				time, and contact support if anything else needs to change.
 			</Alert.Description>
 		</Alert.Root>
 
@@ -159,6 +191,39 @@
 						</div>
 					</div>
 				</div>
+
+				<!-- The ONE editable thing on this page once approved. It writes only to
+				     the document row, never to the experience entry above. -->
+				<!-- The only editable things on this page once approved. The LICENSE slot
+				     writes documents only; the CERTIFICATION slot writes the single date
+				     on this entry through a narrow endpoint that can do nothing else. -->
+				{#if certFor(discipline.disciplineId).requiresLicense}
+					<CredentialSlot
+						kind="LICENSE"
+						disciplineId={discipline.disciplineId}
+						disciplineName={getDisciplineName(discipline.disciplineId)}
+						abbreviation={certFor(discipline.disciplineId).abbreviation}
+						required={true}
+						effectiveExpiry={certFor(discipline.disciplineId).effectiveLicenseExpiry}
+						graceStartedOn={certFor(discipline.disciplineId).licenseGraceStartedOn}
+						documents={data.documents ?? []}
+						onUploadFile={uploadCredentialFile}
+					/>
+				{/if}
+
+				<!-- Rendered unconditionally: this is where a professional DECLARES that
+				     their state requires a certification, so hiding it until they have
+				     would make the opt-in unreachable. -->
+				<CredentialSlot
+					kind="CERTIFICATION"
+					disciplineId={discipline.disciplineId}
+					disciplineName={getDisciplineName(discipline.disciplineId)}
+					abbreviation={certFor(discipline.disciplineId).abbreviation}
+					required={certFor(discipline.disciplineId).requiresCert}
+					effectiveExpiry={certFor(discipline.disciplineId).effectiveCertExpiry}
+					documents={data.documents ?? []}
+					onUploadFile={uploadCredentialFile}
+				/>
 			</div>
 		{/each}
 {:else}

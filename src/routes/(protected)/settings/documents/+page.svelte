@@ -24,8 +24,12 @@
 	import { tick } from 'svelte';
 	import {
 		CANDIDATE_DOCUMENT_TYPES,
-		CANDIDATE_DOCUMENT_TYPE_LABELS
+		CANDIDATE_DOCUMENT_TYPE_LABELS,
+		CREDENTIAL_DOCUMENT_TYPES
 	} from '$lib/config/zod-schemas';
+	import CredentialFields from '$lib/components/certifications/CredentialFields.svelte';
+	import type { CredentialDiscipline } from '$lib/components/certifications/types';
+	import { credentialBadge, formatCertDate, todayInET } from '$lib/certStatus';
 
 	interface FileUploadResult {
 		filename: string;
@@ -37,7 +41,14 @@
 
 	$: userDocuments = data.documents;
 
-	const docsForm = superForm(data.documentsForm);
+	/** Files staged in storage and waiting to be saved with their details. */
+	let uploadedFileCount = 0;
+
+	const docsForm = superForm(data.documentsForm, {
+		onUpdated: () => {
+			uploadedFileCount = 0;
+		}
+	});
 	const { enhance: docsEnhance, form: docsFormData, errors: docsErrors } = docsForm;
 
 	// Helper function to format date
@@ -73,6 +84,51 @@
 	 */
 	function canEdit(doc: { locked?: boolean; adminOnly?: boolean }) {
 		return data.editable && !doc.locked && !doc.adminOnly;
+	}
+
+	/**
+	 * Credential metadata — the expiry date and which discipline a certificate proves —
+	 * stays correctable after approval. The gate keys off both, so refusing to let
+	 * someone fix a mistyped date while their job visibility depends on it would be
+	 * indefensible. An admin pin (`locked`/`adminOnly`) still wins, matching the server.
+	 */
+	function canEditCredential(doc: { locked?: boolean; adminOnly?: boolean }) {
+		return data.canEditCredentialMetadata && !doc.locked && !doc.adminOnly;
+	}
+
+	const disciplines: CredentialDiscipline[] = (data.disciplines ?? []).map((d: any) => ({
+		disciplineId: d.disciplineId,
+		name: d.name,
+		abbreviation: d.abbreviation,
+		requiresLicense: Boolean(d.requiresLicense),
+		effectiveLicenseExpiry: d.effectiveLicenseExpiry ?? null,
+		licenseGraceStartedOn: d.licenseGraceStartedOn ?? null,
+		requiresCert: Boolean(d.requiresCert),
+		effectiveCertExpiry: d.effectiveCertExpiry ?? null
+	}));
+
+	const isCredential = (t: string) =>
+		(CREDENTIAL_DOCUMENT_TYPES as readonly string[]).includes(t);
+
+	/** 'YYYY-MM-DD' for a date input, from however the API returned the expiry. */
+	function expiryInputValue(v: string | null | undefined) {
+		return v ? String(v).slice(0, 10) : '';
+	}
+
+	/**
+	 * Per-row badge. A document's own expiry is shown relative to whether the
+	 * discipline it is linked to actually requires one — an expiry on an unlinked file,
+	 * or on a discipline needing no credential, gates nothing and shouldn't look alarming.
+	 */
+	function docBadge(doc: { disciplineId?: string | null; expiryDate?: string | null }) {
+		if (!doc.expiryDate) return null;
+		const linked = disciplines.find((d) => d.disciplineId === doc.disciplineId);
+		// Judged against the LICENSE track: a certification's date lives on the
+		// Experience & Rates entry, not on a document.
+		return credentialBadge('LICENSE', {
+			required: Boolean(linked?.requiresLicense),
+			expiresOn: expiryInputValue(doc.expiryDate)
+		});
 	}
 
 	function typeLabel(t: string) {
@@ -162,11 +218,16 @@
 
 					await tick();
 
-					// Submit form if we have at least one successful upload
-					const form = document.getElementById('documents-form') as HTMLFormElement;
-					if (form) {
-						form.requestSubmit();
-					}
+					// DO NOT auto-submit here.
+					//
+					// This used to call form.requestSubmit() the moment the upload
+					// finished, which meant only the fields filled in BEFORE choosing the
+					// file were ever posted. The natural order is the opposite — pick the
+					// file, then say what it is and when it expires — so the expiry
+					// silently never arrived and looked like the professional had skipped
+					// it. The file is already in storage by this point; the form now waits
+					// for them to press Save.
+					uploadedFileCount = updatedFiles.length;
 
 					// If some files failed but others succeeded
 					if (partialFailures.length > 0 && successfulUploads.length > 0) {
@@ -258,6 +319,8 @@
 						<tr class="border-b">
 							<th class="text-left py-3 px-4 font-medium">Document</th>
 							<th class="text-left py-3 px-4 font-medium">Type</th>
+							<th class="text-left py-3 px-4 font-medium">Applies to</th>
+							<th class="text-left py-3 px-4 font-medium">Expires</th>
 							<th class="text-left py-3 px-4 font-medium">Uploaded</th>
 							<th class="text-right py-3 px-4 font-medium">Actions</th>
 						</tr>
@@ -312,7 +375,7 @@
 									{#if canEdit(doc)}
 										<!-- Auto-submitting select: retyping is a single interaction,
 										     so there's no separate save button to forget. -->
-										<form method="POST" action="?/updateDocumentType" use:enhance>
+										<form method="POST" action="?/updateDocument" use:enhance>
 											<input type="hidden" name="documentId" value={doc.id} />
 											<select
 												name="type"
@@ -332,6 +395,64 @@
 										</span>
 									{/if}
 								</td>
+								<!-- Applies to: which Experience & Rates entry this credential proves.
+								     Only meaningful for a License/Certification. -->
+								<td class="py-3 px-4 text-sm">
+									{#if !isCredential(doc.type)}
+										<span class="text-muted-foreground">—</span>
+									{:else if canEditCredential(doc) && disciplines.length > 0}
+										<form method="POST" action="?/updateDocument" use:enhance>
+											<input type="hidden" name="documentId" value={doc.id} />
+											<!-- Designating a document as a credential also sets its type,
+											     which the approval freeze otherwise refuses. Legacy uploads
+											     were all forced to OTHER, so this is the no-re-upload path. -->
+											<input type="hidden" name="intent" value="DESIGNATE_CREDENTIAL" />
+											<select
+												name="disciplineId"
+												class="border rounded-md px-2 py-1 text-sm bg-white"
+												value={doc.disciplineId ?? ''}
+												on:change={(e) => e.currentTarget.form?.requestSubmit()}
+											>
+												<option value="">Not a credential</option>
+												{#each disciplines as d (d.disciplineId)}
+													<option value={d.disciplineId}>{d.abbreviation}</option>
+												{/each}
+											</select>
+										</form>
+									{:else if doc.disciplineName}
+										<span class="inline-flex items-center gap-1">
+											{doc.disciplineAbbreviation ?? doc.disciplineName}
+											{#if !canEditCredential(doc)}<Lock class="h-3 w-3" />{/if}
+										</span>
+									{:else}
+										<span class="text-muted-foreground">—</span>
+									{/if}
+								</td>
+
+								<!-- Expires: READ-ONLY, deliberately.
+								     The date is captured once, at upload, together with the document
+								     it came from. Letting it be edited afterwards decouples the two —
+								     the file says one thing and the record says another — and it was
+								     also the reason the same date had to be entered in several
+								     places. To correct a date, upload the document again or ask DTSS. -->
+								<td class="py-3 px-4 text-sm">
+									{#if !isCredential(doc.type)}
+										<span class="text-muted-foreground">—</span>
+									{:else if doc.expiryDate}
+										<span>{formatCertDate(expiryInputValue(doc.expiryDate))}</span>
+										{#if docBadge(doc)}
+											{@const b = docBadge(doc)}
+											<span
+												class="mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium {b?.class}"
+											>
+												{b?.label}
+											</span>
+										{/if}
+									{:else}
+										<span class="text-muted-foreground">—</span>
+									{/if}
+								</td>
+
 								<td class="py-3 px-4 text-sm">{formatDate(doc.createdAt)}</td>
 								<td class="py-3 px-4 text-right">
 									<DropdownMenu>
@@ -412,6 +533,14 @@
 								Applied to every file in this upload. You can change it afterwards.
 							</p>
 						</div>
+
+						<CredentialFields
+							documentType={$docsFormData.documentType}
+							{disciplines}
+							bind:disciplineId={$docsFormData.documentDisciplineId}
+							bind:expiryDate={$docsFormData.documentExpiryDate}
+							minDate={todayInET()}
+						/>
 						<FileDropzone
 							onFileDrop={handleDocumentsUpload}
 							accept={['image/*', '.jpg', '.png', '.pdf', '.doc', '.docx', '.txt']}
@@ -427,6 +556,26 @@
 								</Alert.Description>
 							</Alert.Root>
 						{/if}
+
+						<!--
+							The form used to submit itself the instant a file finished uploading,
+							which is why details typed BEFORE the drop could still be lost: the
+							submit raced the bindings. An explicit Save makes the order the
+							person's to choose — fill in the details, drop the files, then save.
+						-->
+						<div class="flex items-center gap-3 pt-2">
+							<Button type="submit" disabled={uploadedFileCount === 0}>
+								{uploadedFileCount === 0
+									? 'Add a file to save'
+									: `Save ${uploadedFileCount} ${uploadedFileCount === 1 ? 'document' : 'documents'}`}
+							</Button>
+							{#if uploadedFileCount > 0}
+								<p class="text-xs text-muted-foreground">
+									Type, discipline and expiration above are applied to every file in
+									this upload.
+								</p>
+							{/if}
+						</div>
 					</div>
 				</form>
 				<Separator />

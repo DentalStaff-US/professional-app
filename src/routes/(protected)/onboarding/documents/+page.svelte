@@ -7,9 +7,23 @@
   import Button from '$lib/components/ui/button/button.svelte';
   import FileDropzone from '$lib/components/general/file-dropzone.svelte';
   import { CANDIDATE_DOCUMENT_TYPES, CANDIDATE_DOCUMENT_TYPE_LABELS } from '$lib/config/zod-schemas';
+	import CredentialFields from '$lib/components/certifications/CredentialFields.svelte';
+	import type { CredentialDiscipline } from '$lib/components/certifications/types';
+	import { todayInET } from '$lib/certStatus';
   import { tick } from 'svelte';
 
   export let data: PageData;
+
+	const disciplines: CredentialDiscipline[] = (data.disciplines ?? []).map((d: any) => ({
+		disciplineId: d.disciplineId,
+		name: d.name,
+		abbreviation: d.abbreviation,
+		requiresLicense: Boolean(d.requiresLicense),
+		effectiveLicenseExpiry: d.effectiveLicenseExpiry ?? null,
+		licenseGraceStartedOn: d.licenseGraceStartedOn ?? null,
+		requiresCert: Boolean(d.requiresCert),
+		effectiveCertExpiry: d.effectiveCertExpiry ?? null
+	}));
 
   interface FileUploadResult {
       filename: string;
@@ -171,7 +185,7 @@
   <Card.Root class="border-0 sm:border shadow-none sm:shadow-sm">
     <Card.Header class="space-y-1">
       <Card.Title class="text-2xl">Upload your work documents</Card.Title>
-      <Card.Description>Upload any relevant documents you would need for work and verification such as certifications, licenses, or permits. This is optional but may impact your profile approval process.</Card.Description>
+      <Card.Description>Upload any relevant documents you would need for work and verification such as certifications, licenses, registrations, or permits. This is optional but may impact your profile approval process.</Card.Description>
     </Card.Header>
     <Card.Content>
         <form id="documents-form" use:docsEnhance method="POST" action="?/documentsUpload" class="mt-6">
@@ -193,6 +207,16 @@
               <p class="text-xs text-muted-foreground">
                 Applied to every file you upload here. You can change it later in Settings.
               </p>
+            </div>
+
+            <div class="mb-4">
+              <CredentialFields
+                documentType={$docsFormData.documentType}
+                {disciplines}
+                bind:disciplineId={$docsFormData.documentDisciplineId}
+                bind:expiryDate={$docsFormData.documentExpiryDate}
+                minDate={todayInET()}
+              />
             </div>
             <FileDropzone
                   onFileDrop={handleDocumentsUpload}

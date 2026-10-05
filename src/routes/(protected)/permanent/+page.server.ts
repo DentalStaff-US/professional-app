@@ -19,13 +19,19 @@ export const load: PageServerLoad = async ({ locals, setHeaders }) => {
 
 	const token = generateToken(user.id);
 	const [openingsRes, appliedRes] = await Promise.all([
-		fetchAdmin<{ requisitions: any[] }>('/api/external/getOpeningsForCandidate', { token }),
+		fetchAdmin<{ requisitions: any[]; certLocked?: any[] }>(
+			'/api/external/getOpeningsForCandidate',
+			{ token }
+		),
 		fetchAdmin<any>('/api/external/getAppliedRequisitions', { token })
 	]);
 
 	return {
 		requisitions: openingsRes.ok ? (openingsRes.data.requisitions ?? []) : [],
 		applied: appliedRes.ok ? appliedRes.data : null,
+		// Disciplines hidden because their certification lapsed. Non-empty even when
+		// openings were found, so the banner still explains a partial loss.
+		certLocked: openingsRes.ok ? (openingsRes.data.certLocked ?? []) : [],
 		loadError: openingsRes.ok && appliedRes.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
 	};
 };

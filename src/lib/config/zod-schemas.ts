@@ -121,7 +121,31 @@ export const updateProfileSchema = z.object({
 });
 export type UpdateProfileSchema = typeof newProfileSchema;
 
+/**
+ * A discipline cannot appear twice in one payload — the admin app writes the whole
+ * set in a single INSERT … ON CONFLICT DO UPDATE, and Postgres rejects a duplicate
+ * key within one statement (SQLSTATE 21000). The UI guards this client-side; this is
+ * the guard that actually holds.
+ *
+ * Mirrors `uniqueDisciplineIds` in dental-staff-app, which is the authority.
+ */
+function uniqueDisciplineIds<T extends { disciplineId: string }>(rows: T[], ctx: z.RefinementCtx) {
+	const seen = new Set<string>();
+	rows.forEach((row, i) => {
+		if (seen.has(row.disciplineId)) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: [i, 'disciplineId'],
+				message: 'This discipline is listed twice.'
+			});
+		}
+		seen.add(row.disciplineId);
+	});
+}
+
 export const newCandidateDisciplinesSchema = z.object({
+	// Carries no certification fields: those are written by their own single-row
+	// endpoint, so a rate edit cannot clear one. See replaceCandidateDisciplines.
 	disciplines: z
 		.array(
 			z
@@ -137,6 +161,7 @@ export const newCandidateDisciplinesSchema = z.object({
 				})
 		)
 		.min(1, 'Please select at least one discipline')
+		.superRefine(uniqueDisciplineIds)
 });
 
 export type NewCandidateDisciplinesSchema = typeof newCandidateDisciplinesSchema;
@@ -174,11 +199,34 @@ export const CANDIDATE_DOCUMENT_TYPE_LABELS: Record<
 	string
 > = {
 	RESUME: 'Resume / CV',
-	LICENSE: 'License',
+	LICENSE: 'License / Registration',
 	CERTIFICATE: 'Certification',
 	AGREEMENT: 'Agreement',
 	OTHER: 'Other'
 };
+
+/** The two document types that can act as a credential for a discipline. */
+export const CREDENTIAL_DOCUMENT_TYPES = ['LICENSE', 'CERTIFICATE'] as const;
+
+/**
+ * A credential expiry as a calendar date — what `<input type="date">` submits.
+ * Normalised to midnight UTC server-side; the gate reads it back the same way.
+ */
+/**
+ * A credential expiry as a calendar date — what `<input type="date">` submits.
+ *
+ * A plain optional string with a refine, NOT `.regex().or(z.literal(''))`.
+ * superforms introspects the schema to build and coerce form fields, and a union
+ * (what `.or()` produces) is not a shape it can resolve for form-encoded data — the
+ * value silently fails to arrive, which looks exactly like the user never typed it.
+ *
+ * Optional throughout: a dental license is held until revoked rather than expiring,
+ * and a certificate attached to a document is evidence, not the governing date.
+ */
+const credentialExpiry = z
+	.string()
+	.optional()
+	.refine((v) => !v || /^\d{4}-\d{2}-\d{2}$/.test(v), 'Enter a valid date.');
 
 export const documentUrlSchema = z.object({
 	type: z.enum(CANDIDATE_DOCUMENT_TYPES).optional(),
@@ -188,14 +236,36 @@ export const documentUrlSchema = z.object({
 	url: z.string().optional(),
 	urls: z.array(z.string()).optional(),
 	createdAt: z.date().optional(),
-	filesData: zJsonString.optional()
+	filesData: zJsonString.optional(),
+	/**
+	 * Ticking "this is a credential for one of my disciplines" sends both of these.
+	 * The server additionally checks the professional holds the discipline and that
+	 * the type is a credential type — rules that need the database.
+	 */
+	// Plain optional, not a union — see credentialExpiry above.
+	documentDisciplineId: z.string().optional(),
+	documentExpiryDate: credentialExpiry
 });
 
-/** Retype / rename an existing document from the settings page. */
-export const documentUpdateSchema = z.object({
-	documentId: z.string().uuid(),
-	type: z.enum(CANDIDATE_DOCUMENT_TYPES)
-});
+/**
+ * Retype / rename an existing document, or set its credential link and expiry.
+ *
+ * Every field is optional so one form action can serve the type dropdown, the
+ * expiry cell and the discipline cell. `intent: 'DESIGNATE_CREDENTIAL'` is what lets
+ * an APPROVED professional promote an existing document (historically everything
+ * landed as type OTHER) into a credential — the admin API enforces the limits.
+ */
+export const documentUpdateSchema = z
+	.object({
+		documentId: z.string().uuid(),
+		type: z.enum(CANDIDATE_DOCUMENT_TYPES).optional(),
+		disciplineId: z.string().nullable().optional(),
+		expiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+		intent: z.literal('DESIGNATE_CREDENTIAL').optional()
+	})
+	.refine((d) => d.type !== undefined || d.disciplineId !== undefined || d.expiryDate !== undefined, {
+		message: 'Nothing to update.'
+	});
 
 export const documentDeleteSchema = z.object({
 	documentId: z.string().uuid()
