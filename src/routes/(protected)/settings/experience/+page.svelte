@@ -36,7 +36,7 @@
 			effectiveLicenseExpiry: (d?.effectiveLicenseExpiry ?? null) as string | null,
 			licenseGraceStartedOn: (d?.licenseGraceStartedOn ?? null) as string | null,
 			requiresCert: Boolean(d?.requiresCert),
-			certExpiresOn: (d?.certExpiresOn ?? null) as string | null
+			effectiveCertExpiry: (d?.effectiveCertExpiry ?? null) as string | null
 		};
 	}
 
@@ -220,8 +220,9 @@
 					disciplineName={getDisciplineName(discipline.disciplineId)}
 					abbreviation={certFor(discipline.disciplineId).abbreviation}
 					required={certFor(discipline.disciplineId).requiresCert}
-					effectiveExpiry={certFor(discipline.disciplineId).certExpiresOn}
+					effectiveExpiry={certFor(discipline.disciplineId).effectiveCertExpiry}
 					documents={data.documents ?? []}
+					onUploadFile={uploadCredentialFile}
 				/>
 			</div>
 		{/each}

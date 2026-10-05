@@ -73,7 +73,7 @@
 				{checked}
 				on:change={onToggle}
 			/>
-			<span>This is a license or certificate for one of my disciplines</span>
+			<span>This is a license, registration or certificate for one of my disciplines</span>
 		</label>
 
 		{#if checked}
@@ -94,7 +94,7 @@
 						{#each disciplines as d (d.disciplineId)}
 							<option value={d.disciplineId}>
 								{d.name} ({d.abbreviation}){d.requiresLicense && !d.effectiveLicenseExpiry
-									? ' — license needed'
+									? ' — license/registration needed'
 									: ''}
 							</option>
 						{/each}
@@ -105,15 +105,19 @@
 						</p>
 					{:else if selected && !selected.requiresLicense}
 						<p class="text-xs text-gray-600">
-							This discipline does not require a license, so nothing will be hidden if this
+							This discipline does not require a license or registration, so nothing will be hidden if this
 							one expires.
 						</p>
 					{/if}
 				</div>
 
+				<!-- Optional. A dental license is held until revoked rather than expiring,
+				     and a certificate attached here is supporting evidence — the date that
+				     governs a certification lives on the Experience & Rates entry. Making
+				     this required blocked people from filing a perfectly valid document. -->
 				<div class="space-y-1">
 					<label class="text-xs font-medium text-gray-700" for="credential-expiry">
-						Expires on
+						Expires on <span class="font-normal text-gray-500">(if it has an expiry)</span>
 					</label>
 					<input
 						id="credential-expiry"
@@ -123,14 +127,10 @@
 						bind:value={expiryDate}
 						min={minDate}
 						{disabled}
-						required
 					/>
-					{#if selected?.requiresLicense}
-						<p class="text-xs text-gray-600">
-							If this date passes without a newer document, {selected.abbreviation} jobs will be
-							hidden until you renew.
-						</p>
-					{/if}
+					<p class="text-xs text-gray-600">
+						Leave blank if this document does not expire.
+					</p>
 				</div>
 			</div>
 		{/if}

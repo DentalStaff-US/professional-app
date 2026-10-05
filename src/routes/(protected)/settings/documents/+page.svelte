@@ -41,7 +41,14 @@
 
 	$: userDocuments = data.documents;
 
-	const docsForm = superForm(data.documentsForm);
+	/** Files staged in storage and waiting to be saved with their details. */
+	let uploadedFileCount = 0;
+
+	const docsForm = superForm(data.documentsForm, {
+		onUpdated: () => {
+			uploadedFileCount = 0;
+		}
+	});
 	const { enhance: docsEnhance, form: docsFormData, errors: docsErrors } = docsForm;
 
 	// Helper function to format date
@@ -97,7 +104,7 @@
 		effectiveLicenseExpiry: d.effectiveLicenseExpiry ?? null,
 		licenseGraceStartedOn: d.licenseGraceStartedOn ?? null,
 		requiresCert: Boolean(d.requiresCert),
-		certExpiresOn: d.certExpiresOn ?? null
+		effectiveCertExpiry: d.effectiveCertExpiry ?? null
 	}));
 
 	const isCredential = (t: string) =>
@@ -211,11 +218,16 @@
 
 					await tick();
 
-					// Submit form if we have at least one successful upload
-					const form = document.getElementById('documents-form') as HTMLFormElement;
-					if (form) {
-						form.requestSubmit();
-					}
+					// DO NOT auto-submit here.
+					//
+					// This used to call form.requestSubmit() the moment the upload
+					// finished, which meant only the fields filled in BEFORE choosing the
+					// file were ever posted. The natural order is the opposite — pick the
+					// file, then say what it is and when it expires — so the expiry
+					// silently never arrived and looked like the professional had skipped
+					// it. The file is already in storage by this point; the form now waits
+					// for them to press Save.
+					uploadedFileCount = updatedFiles.length;
 
 					// If some files failed but others succeeded
 					if (partialFailures.length > 0 && successfulUploads.length > 0) {
@@ -417,26 +429,17 @@
 									{/if}
 								</td>
 
-								<!-- Expires: the date the gate reads. Editable after approval. -->
+								<!-- Expires: READ-ONLY, deliberately.
+								     The date is captured once, at upload, together with the document
+								     it came from. Letting it be edited afterwards decouples the two —
+								     the file says one thing and the record says another — and it was
+								     also the reason the same date had to be entered in several
+								     places. To correct a date, upload the document again or ask DTSS. -->
 								<td class="py-3 px-4 text-sm">
 									{#if !isCredential(doc.type)}
 										<span class="text-muted-foreground">—</span>
-									{:else if canEditCredential(doc)}
-										<form
-											method="POST"
-											action="?/updateDocument"
-											use:enhance
-											class="flex items-center gap-2"
-										>
-											<input type="hidden" name="documentId" value={doc.id} />
-											<input
-												name="expiryDate"
-												type="date"
-												class="border rounded-md px-2 py-1 text-sm bg-white"
-												value={expiryInputValue(doc.expiryDate)}
-												on:change={(e) => e.currentTarget.form?.requestSubmit()}
-											/>
-										</form>
+									{:else if doc.expiryDate}
+										<span>{formatCertDate(expiryInputValue(doc.expiryDate))}</span>
 										{#if docBadge(doc)}
 											{@const b = docBadge(doc)}
 											<span
@@ -445,11 +448,6 @@
 												{b?.label}
 											</span>
 										{/if}
-									{:else if doc.expiryDate}
-										<span class="inline-flex items-center gap-1">
-											{formatCertDate(expiryInputValue(doc.expiryDate))}
-											<Lock class="h-3 w-3" />
-										</span>
 									{:else}
 										<span class="text-muted-foreground">—</span>
 									{/if}
@@ -558,6 +556,26 @@
 								</Alert.Description>
 							</Alert.Root>
 						{/if}
+
+						<!--
+							The form used to submit itself the instant a file finished uploading,
+							which is why details typed BEFORE the drop could still be lost: the
+							submit raced the bindings. An explicit Save makes the order the
+							person's to choose — fill in the details, drop the files, then save.
+						-->
+						<div class="flex items-center gap-3 pt-2">
+							<Button type="submit" disabled={uploadedFileCount === 0}>
+								{uploadedFileCount === 0
+									? 'Add a file to save'
+									: `Save ${uploadedFileCount} ${uploadedFileCount === 1 ? 'document' : 'documents'}`}
+							</Button>
+							{#if uploadedFileCount > 0}
+								<p class="text-xs text-muted-foreground">
+									Type, discipline and expiration above are applied to every file in
+									this upload.
+								</p>
+							{/if}
+						</div>
 					</div>
 				</form>
 				<Separator />

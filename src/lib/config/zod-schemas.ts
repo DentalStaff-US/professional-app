@@ -199,7 +199,7 @@ export const CANDIDATE_DOCUMENT_TYPE_LABELS: Record<
 	string
 > = {
 	RESUME: 'Resume / CV',
-	LICENSE: 'License',
+	LICENSE: 'License / Registration',
 	CERTIFICATE: 'Certification',
 	AGREEMENT: 'Agreement',
 	OTHER: 'Other'
@@ -212,11 +212,21 @@ export const CREDENTIAL_DOCUMENT_TYPES = ['LICENSE', 'CERTIFICATE'] as const;
  * A credential expiry as a calendar date — what `<input type="date">` submits.
  * Normalised to midnight UTC server-side; the gate reads it back the same way.
  */
+/**
+ * A credential expiry as a calendar date — what `<input type="date">` submits.
+ *
+ * A plain optional string with a refine, NOT `.regex().or(z.literal(''))`.
+ * superforms introspects the schema to build and coerce form fields, and a union
+ * (what `.or()` produces) is not a shape it can resolve for form-encoded data — the
+ * value silently fails to arrive, which looks exactly like the user never typed it.
+ *
+ * Optional throughout: a dental license is held until revoked rather than expiring,
+ * and a certificate attached to a document is evidence, not the governing date.
+ */
 const credentialExpiry = z
 	.string()
-	.regex(/^\d{4}-\d{2}-\d{2}$/, 'Enter the expiration date.')
 	.optional()
-	.or(z.literal(''));
+	.refine((v) => !v || /^\d{4}-\d{2}-\d{2}$/.test(v), 'Enter a valid date.');
 
 export const documentUrlSchema = z.object({
 	type: z.enum(CANDIDATE_DOCUMENT_TYPES).optional(),
@@ -232,7 +242,8 @@ export const documentUrlSchema = z.object({
 	 * The server additionally checks the professional holds the discipline and that
 	 * the type is a credential type — rules that need the database.
 	 */
-	documentDisciplineId: z.string().optional().or(z.literal('')),
+	// Plain optional, not a union — see credentialExpiry above.
+	documentDisciplineId: z.string().optional(),
 	documentExpiryDate: credentialExpiry
 });
 

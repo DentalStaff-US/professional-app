@@ -22,7 +22,7 @@
 		effectiveLicenseExpiry: d.effectiveLicenseExpiry ?? null,
 		licenseGraceStartedOn: d.licenseGraceStartedOn ?? null,
 		requiresCert: Boolean(d.requiresCert),
-		certExpiresOn: d.certExpiresOn ?? null
+		effectiveCertExpiry: d.effectiveCertExpiry ?? null
 	}));
 
   interface FileUploadResult {
@@ -185,7 +185,7 @@
   <Card.Root class="border-0 sm:border shadow-none sm:shadow-sm">
     <Card.Header class="space-y-1">
       <Card.Title class="text-2xl">Upload your work documents</Card.Title>
-      <Card.Description>Upload any relevant documents you would need for work and verification such as certifications, licenses, or permits. This is optional but may impact your profile approval process.</Card.Description>
+      <Card.Description>Upload any relevant documents you would need for work and verification such as certifications, licenses, registrations, or permits. This is optional but may impact your profile approval process.</Card.Description>
     </Card.Header>
     <Card.Content>
         <form id="documents-form" use:docsEnhance method="POST" action="?/documentsUpload" class="mt-6">

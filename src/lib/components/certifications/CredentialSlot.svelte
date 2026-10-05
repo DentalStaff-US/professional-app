@@ -54,13 +54,22 @@
 
 	$: input = { required, expiresOn: effectiveExpiry, graceStartedOn };
 	$: badge = credentialBadge(kind, input);
+	/** The chosen document's own expiry, so it is never re-typed. */
+	$: chosenDocExpiry =
+		selectable.find((d) => d.id === chosenDocumentId)?.expiryDate?.slice(0, 10) ?? '';
 	$: state = credentialState(input);
 	$: isLicense = kind === 'LICENSE';
-	$: noun = isLicense ? 'license' : 'certification';
+	// "license or registration": some disciplines register rather than license, and
+	// both are gated identically, so the copy must name both.
+	$: noun = isLicense ? 'license or registration' : 'certification';
 
-	// The credential currently backing this entry, if any.
+	// The credential currently backing this entry, if any. Filtered by TYPE as well
+	// as discipline: the two slots share one document list, so without this the
+	// Certification slot happily reports a LICENSE file as the certificate on file —
+	// and vice versa — while the gate, which does filter by type, disagrees.
+	$: linkedType = isLicense ? 'LICENSE' : 'CERTIFICATE';
 	$: linked = documents
-		.filter((d) => d.disciplineId === disciplineId && d.expiryDate)
+		.filter((d) => d.disciplineId === disciplineId && d.expiryDate && d.type === linkedType)
 		.sort((a, b) => String(b.expiryDate).localeCompare(String(a.expiryDate)))[0];
 
 	// Candidates for designation: anything not already backing THIS entry, and not
@@ -148,53 +157,49 @@
 	{/if}
 
 	{#if !isLicense}
-		<!-- Certifications have no document of their own: the date on the Experience &
-		     Rates entry IS the record, and a CERTIFICATE upload is optional evidence. -->
-		<form
-			method="POST"
-			action="?/setCertificationExpiry"
-			use:enhance={() => {
-				return async ({ update }) => {
-					await update();
-				};
-			}}
-			class="mt-3 space-y-2 border-t pt-3"
-		>
-			<input type="hidden" name="disciplineId" value={disciplineId} />
-			<div class="space-y-1">
-				<label class="text-xs font-medium text-gray-700" for="cert-exp-{disciplineId}">
-					{required ? 'Expires on' : 'Does your state require a certification for this discipline?'}
-				</label>
-				{#if !required}
-					<p class="text-xs text-gray-600">
-						If it does, add its expiration date below. <strong
-							>Once added, only DTSS staff can remove it</strong
-						> — contact support if you add it by mistake.
-					</p>
-				{/if}
-				<input
-					id="cert-exp-{disciplineId}"
-					name="expiryDate"
-					type="date"
-					class="w-full rounded-md border-gray-300 text-sm"
-					min={todayInET()}
-					bind:value={expiry}
-					required
-				/>
-			</div>
-			{#if required}
-				<p class="text-xs text-gray-600">
-					If this date passes without a renewal, {abbreviation} jobs will be hidden until you update
-					it.
+		<!--
+			Declaration only. The expiration lives on the certificate document and is
+			set when that document is uploaded, so there is exactly one date for one
+			certification. This row records the jurisdictional fact — "my state
+			requires one for this discipline" — and nothing else.
+		-->
+		{#if !required}
+			<form
+				method="POST"
+				action="?/setCertificationExpiry"
+				use:enhance={() => {
+					return async ({ update }) => {
+						await update();
+					};
+				}}
+				class="mt-3 space-y-2 border-t pt-3"
+			>
+				<input type="hidden" name="disciplineId" value={disciplineId} />
+				<p class="text-xs font-medium text-gray-700">
+					Does your state require a certification for this discipline?
 				</p>
-			{/if}
-			<Button type="submit" size="sm" disabled={!expiry}>
-				{required ? 'Update expiration' : 'Add certification'}
-			</Button>
-		</form>
+				<p class="text-xs text-gray-600">
+					If it does, say so here and then upload the certificate — its expiration
+					comes from the document.
+					<strong>Once added, only DTSS staff can remove it</strong> — contact support
+					if you add it by mistake.
+				</p>
+				<Button type="submit" size="sm">Yes, my state requires one</Button>
+			</form>
+		{:else if !linked}
+			<p class="mt-3 border-t pt-3 text-xs text-gray-600">
+				You have marked {abbreviation} as requiring a certification. Upload the certificate
+				below and set its expiration there — we will remind you before it lapses.
+			</p>
+		{:else}
+			<p class="mt-3 border-t pt-3 text-xs text-gray-600">
+				If this date passes without a renewal, {abbreviation} jobs will be hidden until
+				you upload a current certificate.
+			</p>
+		{/if}
 	{/if}
 
-	{#if required && isLicense && mode === 'select'}
+	{#if required && mode === 'select'}
 		<!-- Designation: sets type + link + expiry in one atomic write, which is the
 		     only way the approval freeze permits touching `type`. -->
 		<form
@@ -211,6 +216,7 @@
 			class="mt-3 space-y-2 border-t pt-3"
 		>
 			<input type="hidden" name="disciplineId" value={disciplineId} />
+			<input type="hidden" name="credentialType" value={kind} />
 			<div class="space-y-1">
 				<label class="text-xs font-medium text-gray-700" for="sel-{disciplineId}">
 					Which document is your {disciplineName} ({abbreviation}) certificate?
@@ -228,30 +234,45 @@
 					{/each}
 				</select>
 			</div>
-			<div class="space-y-1">
-				<label class="text-xs font-medium text-gray-700" for="sel-exp-{disciplineId}">
-					Expires on
-				</label>
-				<input
-					id="sel-exp-{disciplineId}"
-					name="expiryDate"
-					type="date"
-					class="w-full rounded-md border-gray-300 text-sm"
-					bind:value={expiry}
-					required
-				/>
-			</div>
+			<!-- The date comes from the document, not from a second prompt. Asking again
+			     here was one of the places the same date had to be typed twice, and it
+			     let the record drift from the file it is meant to evidence. Only a
+			     document that has no date on it (uploaded before expiries were
+			     captured) asks for one. -->
+			{#if chosenDocExpiry}
+				<p class="text-xs text-gray-600">
+					Expires <span class="font-medium">{formatCertDate(chosenDocExpiry)}</span>, taken from
+					the document.
+				</p>
+				<input type="hidden" name="expiryDate" value={chosenDocExpiry} />
+			{:else if chosenDocumentId}
+				<div class="space-y-1">
+					<label class="text-xs font-medium text-gray-700" for="sel-exp-{disciplineId}">
+						Expires on <span class="font-normal text-gray-500">(if it has an expiry)</span>
+					</label>
+					<input
+						id="sel-exp-{disciplineId}"
+						name="expiryDate"
+						type="date"
+						class="w-full rounded-md border-gray-300 text-sm"
+						bind:value={expiry}
+					/>
+					<p class="text-xs text-gray-600">
+						This document has no expiry recorded. Add one if it has a date on it.
+					</p>
+				</div>
+			{/if}
 			<p class="text-xs text-gray-600">
 				If this date passes without a newer certificate, {abbreviation} jobs will be hidden until
 				you renew.
 			</p>
-			<Button type="submit" size="sm" disabled={!chosenDocumentId || !expiry}>
+			<Button type="submit" size="sm" disabled={!chosenDocumentId}>
 				Use as {abbreviation} certificate
 			</Button>
 		</form>
 	{/if}
 
-	{#if required && isLicense && mode === 'upload' && onUploadFile}
+	{#if required && mode === 'upload' && onUploadFile}
 		<form
 			method="POST"
 			action="?/uploadCredential"
@@ -266,6 +287,7 @@
 			class="mt-3 space-y-2 border-t pt-3"
 		>
 			<input type="hidden" name="disciplineId" value={disciplineId} />
+			<input type="hidden" name="credentialType" value={kind} />
 			<input type="hidden" name="url" value={uploadedUrl} />
 			<input type="hidden" name="filename" value={uploadedName} />
 			<div class="space-y-1">

@@ -43,7 +43,7 @@
 	// both are lapsed, Documents is the better landing spot — it is the slower of the
 	// two to resolve.
 	$: href = anyLicense ? '/settings/documents' : '/settings/experience';
-	$: ctaLabel = anyLicense ? 'Upload your license' : 'Update your certification';
+	$: ctaLabel = anyLicense ? 'Upload your license/registration' : 'Upload your certificate';
 	$: names = certLocked.map((c) => `${c.disciplineName} (${c.abbreviation})`);
 
 	const noun = (t: Blocker['track']) => (t === 'LICENSE' ? 'license' : 'certification');
@@ -74,9 +74,9 @@
 				{/each}
 				<p>
 					{#if anyLicense && anyCert}
-						Upload a current license and update your certification date to see
+						Upload a current license/registration and a current certificate to see
 					{:else if anyLicense}
-						Upload a current license to see
+						Upload a current license or registration to see
 					{:else}
 						Update its expiration date to see
 					{/if}

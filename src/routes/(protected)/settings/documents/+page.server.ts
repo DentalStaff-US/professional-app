@@ -57,6 +57,12 @@ export const actions = {
 			return redirect(302, '/sign-in');
 		}
 
+		// Clone before superValidate reads the body — a Request can only be consumed
+		// once, and we want to see what the browser actually sent.
+		const rawFormEntries = [...(await request.clone().formData()).entries()].map(
+			([k, v]) => [k, v instanceof File ? `<File ${v.name}>` : v] as const
+		);
+
 		const form = await superValidate(request, documentUrlSchema);
 
 		if (!form.valid) {
@@ -64,6 +70,24 @@ export const actions = {
 		}
 
 		const fileData = form.data.filesData;
+
+		// TEMPORARY DIAGNOSTIC. The expiry a professional typed was not reaching this
+		// action, and neither the schema shape nor the submit timing turned out to
+		// explain it. Log the raw request body alongside what superValidate produced,
+		// so the next upload says definitively which layer drops it.
+		// Remove once the cause is found.
+		logger.info?.('documentsUpload received', {
+			raw: Object.fromEntries(rawFormEntries),
+			parsed: {
+				documentType: form.data.documentType,
+				documentDisciplineId: form.data.documentDisciplineId,
+				documentExpiryDate: form.data.documentExpiryDate,
+				hasFilesData: Boolean(form.data.filesData)
+			},
+			valid: form.valid,
+			errors: form.errors,
+			distinctId: user.id
+		});
 
 		try {
 			const token = generateToken(user.id);
@@ -83,8 +107,10 @@ export const actions = {
 						type: form.data.documentType ?? 'OTHER',
 						filesData: fileData,
 						// Set only when "this is a credential for one of my disciplines" was
-						// ticked. The admin API rejects a link without an expiry, a link on a
-						// non-credential type, or a discipline they don't hold.
+						// ticked. The expiry is optional — a license is held until revoked,
+						// and a certificate here is evidence rather than the governing date.
+						// The admin API still rejects a link on a non-credential type or to a
+						// discipline they do not hold.
 						disciplineId: form.data.documentDisciplineId || null,
 						expiryDate: form.data.documentExpiryDate || null
 					})
@@ -153,7 +179,12 @@ export const actions = {
 		// `type` alongside an expiry edit would turn a permitted credential correction
 		// into a refused retype.
 		const raw: Record<string, unknown> = { documentId: formData.get('documentId') };
-		for (const field of ['type', 'disciplineId', 'expiryDate'] as const) {
+		// `expiryDate` is deliberately NOT accepted here. A document's expiry is
+		// captured once, at upload, alongside the file it came from; allowing it to be
+		// edited afterwards lets the record drift from the document it evidences, and
+		// was why the same date had to be typed in several places. Corrections go
+		// through a re-upload, or through an admin.
+		for (const field of ['type', 'disciplineId'] as const) {
 			if (formData.has(field)) {
 				const v = formData.get(field);
 				// An empty string means "clear it" for the two nullable credential fields.

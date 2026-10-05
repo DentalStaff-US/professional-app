@@ -63,21 +63,22 @@ export const actions: Actions = {
 
 		const fd = await event.request.formData();
 		const disciplineId = String(fd.get('disciplineId') ?? '');
-		const certExpiresOn = String(fd.get('expiryDate') ?? '');
-		const documentId = String(fd.get('documentId') ?? '') || undefined;
 
-		if (!disciplineId || !certExpiresOn) {
-			setFlash({ type: 'error', message: 'Choose an expiration date.' }, event);
+		if (!disciplineId) {
 			return fail(400, { error: 'Missing fields' });
 		}
 
+		// Declaration only — no date. The expiration is a property of the certificate
+		// document and is set when that document is uploaded. Accepting a date here as
+		// well gave the same certification two independent dates that could disagree,
+		// which is precisely the state this page kept ending up in.
 		const token = generateToken(user.id);
 		const res = await fetchAdmin<{ message?: string }>(
 			'/api/external/updateCandidateDisciplineCertification',
 			{
 				method: 'POST',
 				token,
-				body: { disciplineId, requiresCert: true, certExpiresOn, documentId }
+				body: { disciplineId, requiresCert: true }
 			}
 		);
 
@@ -87,7 +88,10 @@ export const actions: Actions = {
 			return fail(res.status ?? 500, { error: msg });
 		}
 
-		setFlash({ type: 'success', message: 'Certification saved.' }, event);
+		setFlash(
+			{ type: 'success', message: 'Saved. Upload your certificate to record its expiration.' },
+			event
+		);
 		return { success: true };
 	},
 
@@ -110,6 +114,11 @@ export const actions: Actions = {
 		const documentId = String(fd.get('documentId') ?? '');
 		const disciplineId = String(fd.get('disciplineId') ?? '');
 		const expiryDate = String(fd.get('expiryDate') ?? '');
+		// Which track this document proves. Hardcoding CERTIFICATE here filed every
+		// license under the wrong type, where the license gate — which reads LICENSE
+		// documents only — could not see it, so the professional stayed blocked after
+		// supplying exactly the document they were asked for.
+		const credentialType = fd.get('credentialType') === 'LICENSE' ? 'LICENSE' : 'CERTIFICATE';
 
 		if (!documentId || !disciplineId || !expiryDate) {
 			setFlash({ type: 'error', message: 'Pick a document and an expiration date.' }, event);
@@ -125,18 +134,20 @@ export const actions: Actions = {
 				disciplineId,
 				expiryDate,
 				// Promote it to a credential type; legacy uploads were all forced to OTHER.
-				type: 'CERTIFICATE',
+				type: credentialType,
 				intent: 'DESIGNATE_CREDENTIAL'
 			}
 		});
 
+		const noun = credentialType === 'LICENSE' ? 'license' : 'certificate';
+
 		if (!res.ok) {
-			const msg = res.error || 'Could not use that document as your certificate.';
+			const msg = res.error || `Could not use that document as your ${noun}.`;
 			setFlash({ type: 'error', message: msg }, event);
 			return fail(res.status ?? 500, { error: msg });
 		}
 
-		setFlash({ type: 'success', message: 'Certificate saved.' }, event);
+		setFlash({ type: 'success', message: `Your ${noun} has been saved.` }, event);
 		return { success: true };
 	},
 
@@ -154,6 +165,7 @@ export const actions: Actions = {
 		const filename = String(fd.get('filename') ?? '');
 		const disciplineId = String(fd.get('disciplineId') ?? '');
 		const expiryDate = String(fd.get('expiryDate') ?? '');
+		const credentialType = fd.get('credentialType') === 'LICENSE' ? 'LICENSE' : 'CERTIFICATE';
 
 		if (!url || !disciplineId || !expiryDate) {
 			setFlash({ type: 'error', message: 'Choose a file and an expiration date.' }, event);
@@ -164,16 +176,18 @@ export const actions: Actions = {
 		const res = await fetchAdmin<{ message?: string }>('/api/external/createCandidateDocument', {
 			method: 'POST',
 			token,
-			body: { type: 'CERTIFICATE', url, filename, disciplineId, expiryDate }
+			body: { type: credentialType, url, filename, disciplineId, expiryDate }
 		});
 
+		const noun = credentialType === 'LICENSE' ? 'license' : 'certificate';
+
 		if (!res.ok) {
-			const msg = res.error || 'Could not save that certificate.';
+			const msg = res.error || `Could not save that ${noun}.`;
 			setFlash({ type: 'error', message: msg }, event);
 			return fail(res.status ?? 500, { error: msg });
 		}
 
-		setFlash({ type: 'success', message: 'Certificate saved.' }, event);
+		setFlash({ type: 'success', message: `Your ${noun} has been saved.` }, event);
 		return { success: true };
 	},
 

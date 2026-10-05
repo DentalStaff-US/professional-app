@@ -14,6 +14,10 @@ export type CredentialDiscipline = {
 	licenseGraceStartedOn: string | null;
 	/** cde.requires_cert — declared by this professional for their state. */
 	requiresCert: boolean;
-	/** cde.cert_expires_on — authoritative for the certification track. */
-	certExpiresOn: string | null;
+	/**
+	 * MAX(expiry_date) across linked CERTIFICATE documents; 'YYYY-MM-DD' or null.
+	 * The certification's date is a property of its document, like the license's —
+	 * `cde.cert_expires_on` is legacy and deliberately not surfaced here.
+	 */
+	effectiveCertExpiry: string | null;
 };

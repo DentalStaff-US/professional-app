@@ -64,8 +64,14 @@ export function formatCertDate(value: string | null | undefined): string {
 	return formatInTimeZone(parseISO(`${String(value).slice(0, 10)}T00:00:00Z`), 'UTC', 'MMM d, yyyy');
 }
 
+/**
+ * Display nouns. "License/Registration" because several disciplines are
+ * REGISTERED rather than licensed, and the platform treats the two identically —
+ * one flag, one gate, one document type. Calling it only a "license" sends a
+ * registered professional looking for a document they will never have.
+ */
 const NOUN: Record<CredentialTrack, string> = {
-	LICENSE: 'License',
+	LICENSE: 'License/Registration',
 	CERTIFICATION: 'Certification'
 };
 
