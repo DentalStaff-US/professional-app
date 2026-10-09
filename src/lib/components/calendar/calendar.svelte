@@ -29,7 +29,6 @@
 		selectable: true,
 		displayEventEnd: true,
 		eventClick: (item: any) => {
-			console.log(item.event);
 			selectEvent(item.event);
 		}
 	};

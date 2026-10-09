@@ -5,6 +5,7 @@
 	import LockedPracticeDetails from '$lib/components/general/LockedPracticeDetails.svelte';
 	import { isPracticeLocked } from '$lib/_helpers/practiceIdentity';
 	import CertLockedBanner from '$lib/components/certifications/CertLockedBanner.svelte';
+	import WorkPreferenceBanner from '$lib/components/workPreference/WorkPreferenceBanner.svelte';
 
 	export let data;
 	$: requisitions = data.requisitions;
@@ -32,6 +33,7 @@
 	</h1>
 
 	<CertLockedBanner certLocked={data.certLocked ?? []} />
+	<WorkPreferenceBanner workPreference={data.workPreference} />
 
 	<Tabs.Root value="Recommended">
 		<Tabs.List class="gap-6">

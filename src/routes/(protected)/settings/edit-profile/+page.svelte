@@ -46,6 +46,29 @@
 	});
 	const avatarForm = superForm(data.avatarForm);
 	const { enhance, form: formData, errors, submitting } = form;
+
+	/**
+	 * Mirrors WORK_PREFERENCE_LABELS in the admin app's $lib/server/workPreference,
+	 * which is the authority — the two repos share a database but no code. The help
+	 * text lives only here because only the professional sees it.
+	 */
+	const WORK_PREFERENCE_OPTIONS = [
+		{
+			value: 'BOTH',
+			label: 'Both temporary and permanent',
+			help: 'See every job you qualify for. This is the default.'
+		},
+		{
+			value: 'TEMP',
+			label: 'Temporary shifts only',
+			help: "Day-to-day shifts. Permanent positions won't be shown to you."
+		},
+		{
+			value: 'PERMANENT',
+			label: 'Permanent positions only',
+			help: "Full-time roles. Temporary shifts won't be shown to you, and you won't be texted about them."
+		}
+	] as const;
 	const { form: formAvatar, enhance: avatarEnhance, errors: avatarError } = avatarForm;
 
 	async function handleAvatarUpdated(url: string) {
@@ -266,6 +289,37 @@
 						<input type="hidden" name="zipcode" value={selectedAddress.context?.postcode || ''}/>
 					{/if}
 				</div>
+
+				<!--
+					What kind of work to show them. Radios rather than a select: three
+					options, all worth reading, and the consequence of each needs stating.
+					Native inputs so the value submits without JS.
+
+					Blank is NOT an option here — the server treats "never answered" as
+					both, and the help text says so, but once this form is in front of
+					them an unanswered radio group would just look broken.
+				-->
+				<fieldset class="space-y-3 border-t pt-6">
+					<legend class="text-lg font-medium">What work are you looking for?</legend>
+					<p class="text-sm text-muted-foreground">
+						This controls which jobs you see. Leave it on “Both” to keep seeing everything.
+					</p>
+					{#each WORK_PREFERENCE_OPTIONS as option (option.value)}
+						<label class="flex cursor-pointer items-start gap-3 rounded-md border p-3">
+							<input
+								type="radio"
+								name="workPreference"
+								value={option.value}
+								class="mt-1"
+								bind:group={$formData.workPreference}
+							/>
+							<span>
+								<span class="block font-medium">{option.label}</span>
+								<span class="block text-sm text-muted-foreground">{option.help}</span>
+							</span>
+						</label>
+					{/each}
+				</fieldset>
 
 				<div class="flex justify-end pt-4">
 					<Button disabled={$submitting} class="bg-primary hover:bg-primary/90" type="submit">
