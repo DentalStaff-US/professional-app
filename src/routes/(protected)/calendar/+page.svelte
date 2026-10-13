@@ -9,14 +9,17 @@
 	import { CalendarDays, Clock, CircleDollarSign, MapPin, Tag, Building, Briefcase, GraduationCap } from 'lucide-svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { StatusBadge } from '$lib/components/ui/status-badge';
-	import type { SuperValidated } from 'sveltekit-superforms';
-	import type { RecurrenceDayClaimSchema } from '$lib/config/zod-schemas.js';
 	import { superForm } from 'sveltekit-superforms/client';
 	import { isPast } from 'date-fns';
 	import { formatInTimeZone } from 'date-fns-tz';
 	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
 	import LockedPracticeDetails from '$lib/components/general/LockedPracticeDetails.svelte';
 	import { isPracticeLocked } from '$lib/_helpers/practiceIdentity';
+	import AvailabilityEditor from '$lib/components/availability/AvailabilityEditor.svelte';
+	import AvailabilityHiddenBanner from '$lib/components/availability/AvailabilityHiddenBanner.svelte';
+	import WorkPreferenceBanner from '$lib/components/workPreference/WorkPreferenceBanner.svelte';
+	import type { AvailabilityState } from '$lib/components/availability/availability';
+	import { CalendarCheck } from 'lucide-svelte';
 
 	type FilterType = 'ALL' | 'OPEN' | 'APPLIED';
 	export let data: PageData;
@@ -27,7 +30,6 @@
 	$: user = data.user;
 	$: profile = data.profile;
 	let filter: FilterType = 'ALL';
-	$: console.log({ selectedEvent });
 	// First convert all events
 	$: convertedEvents = data.recurrenceDays.map((recurrenceDay: any) =>
 		convertRecurrenceDayToEvent(recurrenceDay)
@@ -47,9 +49,54 @@
 	});
 
 	const selectEvent = (event: CalendarEvent) => {
+		// The dialog header dereferences extendedProps.requisition and .company
+		// unguarded, so anything that is not a recurrence day must not open it.
+		if (event?.extendedProps?.type !== 'RECURRENCE_DAY') return;
 		selectedEvent = event;
 		dialogOpen = true;
 	};
+
+	// ── Availability ─────────────────────────────────────────────────────────────
+	// A MODE, not an overlay. In shift mode a tap means "tell me about this shift";
+	// in availability mode it means "I can't work this day". Same pixels, two
+	// meanings, and here the mistake silently removes someone's work — so the two
+	// never share a grid.
+	let editingAvailability = false;
+	/** Preserved across the mode switch rather than reset. */
+	let filterBeforeEditing: FilterType = 'ALL';
+
+	const availabilityForm = superForm(data.availabilityForm, {
+		dataType: 'json',
+		id: 'availability',
+		onResult: ({ result }) => {
+			if (result.type === 'success' || result.type === 'redirect') editingAvailability = false;
+		}
+	});
+	const {
+		enhance: availabilityEnhance,
+		submitting: availabilitySubmitting,
+		form: availabilityData
+	} = availabilityForm;
+
+	let availabilityFormEl: HTMLFormElement;
+
+	function enterEditing() {
+		filterBeforeEditing = filter;
+		editingAvailability = true;
+	}
+
+	function exitEditing() {
+		editingAvailability = false;
+		filter = filterBeforeEditing;
+	}
+
+	function saveAvailability(state: AvailabilityState) {
+		$availabilityData.availableDays = state.availableDays;
+		$availabilityData.blockedDates = state.blockedDates;
+		availabilityFormEl.requestSubmit();
+	}
+
+	$: blockedShiftCount = data.hiddenByAvailability ?? 0;
 
 	const setFilter = (value: string | string[] | undefined) => {
 		filter = value as FilterType;
@@ -59,16 +106,17 @@
 		mounted = true;
 	});
 
-	export let applyForm: SuperValidated<RecurrenceDayClaimSchema>;
-	const { enhance, submitting } = superForm(applyForm, {
+	// The id is explicit because this page runs a second superForm (availability).
+	// Two forms both defaulting to an undefined id cross-wire on the single `form`
+	// prop and trip superforms' duplicate-id path.
+	const { enhance, submitting, errors } = superForm(data.claimForm, {
+		id: 'claim-shift',
 		onResult: ({ result }) => {
-			console.log(result);
 			if (result.type === 'success') {
 				dialogOpen = false;
 			}
 		}
 	});
-	$: console.log(selectedEvent)
 </script>
 
 <svelte:head>
@@ -80,16 +128,67 @@
 		<h1 class="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
 			Temporary Positions
 		</h1>
-		<div class="flex gap-2 items-center">
-			<p>Filter:</p>
-			<ToggleGroup.Root class="justify-start" value={filter} onValueChange={setFilter}>
-				<ToggleGroup.Item value="ALL">All</ToggleGroup.Item>
-				<ToggleGroup.Item value="OPEN">Open</ToggleGroup.Item>
-				<ToggleGroup.Item value="APPLIED">Applied</ToggleGroup.Item>
-			</ToggleGroup.Root>
+		<div class="flex flex-wrap gap-2 items-center">
+			{#if !editingAvailability}
+				<!-- Hidden (not merely disabled) while editing: visible-but-inert is worse
+				     than absent, and the filter describes a shift's relationship to YOU
+				     while availability describes the DAY — conflating them would make
+				     "Open" ambiguous. -->
+				<p>Filter:</p>
+				<ToggleGroup.Root class="justify-start" value={filter} onValueChange={setFilter}>
+					<ToggleGroup.Item value="ALL">All</ToggleGroup.Item>
+					<ToggleGroup.Item value="OPEN">Open</ToggleGroup.Item>
+					<ToggleGroup.Item value="APPLIED">Applied</ToggleGroup.Item>
+				</ToggleGroup.Root>
+			{/if}
+			<Button
+				variant="outline"
+				class="gap-2"
+				disabled={!data.availabilityLoaded}
+				title={data.availabilityLoaded
+					? undefined
+					: "We couldn't load your availability. Refresh and try again."}
+				on:click={() => (editingAvailability ? exitEditing() : enterEditing())}
+			>
+				<CalendarCheck class="h-4 w-4" />
+				{editingAvailability ? 'Done editing' : 'Edit availability'}
+			</Button>
 		</div>
 	</div>
-	{#if mounted}
+
+	<WorkPreferenceBanner workPreference={data.workPreference} />
+
+	<AvailabilityHiddenBanner
+		hiddenCount={blockedShiftCount}
+		showingUnavailable={data.showUnavailable}
+		basePath="/calendar"
+		onEdit={editingAvailability ? null : enterEditing}
+		editDisabled={!data.availabilityLoaded}
+	/>
+
+	{#if editingAvailability}
+		<div class="rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+			Editing your availability. Tap a date to mark a day you can't work.
+		</div>
+		<!-- Deliberately NOT inside the overflow-scroll wrapper below: the tap grid
+		     must FIT at phone width, not scroll sideways. -->
+		<form
+			method="POST"
+			action="?/saveAvailability"
+			use:availabilityEnhance
+			bind:this={availabilityFormEl}
+		>
+			<AvailabilityEditor
+				initialAvailableDays={data.availabilityForm.data.availableDays}
+				initialBlockedDates={data.availabilityForm.data.blockedDates}
+				bookedDates={data.bookedDates}
+				today={data.today}
+				loaded={data.availabilityLoaded}
+				submitting={$availabilitySubmitting}
+				onSave={saveAvailability}
+			/>
+		</form>
+	{:else if mounted}
 		<div class="w-full overflow-scroll">
 			<Calendar events={calendarEvents} {selectEvent} />
 		</div>
@@ -251,6 +350,29 @@
 					{/if}
 				</div>
 
+				{#if selectedEvent.extendedProps.blockedByAvailability}
+					<div class="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+						<p class="font-semibold">
+							{selectedEvent.extendedProps.blockedReason === 'WEEKDAY'
+								? "This falls on a weekday you don't work."
+								: 'You marked this day as unavailable.'}
+						</p>
+						<p>
+							You can still claim this shift. Claiming it doesn't change your availability — if
+							you want the day back, edit it on the calendar.
+						</p>
+					</div>
+				{/if}
+
+				{#if $errors._errors?.length}
+					<p
+						class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+						role="alert"
+					>
+						{$errors._errors[0]}
+					</p>
+				{/if}
+
 				<Dialog.Footer class="flex gap-2 justify-end">
 					<Button variant="outline" type="button" on:click={() => (dialogOpen = false)}>
 						Close
@@ -261,6 +383,14 @@
 								type="hidden"
 								name="recurrenceDayId"
 								value={selectedEvent.extendedProps.recurrenceDay.id}
+							/>
+							<!-- The admin app refuses a blocked day unless the override is
+							     explicit. Set only when the professional is looking at a shift
+							     they asked to be shown. -->
+							<input
+								type="hidden"
+								name="acknowledgeUnavailable"
+								value={selectedEvent.extendedProps.blockedByAvailability ? 'true' : 'false'}
 							/>
 							<Button
 								class="bg-primary hover:bg-primary/90 w-full md:w-fit"

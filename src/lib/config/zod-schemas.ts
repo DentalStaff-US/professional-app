@@ -101,6 +101,10 @@ export const newProfileSchema = z.object({
 export type NewProfileSchema = typeof newProfileSchema;
 
 export const updateProfileSchema = z.object({
+	// What kind of work to show them: temp shifts, permanent positions, or both.
+	// Nullable because NULL means "never answered", which the admin app treats as
+	// BOTH — so a professional who ignores this keeps seeing everything.
+	workPreference: z.enum(['TEMP', 'PERMANENT', 'BOTH']).nullable().optional(),
 	firstName: z.string(),
 	lastName: z.string(),
 	email: z.string().email(),
@@ -276,3 +280,29 @@ export const addExpenseSchema = z.object({
 	amountDollars: z.number({ invalid_type_error: 'Amount must be a number' }).positive()
 });
 export type AddExpenseSchema = typeof addExpenseSchema;
+
+/**
+ * Professional availability: the weekly pattern plus the blackout dates for an
+ * explicit window.
+ *
+ * `availableDays: null` means "never set", which means available all seven days.
+ * An EMPTY array is refused — see the available_days CHECK constraint in the admin
+ * app's candidate schema for why.
+ *
+ * `replaceFrom`/`replaceTo` declare the window this submission is authoritative
+ * for. Without them a save would delete blackout rows the editor never loaded —
+ * including past rows and anything outside the months on screen. This is a
+ * UI<->server contract; the admin app's updateCandidateAvailability endpoint
+ * replaces rows only inside it.
+ */
+export const candidateAvailabilitySchema = z.object({
+	availableDays: z
+		.array(z.number().int().min(0).max(6))
+		.min(1, 'Pick at least one day you can work.')
+		.max(7)
+		.nullable(),
+	blockedDates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(1000),
+	replaceFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+	replaceTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+});
+export type CandidateAvailabilitySchema = typeof candidateAvailabilitySchema;

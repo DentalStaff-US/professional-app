@@ -137,6 +137,12 @@ export function convertRecurrenceDayToEvent(data: {
 	// candidate doesn't hold this shift. Carried into extendedProps so the
 	// event dialog can render the locked panel instead of empty fields.
 	identityLocked?: boolean;
+	// Set by getTempRequisitionsForCandidate when ?includeUnavailable=true, i.e.
+	// this shift falls on a day the professional marked off and is only visible
+	// because they asked to see it. Desaturated in the grid and annotated in the
+	// dialog so "shown anyway" never looks like a normal opening.
+	blockedByAvailability?: boolean;
+	blockedReason?: 'WEEKDAY' | 'DATE';
 }) {
 	const {
 		recurrenceDay: { id: recurrenceDayId, status },
@@ -173,11 +179,16 @@ export function convertRecurrenceDayToEvent(data: {
 		resourceIds: [requisition.id, recurrenceDayId],
 		title,
 		data: requisition,
-		color: status
-			? requisitionStatusColorEnum[status as keyof typeof requisitionStatusColorEnum]
-			: '#b3b3b3',
+		color: data.blockedByAvailability
+			? // Slate-300: clearly present, clearly not a normal opening.
+				'#cbd5e1'
+			: status
+				? requisitionStatusColorEnum[status as keyof typeof requisitionStatusColorEnum]
+				: '#b3b3b3',
 		extendedProps: {
 			type: 'RECURRENCE_DAY',
+			blockedByAvailability: data.blockedByAvailability ?? false,
+			blockedReason: data.blockedReason,
 			requisition: { ...requisition },
 			// Normalize the recurrence day so consumers can rely on dayStart/dayEnd
 			// regardless of which endpoint produced the row.
