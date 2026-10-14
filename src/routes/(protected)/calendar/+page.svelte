@@ -138,7 +138,7 @@
 				<ToggleGroup.Root class="justify-start" value={filter} onValueChange={setFilter}>
 					<ToggleGroup.Item value="ALL">All</ToggleGroup.Item>
 					<ToggleGroup.Item value="OPEN">Open</ToggleGroup.Item>
-					<ToggleGroup.Item value="APPLIED">Applied</ToggleGroup.Item>
+					<ToggleGroup.Item value="APPLIED">Claimed</ToggleGroup.Item>
 				</ToggleGroup.Root>
 			{/if}
 			<Button
