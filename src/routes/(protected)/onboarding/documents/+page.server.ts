@@ -85,7 +85,7 @@ export const actions: Actions = {
 			setFlash({ type: 'error', message: 'Failed to skip document upload' }, event);
 			return fail(500, { message: 'Failed to skip document upload' });
 		}
-		return redirect(302, '/onboarding/awaiting-approval');
+		return redirect(302, '/onboarding/availability');
 	},
 	documentsUpload: async (event) => {
 		const { locals, request } = event;
@@ -166,6 +166,6 @@ export const actions: Actions = {
 			setFlash({ type: 'error', message: 'Failed to update documents' }, event);
 			return setError(form, 'Failed to update documents');
 		}
-		redirect(302, '/onboarding/awaiting-approval');
+		redirect(302, '/onboarding/availability');
 	}
 };

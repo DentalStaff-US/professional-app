@@ -8,14 +8,16 @@ import { setFlash } from 'sveltekit-flash-message/server';
 import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE, adminForwardHeaders } from '$lib/server/fetchAdmin';
 import { getCandidateStatus, inactiveAccountMessage } from '$lib/server/candidateStatus';
 import { logger } from '$lib/server/logger';
+import { candidateAvailabilitySchema } from '$lib/config/zod-schemas';
+import { todayInBusinessTz } from '$lib/components/availability/availability';
 
 type RecurrenceDayEntry = any;
 
-export const load: PageServerLoad = async ({ locals, setHeaders }) => {
-	setHeaders({
-		'cache-control': 'max-age=60'
-	});
-
+export const load: PageServerLoad = async (event) => {
+	// Deliberately NOT cached. A candidate who edits their availability and comes
+	// back here must see the board change immediately; a 60s cache made a saved
+	// change look like it had failed.
+	const { locals, url } = event;
 	const { user } = locals;
 
 	if (!user) {
@@ -28,15 +30,35 @@ export const load: PageServerLoad = async ({ locals, setHeaders }) => {
 
 	const token = generateToken(user.id);
 
+	// A URL param rather than component state, so "show me the shifts my
+	// availability is hiding" survives a refresh and can be shared with support.
+	const showUnavailable = url.searchParams.get('showUnavailable') === '1';
+	const today = todayInBusinessTz();
+	const availabilityTo = `${Number(today.slice(0, 4)) + 1}${today.slice(4)}`;
+
 	// Fetch openings (recurrence days still claimable), the candidate's own
-	// workdays (past + future claimed shifts), and their profile in parallel.
-	// Any failure degrades that single bucket to empty; the page still renders.
-	const [openingsRes, workdaysRes, profileRes] = await Promise.all([
-		fetchAdmin<{ recurrenceDays: any[] }>('/api/external/getTempRequisitionsForCandidate', {
-			token
-		}),
+	// workdays (past + future claimed shifts), their profile, and their stated
+	// availability in parallel. Any failure degrades that single bucket to empty;
+	// the page still renders.
+	const [openingsRes, workdaysRes, profileRes, availabilityRes] = await Promise.all([
+		fetchAdmin<{
+			recurrenceDays: any[];
+			availability?: { availableDays: number[] | null; isCustomised: boolean; hiddenByAvailability: number };
+			workPreference?: {
+				preference: 'TEMP' | 'PERMANENT' | 'BOTH' | null;
+				excluded: { preference: string; message: string } | null;
+			};
+		}>(
+			`/api/external/getTempRequisitionsForCandidate${showUnavailable ? '?includeUnavailable=true' : ''}`,
+			{ token }
+		),
 		fetchAdmin<{ data: any[] }>('/api/external/getWorkdaysForCandidate', { token }),
-		fetchAdmin<any>('/api/external/getCandidateProfile', { token })
+		fetchAdmin<any>('/api/external/getCandidateProfile', { token }),
+		fetchAdmin<{
+			availableDays: number[] | null;
+			blackouts: Array<{ date: string }>;
+			bookedDates: Array<{ date: string; requisitionId: number; workdayId: string }>;
+		}>(`/api/external/getCandidateAvailability?from=${today}&to=${availabilityTo}`, { token })
 	]);
 
 	const tempRecurrenceDays = openingsRes.ok ? (openingsRes.data.recurrenceDays ?? []) : [];
@@ -66,6 +88,45 @@ export const load: PageServerLoad = async ({ locals, setHeaders }) => {
 		user,
 		profile: profileRes.ok ? profileRes.data : null,
 		recurrenceDays: merged,
+		// The claim form MUST come from the load. The page previously declared
+		// `export let applyForm`, which a +page.svelte never receives — superforms
+		// silently fabricated an empty form, so every fail() from the claim action
+		// (including the inactive-account message) was dropped on the floor.
+		claimForm: await superValidate(event, recurrenceDayClaimSchema),
+		// Seeded from CURRENT values, never superValidate(event, ...) — an empty form
+		// here would wipe the professional's availability on first save.
+		availabilityForm: await superValidate(
+			{
+				availableDays: availabilityRes.ok ? availabilityRes.data.availableDays : null,
+				blockedDates: availabilityRes.ok ? availabilityRes.data.blackouts.map((b) => b.date) : [],
+				replaceFrom: today,
+				replaceTo: availabilityTo
+			},
+			candidateAvailabilitySchema
+		),
+		today,
+		availabilityWindow: { from: today, to: availabilityTo },
+		// Gates the edit mode. Without this an editor rendered from a failed load,
+		// then saved, would delete every blackout the professional has.
+		availabilityLoaded: availabilityRes.ok,
+		bookedDates: availabilityRes.ok
+			? availabilityRes.data.bookedDates.map((b) => ({
+					date: b.date,
+					label: `Working — Req #${b.requisitionId}`,
+					workdayId: b.workdayId
+				}))
+			: [],
+		// Same purpose as `certLocked`: explain an absence rather than let shifts
+		// quietly disappear.
+		hiddenByAvailability: openingsRes.ok
+			? (openingsRes.data.availability?.hiddenByAvailability ?? 0)
+			: 0,
+		availabilityIsCustomised: openingsRes.ok
+			? (openingsRes.data.availability?.isCustomised ?? false)
+			: false,
+		showUnavailable,
+		// See permanent/+page.server.ts.
+		workPreference: openingsRes.ok ? openingsRes.data.workPreference : undefined,
 		loadError:
 			openingsRes.ok && workdaysRes.ok && profileRes.ok ? undefined : ADMIN_LOAD_ERROR_MESSAGE
 	};
@@ -77,10 +138,16 @@ export const actions = {
 		const token = generateToken(userId);
 		const form = await superValidate(event, recurrenceDayClaimSchema);
 		const recurrenceDayId = form.data.recurrenceDayId;
+		// Claiming a shift on a day they marked off is their own override, so the
+		// admin app permits it only when the intent is explicit. Without this the
+		// "Show them anyway" affordance would show a shift that cannot be claimed.
+		const acknowledgeUnavailable =
+			(await event.request.clone().formData().catch(() => null))?.get('acknowledgeUnavailable') ===
+			'true';
 
 		if (!userId || !recurrenceDayId) {
 			return fail(400, {
-				form: { ...form, errors: { message: 'Missing required information' } }
+				form: { ...form, errors: { _errors: ['Missing required information'] } }
 			});
 		}
 
@@ -92,14 +159,14 @@ export const actions = {
 		const status = await getCandidateStatus(userId);
 		if (status !== 'ACTIVE') {
 			return fail(403, {
-				form: { ...form, errors: { message: inactiveAccountMessage(status) } }
+				form: { ...form, errors: { _errors: [inactiveAccountMessage(status)] } }
 			});
 		}
 
 		try {
 			const req = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/applyForTempRequisition`, {
 				method: 'POST',
-				body: JSON.stringify({ recurrenceDayId }),
+				body: JSON.stringify({ recurrenceDayId, acknowledgeUnavailable }),
 				headers: {
 					...adminForwardHeaders(),
 					Authorization: `Bearer ${token}`,
@@ -115,7 +182,7 @@ export const actions = {
 					form: {
 						...form,
 						errors: {
-							message: responseData.message || 'Failed to claim shift'
+							_errors: [responseData.message || 'Failed to claim shift']
 						}
 					}
 				});
@@ -145,10 +212,46 @@ export const actions = {
 				form: {
 					...form,
 					errors: {
-						message: 'Something went wrong while claiming the shift'
+						_errors: ['Something went wrong while claiming the shift']
 					}
 				}
 			});
 		}
+	},
+
+	/**
+	 * Saving availability from the calendar's edit mode.
+	 *
+	 * The same window-scoped contract as settings/availability: the form declares
+	 * the window it is authoritative for, so a save here cannot delete rows the
+	 * calendar never loaded.
+	 */
+	saveAvailability: async (event: RequestEvent) => {
+		const user = event.locals.user;
+		if (!user) return redirect(303, '/sign-in');
+
+		const form = await superValidate(event, candidateAvailabilitySchema);
+		if (!form.valid) return fail(400, { form });
+
+		const res = await fetchAdmin('/api/external/updateCandidateAvailability', {
+			method: 'POST',
+			token: generateToken(user.id),
+			body: {
+				availableDays: form.data.availableDays,
+				blackouts: {
+					from: form.data.replaceFrom,
+					to: form.data.replaceTo,
+					dates: form.data.blockedDates
+				}
+			}
+		});
+
+		if (!res.ok) {
+			setFlash({ type: 'error', message: res.error || 'Could not save your availability.' }, event);
+			return fail(res.status ?? 500, { form });
+		}
+
+		setFlash({ type: 'success', message: 'Availability saved.' }, event);
+		return message(form, 'saved');
 	}
 };

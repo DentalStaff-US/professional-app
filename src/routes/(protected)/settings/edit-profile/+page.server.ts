@@ -46,6 +46,11 @@ export const load: PageServerLoad = async (event) => {
 			email: user.email,
 			timezone: user.timezone,
 			...profile,
+			// NULL means never answered, which the server treats as BOTH — so show
+			// BOTH selected rather than an empty radio group that looks broken.
+			// Saving then records it explicitly, which is honest: the question was on
+			// screen in front of them.
+			workPreference: profile.workPreference ?? 'BOTH',
 			birthday: profile.birthday ? format(new Date(profile.birthday), 'yyyy-MM-dd') : '',
 			address: profile.address || '',
 			state:
@@ -132,6 +137,9 @@ export const actions: Actions = {
 		};
 
 		const candidateData = {
+			// Absent would leave the stored value alone; the form always sends one of
+			// the three, so this is always an explicit answer.
+			workPreference: form.data.workPreference ?? null,
 			birthday: form.data.birthday,
 			completeAddress: form.data.completeAddress,
 			lat: form.data.lat,

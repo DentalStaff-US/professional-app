@@ -12,6 +12,7 @@
 	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import {
 		CalendarDays,
+		CalendarOff,
 		Briefcase,
 		Clock,
 		Clipboard,
@@ -31,14 +32,14 @@
 	import type { PageData } from './$types';
 	import { format, isPast } from 'date-fns';
 	import * as Dialog from '$lib/components/ui/dialog';
-	import type { SuperValidated } from 'sveltekit-superforms';
-	import type { RecurrenceDayClaimSchema } from '$lib/config/zod-schemas';
 	import { superForm } from 'sveltekit-superforms/client';
 	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
 	import { formatInTimeZone } from 'date-fns-tz';
 	import LockedPracticeDetails from '$lib/components/general/LockedPracticeDetails.svelte';
 	import { isPracticeLocked } from '$lib/_helpers/practiceIdentity';
 	import CertLockedBanner from '$lib/components/certifications/CertLockedBanner.svelte';
+	import AvailabilityHiddenBanner from '$lib/components/availability/AvailabilityHiddenBanner.svelte';
+	import WorkPreferenceBanner from '$lib/components/workPreference/WorkPreferenceBanner.svelte';
 
 	// Render a YYYY-MM-DD as "Month d, yyyy" without applying any timezone shift.
 	const formatUtcDate = (value: string | Date | null | undefined) => {
@@ -114,7 +115,6 @@
 		}
 	}
 
-	$: console.log('Workdays:', workdays);
 
 	const viewShiftDetails = (shift) => {
       selectedShift = shift;
@@ -126,10 +126,9 @@
       selectedShift = null;
     };
 
-	export let applyForm: SuperValidated<RecurrenceDayClaimSchema>;
-	const { enhance, submitting } = superForm(applyForm, {
+	const { enhance, submitting, errors } = superForm(data.claimForm, {
+		id: 'claim-shift',
 		onResult: ({ result }) => {
-			console.log(result);
 			if (result.type === 'success') {
 				dialogOpen = false;
 			}
@@ -150,6 +149,16 @@
 	</div>
 
 	<CertLockedBanner certLocked={data.certLocked ?? []} />
+
+	<!-- No inline editor on the dashboard, so the CTA goes to Settings rather than
+	     taking an onEdit handler. -->
+	<AvailabilityHiddenBanner
+		hiddenCount={data.hiddenByAvailability ?? 0}
+		showingUnavailable={data.showUnavailable ?? false}
+		basePath="/dashboard"
+	/>
+
+	<WorkPreferenceBanner workPreference={data.workPreference} />
 
 	<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 		<!-- Left Column -->
@@ -184,9 +193,26 @@
 									{#each requisitions as requisition}
 										<div
 											class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+											class:opacity-70={requisition.blockedByAvailability}
 										>
 											<div class="space-y-1">
-												<div class="font-medium">{requisition.requisition.disciplineName} <span class="text-xs text-gray-500">#{requisition.requisition.id}</span></div>
+												<div class="font-medium">
+													{requisition.requisition.disciplineName}
+													<span class="text-xs text-gray-500">#{requisition.requisition.id}</span>
+													{#if requisition.blockedByAvailability}
+														<!-- Only reachable via ?showUnavailable=1, so this always has a
+														     banner above it explaining the state. The pill is what makes
+														     a single row identifiable in a mixed list. -->
+														<span
+															class="ml-1 inline-flex items-center gap-1 rounded-full border border-dashed border-amber-400 bg-amber-50 px-2 py-0.5 align-middle text-xs font-medium text-amber-800"
+														>
+															<CalendarOff class="h-3 w-3" aria-hidden="true" />
+															{requisition.blockedReason === 'WEEKDAY'
+																? "Weekday you don't work"
+																: 'Day you marked off'}
+														</span>
+													{/if}
+												</div>
 												{#if isPracticeLocked(requisition)}
 													<LockedPracticeDetails
 														compact
@@ -753,6 +779,29 @@
 					{/if}
 				</div>
 
+				{#if $errors._errors?.length}
+					<p
+						class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+						role="alert"
+					>
+						{$errors._errors[0]}
+					</p>
+				{/if}
+
+				{#if selectedShift?.blockedByAvailability}
+					<div class="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+						<p class="font-semibold">
+							{selectedShift.blockedReason === 'WEEKDAY'
+								? "This falls on a weekday you don't work."
+								: 'You marked this day as unavailable.'}
+						</p>
+						<p>
+							You can still claim this shift. Claiming it doesn't change your availability — edit
+							it in Settings → Availability if you want the day back.
+						</p>
+					</div>
+				{/if}
+
 				<Dialog.Footer class="flex gap-2 justify-end">
 					<Button variant="outline" type="button" on:click={() => (dialogOpen = false)}>
 						Close
@@ -763,6 +812,14 @@
 								type="hidden"
 								name="recurrenceDayId"
 								value={selectedShift?.recurrenceDay.id}
+							/>
+							<!-- The admin app refuses a blocked day unless the override is
+							     explicit. Set only for a shift the professional asked to be
+							     shown via ?showUnavailable=1. -->
+							<input
+								type="hidden"
+								name="acknowledgeUnavailable"
+								value={selectedShift?.blockedByAvailability ? 'true' : 'false'}
 							/>
 							<Button
 								class="bg-primary hover:bg-primary/90 w-full md:w-fit"
