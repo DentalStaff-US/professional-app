@@ -125,7 +125,12 @@
       <div class="flex justify-center gap-4">
         <a href="/settings/edit-profile"><Button variant="outline">View My Profile</Button></a>
         <a href="/settings/documents"><Button variant="outline">Update Documents</Button></a>
+        <a href="/settings/skills"><Button variant="outline">Add My Skills</Button></a>
       </div>
+      <p class="text-xs text-center text-muted-foreground">
+        While your profile is under review is the time to add your skills — they lock once you're
+        approved.
+      </p>
     </Card.Footer>
   </Card.Root>
 

@@ -9,6 +9,7 @@
 		Gift,
 		LifeBuoy,
 		ShieldCheck,
+		Sparkles,
 		SquareAsterisk,
 		UserCog
 	} from 'lucide-svelte';
@@ -43,6 +44,7 @@
 		{ href: '/settings/edit-profile', icon: UserCog, label: 'Edit Profile', desc: 'Personal information, contact, address' },
 		{ href: '/settings/resume', icon: FileCheck, label: 'Resume', desc: 'Upload and update your resume' },
 		{ href: '/settings/experience', icon: Briefcase, label: 'Experience', desc: 'Disciplines and experience levels' },
+		{ href: '/settings/skills', icon: Sparkles, label: 'Skills', desc: 'Skills and skill certificates (e.g. CPR)' },
 		{ href: '/settings/availability', icon: CalendarCheck, label: 'Availability', desc: 'Days you can work and days off' },
 		{ href: '/settings/documents', icon: File, label: 'Documents', desc: 'Certifications, IDs, and other files' },
 		{ href: '/settings/notifications', icon: Bell, label: 'Notifications', desc: 'Manage SMS & email preferences' },
