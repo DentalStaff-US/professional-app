@@ -6,7 +6,10 @@ import { redirect, type Handle } from '@sveltejs/kit';
 import type { HandleServerError } from '@sveltejs/kit';
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { logger } from '$lib/server/logger';
+import { installConsoleGuard } from '$lib/server/consoleGuard';
 import type { AppUser } from '$lib/server/auth';
+
+installConsoleGuard();
 
 export const handleError: HandleServerError = async ({ error, event }) => {
 	const errorId = crypto.randomUUID();

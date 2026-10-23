@@ -29,7 +29,6 @@
 
         const data = await response.json();
 
-        console.log({data})
         $resumeFormData.url = data.url;
         $resumeFormData.filename = data.fileName;
 
@@ -46,7 +45,6 @@
               input.value = $resumeFormData.url;
               filenameInput.value = $resumeFormData.filename;
             }
-            console.log({$resumeFormData})
             form.requestSubmit(); // Use the native submit method
           }
         }
