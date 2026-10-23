@@ -57,7 +57,6 @@
 	let monthFilter: string = '';
 	let monthsToGoBack = 12;
 
-	$: console.log({ timeFilter, sortOrder, monthFilter: JSON.stringify(monthFilter) });
 
 	let monthOptions = Array.from({ length: monthsToGoBack }, (_, i) => {
 		const date = new Date();
@@ -104,7 +103,6 @@
 				.filter((workday: Record<string, any>) => workday.recurrenceDay.dayStart < todayStr)
 				.sort((a: Record<string, any>, b: Record<string, any>) => sortWorkdays(false)(a, b));
 
-	$: console.log({ pastWorkdays, upcomingWorkdays });
 	// Cancel button is allowed only when the shift is in the future AND still
 	// in a candidate-cancellable state. A recurrence day flipped to CANCELED
 	// (or a workday with cancelledAt set) means an admin/client already killed
@@ -134,7 +132,6 @@
 		}
 	}
 
-	$: console.log({ monthOptions, monthFilter });
 </script>
 
 <svelte:head>
