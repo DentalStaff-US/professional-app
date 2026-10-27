@@ -20,6 +20,7 @@ import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import db from '$lib/server/database/drizzle';
 import { sql } from 'drizzle-orm';
+import { readJobIntent } from '$lib/server/jobIntent';
 
 export const load: LayoutServerLoad = async (event) => {
 	const user = event.locals.user;
@@ -35,7 +36,12 @@ export const load: LayoutServerLoad = async (event) => {
 	// itself — that's where we send users with no profile, and the
 	// setupCandidateProfile action handles the no-profile case explicitly.
 	const routeId = event.route.id ?? '';
-	if (routeId.startsWith('/(protected)/onboarding')) return { impersonating };
+	if (routeId.startsWith('/(protected)/onboarding')) {
+		// Cookie-only (no admin call): drives the "we saved the job you were
+		// viewing" banner while they finish onboarding / await approval.
+		const savedJobIntent = readJobIntent(event.cookies) !== null;
+		return { impersonating, savedJobIntent };
+	}
 
 	const result = await db.execute(
 		sql`SELECT candidate_status FROM candidate_profiles WHERE user_id = ${user.id} LIMIT 1`

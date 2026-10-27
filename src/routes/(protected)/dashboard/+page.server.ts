@@ -8,8 +8,14 @@ import { setFlash } from 'sveltekit-flash-message/server';
 import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE, adminForwardHeaders } from '$lib/server/fetchAdmin';
 import { getCandidateStatus, inactiveAccountMessage } from '$lib/server/candidateStatus';
 import { logger } from '$lib/server/logger';
+import { resolveJobIntentRedirect } from '$lib/server/jobIntentRedirect';
 
 export const load = async (event) => {
+	// Return to the public job they clicked "apply" on, if any and if eligible.
+	// Runs BEFORE setHeaders so a redirect never carries the 60s cache header —
+	// a cached /dashboard → /dashboard 302 would loop.
+	await resolveJobIntentRedirect(event);
+
 	// A URL param rather than component state, so "show me the shifts my
 	// availability is hiding" survives a refresh and can be shared with support.
 	const showUnavailable = event.url.searchParams.get('showUnavailable') === '1';
