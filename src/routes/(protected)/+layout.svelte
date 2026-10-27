@@ -8,7 +8,7 @@
 	import { ProgressBar } from '@prgm/sveltekit-progress-bar';
 	import Navigation from '$lib/components/navigation/navigation.svelte';
 	import { ModeWatcher } from 'mode-watcher';
-	import { AlertTriangle } from 'lucide-svelte';
+	import { AlertTriangle, Bookmark } from 'lucide-svelte';
 	export let data: PageData;
 	let user: PageData['user'];
 	$: user = data.user;
@@ -25,6 +25,10 @@
 	$: accountBlocked = !!candidateStatus && candidateStatus !== 'ACTIVE';
 
 	$: impersonating = ($page.data as { impersonating?: boolean } | undefined)?.impersonating;
+
+	// Set by the layout load on onboarding routes (incl. awaiting-approval) when
+	// a public-job "apply" intent cookie is waiting for them to become eligible.
+	$: savedJobIntent = ($page.data as { savedJobIntent?: boolean } | undefined)?.savedJobIntent;
 
 	const flash = getFlash(page);
 	$: if ($flash) {
@@ -88,6 +92,15 @@
 					contact support to reactivate.
 				{/if}
 			</span>
+		</div>
+	{/if}
+	{#if savedJobIntent}
+		<div
+			class="flex items-center gap-2 border-b border-teal-200 bg-teal-50 px-4 py-2 text-sm text-teal-900"
+			role="status"
+		>
+			<Bookmark class="h-4 w-4 shrink-0" />
+			<span>We saved the job you were viewing — finish your profile to apply.</span>
 		</div>
 	{/if}
 	{#if loadError}

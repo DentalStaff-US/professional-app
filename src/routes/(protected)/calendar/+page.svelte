@@ -106,6 +106,25 @@
 		mounted = true;
 	});
 
+	// ?req= deep link: open the dialog on that requisition's shift once, on the
+	// focus date when given, else its first open shift. Silent no-op if absent
+	// (filled, or hidden by availability / certs — the banners explain those).
+	let focusHandled = false;
+	$: if (mounted && !focusHandled && data.focusReqId) {
+		focusHandled = true;
+		const forReq = convertedEvents.filter(
+			(e) =>
+				e.extendedProps?.type === 'RECURRENCE_DAY' &&
+				Number(e.extendedProps.requisition?.id) === data.focusReqId &&
+				e.extendedProps.recurrenceDay?.status === 'OPEN'
+		);
+		const onDate = data.focusDate
+			? forReq.find((e) => String(e.extendedProps.recurrenceDay?.date ?? '').startsWith(data.focusDate!))
+			: undefined;
+		const target = onDate ?? forReq[0];
+		if (target) selectEvent(target as unknown as CalendarEvent);
+	}
+
 	// The id is explicit because this page runs a second superForm (availability).
 	// Two forms both defaulting to an undefined id cross-wire on the single `form`
 	// prop and trip superforms' duplicate-id path.
@@ -190,7 +209,7 @@
 		</form>
 	{:else if mounted}
 		<div class="w-full overflow-scroll">
-			<Calendar events={calendarEvents} {selectEvent} />
+			<Calendar events={calendarEvents} {selectEvent} initialDate={data.focusDate} />
 		</div>
 	{/if}
 	<Dialog.Root open={dialogOpen} onOpenChange={() => (dialogOpen = !dialogOpen)}>

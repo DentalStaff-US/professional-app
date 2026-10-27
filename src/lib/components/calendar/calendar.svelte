@@ -10,6 +10,12 @@
 
 	export let events: any;
 	export let selectEvent: (event: CalendarEvent) => void;
+	/** Optional YYYY-MM-DD to open on (and highlight). Read once, at mount. */
+	export let initialDate: string | null = null;
+
+	// Captured once: event-calendar re-applies only options whose value changed,
+	// so a constant here never yanks the view back after the user navigates.
+	const focus = initialDate;
 
 	let plugins = [DayGrid, TimeGrid];
 	$: options = {
@@ -20,6 +26,7 @@
 			end: 'dayGridMonth,timeGridWeek,timeGridDay'
 		},
 		events,
+		...(focus ? { date: focus, highlightedDates: [focus] } : {}),
 		views: {
 			timeGridWeek: { pointer: true },
 			resourceTimeGridWeek: { pointer: true }

@@ -6,6 +6,7 @@
 	import type { SuperValidated } from 'sveltekit-superforms';
 	import { Loader2, AlertCircle } from 'lucide-svelte';
 	import AuthShell from '$lib/components/auth/auth-shell.svelte';
+	import { page } from '$app/stores';
 
 	const signUpSchema = userSchema.pick({
 		firstName: true,
@@ -16,6 +17,11 @@
 	});
 
 	type SignUpSchema = typeof signUpSchema;
+
+	// Carry a public-job "apply" intent across the sign-in/sign-up switch. The
+	// dtss_job cookie is the source of truth; this is belt-and-braces.
+	$: jobParam = $page.url.searchParams.get('job');
+	$: authSwitchHref = jobParam ? `/auth/sign-in?job=${encodeURIComponent(jobParam)}` : '/auth/sign-in';
 
 	export let form: SuperValidated<SignUpSchema>;
 </script>
@@ -31,7 +37,7 @@
 				<Card.Title class="text-2xl">Create your account</Card.Title>
 				<Card.Description>
 					Already have an account?
-					<a href="/auth/sign-in" class="font-medium text-primary hover:underline">Sign in</a>
+					<a href={authSwitchHref} class="font-medium text-primary hover:underline">Sign in</a>
 				</Card.Description>
 			</Card.Header>
 			<Card.Content class="grid gap-4">
