@@ -33,6 +33,14 @@ export const load: PageServerLoad = async (event) => {
 	// A URL param rather than component state, so "show me the shifts my
 	// availability is hiding" survives a refresh and can be shared with support.
 	const showUnavailable = url.searchParams.get('showUnavailable') === '1';
+	// Deep-link focus (used by the public job board's return-to-job flow):
+	// ?date=YYYY-MM-DD opens the calendar on that date, ?req=<id> highlights and
+	// opens that requisition's shift. Both optional and validated here so the
+	// page never receives junk.
+	const dateParam = url.searchParams.get('date');
+	const focusDate = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : null;
+	const reqParam = Number(url.searchParams.get('req'));
+	const focusReqId = Number.isInteger(reqParam) && reqParam > 0 ? reqParam : null;
 	const today = todayInBusinessTz();
 	const availabilityTo = `${Number(today.slice(0, 4)) + 1}${today.slice(4)}`;
 
@@ -125,6 +133,8 @@ export const load: PageServerLoad = async (event) => {
 			? (openingsRes.data.availability?.isCustomised ?? false)
 			: false,
 		showUnavailable,
+		focusDate,
+		focusReqId,
 		// See permanent/+page.server.ts.
 		workPreference: openingsRes.ok ? openingsRes.data.workPreference : undefined,
 		loadError:

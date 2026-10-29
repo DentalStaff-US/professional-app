@@ -1,12 +1,16 @@
 import { auth } from '$lib/server/auth';
 import { captureReferralCookie } from '$lib/server/affiliate/refCookie';
+import { captureJobIntent } from '$lib/server/jobIntent';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { building } from '$app/environment';
 import { redirect, type Handle } from '@sveltejs/kit';
 import type { HandleServerError } from '@sveltejs/kit';
 import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { logger } from '$lib/server/logger';
+import { installConsoleGuard } from '$lib/server/consoleGuard';
 import type { AppUser } from '$lib/server/auth';
+
+installConsoleGuard();
 
 export const handleError: HandleServerError = async ({ error, event }) => {
 	const errorId = crypto.randomUUID();
@@ -77,6 +81,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// here still gets the cookie written before the 302 fires.
 	if (event.url.searchParams.has('ref')) {
 		captureReferralCookie(event);
+	}
+	// Public job-board "apply" intent (?job=<publicId>) — same placement and
+	// reasoning as the ref capture. Last touch wins; see jobIntent.ts.
+	if (event.url.searchParams.has('job')) {
+		captureJobIntent(event);
 	}
 
 	if (building) {

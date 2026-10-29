@@ -23,7 +23,6 @@ export default async function sendEmail(
 
 	// Set up nodemailer transport
 	const transporter = nodemailer.createTransport(devSMPTSettings);
-	console.log({ transporter });
 
 	try {
 		if (!bodyText) {
