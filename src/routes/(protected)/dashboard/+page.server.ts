@@ -90,14 +90,15 @@ export const actions = {
 	claimWorkdayShift: async (event: RequestEvent) => {
 		const userId = event.locals.user?.id;
 		const token = generateToken(userId);
-		const form = await superValidate(event, recurrenceDayClaimSchema);
+		// Read the body once: superValidate(event) would consume it, and a later
+		// request.clone() then throws 'unusable' — every claim failed that way.
+		const formData = await event.request.formData();
+		const form = await superValidate(formData, recurrenceDayClaimSchema);
 		const recurrenceDayId = form.data.recurrenceDayId;
 		// Claiming a shift on a day they marked off is their own override, so the
 		// admin app permits it only when the intent is explicit — otherwise the
 		// "Show them anyway" banner would surface a shift that cannot be claimed.
-		const acknowledgeUnavailable =
-			(await event.request.clone().formData().catch(() => null))?.get('acknowledgeUnavailable') ===
-			'true';
+		const acknowledgeUnavailable = formData.get('acknowledgeUnavailable') === 'true';
 
 		if (!userId || !recurrenceDayId) {
 			return fail(400, {
