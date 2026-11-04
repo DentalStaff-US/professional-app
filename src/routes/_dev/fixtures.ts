@@ -89,3 +89,22 @@ export const sheetRows = [
 	{ timesheet: { id: 't2', weekBeginDate: dayFromNow(-6), status: 'DISCREPANCY' }, company: sheetCompany, requisition: sheetRequisition },
 	{ timesheet: { id: 't3', weekBeginDate: dayFromNow(-1), status: 'DRAFT' }, company: sheetCompany, requisition: sheetRequisition }
 ];
+
+const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60000).toISOString();
+export const inboxConversations = [
+	{ id: 'a', type: 'APPLICATION', applicationData: { requisition: { disciplineName: 'Dental Hygienist' }, company: { name: 'Bright Smiles Dental' } }, lastMessage: { body: 'See you Thursday at 7:30. Please use the staff entrance around the back.', createdAt: minutesAgo(12) } },
+	{ id: 'b', participants: [{ user: { id: 'me', firstName: 'Maria', lastName: 'Lopez' } }, { user: { id: 'them', firstName: 'Sam', lastName: 'Reed' } }], lastMessage: { body: 'Thanks for covering!', createdAt: minutesAgo(60 * 26) } },
+	{ id: 'c', participants: [{ user: { id: 'me' } }, { user: { id: 'x', firstName: 'DTSS', lastName: 'Support' } }], lastMessage: null }
+];
+export const inboxThread = {
+	id: 'a',
+	type: 'APPLICATION',
+	applicationData: { requisition: { disciplineName: 'Dental Hygienist' }, company: { companyName: 'Bright Smiles Dental' } },
+	participants: [{ userId: 'me' }, { userId: 'them' }],
+	messages: Array.from({ length: 14 }, (_, i) => ({
+		id: `m${i}`,
+		senderId: i % 2 ? 'me' : 'them',
+		body: i % 2 ? 'Sounds good, thank you!' : 'Hi Maria, can you confirm you can make the 7:30am start? We have a full schedule that day and would love to have you.',
+		createdAt: minutesAgo((14 - i) * 40)
+	}))
+};

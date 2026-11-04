@@ -3,7 +3,8 @@ import { generateToken } from '$lib/server/utils';
 import { redirect } from 'sveltekit-flash-message/server';
 import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, depends }) => {
+	depends('inbox:list');
 	const { user } = locals;
 	const userId = user?.id;
 

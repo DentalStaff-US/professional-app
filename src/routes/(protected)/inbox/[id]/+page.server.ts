@@ -13,6 +13,7 @@ const messageSchema = z.object({
 });
 
 export const load: PageServerLoad = async (event) => {
+	event.depends('inbox:conversation');
 	const { id } = event.params;
 	const { user } = event.locals;
 	const userId = user?.id;
