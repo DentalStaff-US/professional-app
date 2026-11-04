@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { superForm } from 'sveltekit-superforms/client';
 	import { CalendarCheck, CalendarSearch, ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import EmptyState from '$dtss/EmptyState.svelte';
@@ -90,8 +90,28 @@
 		offset = 0;
 	}
 
-	function selectDay(date: string) {
+	let calendarEl = $state<HTMLElement>();
+	let dayHeadingEl = $state<HTMLElement>();
+
+	const scrollBehavior = (): ScrollBehavior =>
+		window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+
+	async function selectDay(date: string) {
 		selectedDate = selectedDate === date ? null : date;
+		if (!selectedDate) return;
+		await tick();
+		// A month grid can fill a phone screen, leaving the result out of sight. Only
+		// move when it would be, so a tap on a short week strip doesn't jump the page.
+		const heading = dayHeadingEl;
+		if (!heading) return;
+		heading.focus({ preventScroll: true });
+		if (heading.getBoundingClientRect().top > window.innerHeight * 0.55) {
+			heading.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
+		}
+	}
+
+	function backToCalendar() {
+		calendarEl?.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
 	}
 
 	function openShift(shift: any) {
@@ -202,7 +222,7 @@
 			{/each}
 		</div>
 
-		<section class="rounded-lg border bg-card p-3 shadow-card sm:p-4" aria-label="Calendar">
+		<section bind:this={calendarEl} class="scroll-mt-4 rounded-lg border bg-card p-3 shadow-card sm:p-4" aria-label="Calendar">
 			<div class="mb-2 flex items-center justify-between gap-2">
 				<div class="flex items-center">
 					<button aria-label={`Previous ${view}`} class={navButton} onclick={() => (offset -= 1)}>
@@ -236,11 +256,16 @@
 		</section>
 
 		{#if selectedDate}
-			<div class="flex items-center justify-between gap-3">
+			<div class="flex scroll-mt-4 flex-wrap items-center justify-between gap-x-3 outline-none" bind:this={dayHeadingEl} tabindex="-1">
 				<h2 class="text-h3">{selectedDate === today ? 'Today' : formatShiftDate(`${selectedDate}T00:00:00Z`)}</h2>
-				<button class="min-h-11 text-sm font-bold text-primary-dark hover:underline" onclick={() => (selectedDate = null)}>
-					Show all upcoming
-				</button>
+				<div class="flex gap-4">
+					<button class="min-h-11 text-sm font-bold text-primary-dark hover:underline" onclick={backToCalendar}>
+						Pick another day
+					</button>
+					<button class="min-h-11 text-sm font-bold text-primary-dark hover:underline" onclick={() => (selectedDate = null)}>
+						Show all
+					</button>
+				</div>
 			</div>
 		{/if}
 
