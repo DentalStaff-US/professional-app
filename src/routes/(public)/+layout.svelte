@@ -7,7 +7,6 @@
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { toast } from 'svelte-sonner';
 	import { ProgressBar } from '@prgm/sveltekit-progress-bar';
-	import Navigation from '$lib/components/navigation/navigation.svelte';
 
 	export let data: PageData;
 	let user: PageData['user'];

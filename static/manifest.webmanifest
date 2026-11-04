@@ -1,0 +1,15 @@
+{
+	"name": "DTSS Professional",
+	"short_name": "DTSS",
+	"description": "Find dental shifts, manage your schedule and submit timesheets.",
+	"start_url": "/dashboard",
+	"scope": "/",
+	"display": "standalone",
+	"theme_color": "#0d968b",
+	"background_color": "#ffffff",
+	"icons": [
+		{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+		{ "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+		{ "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+	]
+}
