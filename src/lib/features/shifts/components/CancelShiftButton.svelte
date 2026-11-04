@@ -17,7 +17,7 @@
 <ConfirmDialog
 	bind:open
 	title="Cancel this shift?"
-	description="The shift goes back on the board for other professionals, and you may not be able to claim it again."
+	description="The shift goes back on the board for other professionals. Cancelling within 24 hours of the shift may affect your profile rating."
 	cancelLabel="Keep shift"
 >
 	{#snippet confirm()}

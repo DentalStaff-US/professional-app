@@ -1,12 +1,10 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad, RequestEvent } from './$types';
 import { generateToken } from '$lib/server/utils';
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
-import { setFlash } from 'sveltekit-flash-message/server';
-import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE, adminForwardHeaders } from '$lib/server/fetchAdmin';
-import { logger } from '$lib/server/logger';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
 import { superValidate } from 'sveltekit-superforms/server';
 import { recurrenceDayClaimSchema } from '$lib/config/zod-schemas.js';
+import { cancelShift } from '$features/shifts/server/cancel';
 import { claimShift } from '$features/shifts/server/claim';
 
 export const load: PageServerLoad = async (event: RequestEvent) => {
@@ -61,54 +59,9 @@ export const actions = {
 	claimWorkdayShift: claimShift,
 	cancelWorkdayShift: async (event) => {
 		if (!event.locals.user) {
-			throw redirect(301, '/auth/sign-in');
+			redirect(303, '/auth/sign-in');
 		}
-		const formData = await event.request.formData();
-		const workdayId = formData.get('workdayId');
-		const token = generateToken(event.locals.user.id);
-
-		try {
-			const cancelReq = await fetch(
-				`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/cancelWorkdayForCandidate/${workdayId}`,
-				{
-					method: 'POST',
-					headers: {
-						...adminForwardHeaders(),
-						Authorization: `Bearer ${token}`,
-						'Content-Type': 'application/json'
-					}
-				}
-			);
-
-			if (!cancelReq.ok) {
-				throw new Error('Failed to cancel workday shift');
-			}
-			const cancelResponse = await cancelReq.json();
-			if (!cancelResponse.success) {
-				throw new Error('Cancellation was refused');
-			}
-			setFlash({ type: 'success', message: 'Your shift was cancelled.' }, event);
-			return {
-				success: true,
-				message: 'Your shift was cancelled.'
-			};
-		} catch (error) {
-			logger.error('Failed to cancel workday shift', {
-				error,
-				workdayId,
-				distinctId: event.locals.user.id
-			});
-			setFlash(
-				{
-					type: 'error',
-					message: "We couldn't cancel your shift. Please try again."
-				},
-				event
-			);
-			return {
-				success: false,
-				message: "We couldn't cancel your shift. Please try again."
-			};
-		}
+		const success = await cancelShift(event);
+		return { success };
 	}
 };

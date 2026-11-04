@@ -53,3 +53,24 @@ export const jobs = [
 	{ id: 11, disciplineName: 'Dental Hygienist', identityLocked: true, company: {}, permanentPosition: true, location: { city: 'Tampa', state: 'FL' }, distanceMiles: 7 },
 	{ id: 12, disciplineName: 'Office Manager', identityLocked: false, company: { companyName: 'Bright Smiles Dental' }, permanentPosition: true, location: { completeAddress: '100 Main St, Tampa, FL 33602' } }
 ];
+
+export const todayDate = dayFromNow(0);
+export const calendarDays = [
+	...workdays.map((w) => ({ ...w, requisition: { ...w.requisition, id: '9', hourlyRate: '48' } })),
+	...requisitions.map((r) => ({ ...r, workday: null }))
+];
+export const shiftDetail = {
+	...workdays[0],
+	requisition: {
+		...workdays[0].requisition,
+		companyName: 'Bright Smiles Dental',
+		hourlyRate: 48,
+		jobDescription: 'Cover a full hygiene schedule. Dentrix experience is helpful.',
+		specialInstructions: 'Please park behind the building and use the staff entrance.'
+	},
+	location: {
+		...workdays[0].location,
+		companyPhone: '(813) 555-0142',
+		email: 'frontdesk@example.com'
+	}
+};

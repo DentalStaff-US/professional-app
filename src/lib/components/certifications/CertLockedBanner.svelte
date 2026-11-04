@@ -72,6 +72,12 @@
 						</p>
 					{/each}
 				{/each}
+				{#if anyLicense}
+					<p>
+						Licenses and certifications are tracked separately, so a certificate on file doesn't
+						count as a license or registration.
+					</p>
+				{/if}
 				<p>
 					{#if anyLicense && anyCert}
 						Upload a current license/registration and a current certificate to see

@@ -117,7 +117,7 @@
 		{/if}
 	{:else}
 		{#if months.length > 1}
-			<Select.Root onSelectedChange={(selected) => (month = selected?.value ?? '')}>
+			<Select.Root onSelectedChange={(selected) => (month = String(selected?.value ?? ''))}>
 				<Select.Trigger class="h-11 sm:w-56" aria-label="Filter by month">
 					<Select.Value placeholder="All months" />
 				</Select.Trigger>
