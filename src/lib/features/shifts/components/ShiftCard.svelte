@@ -11,9 +11,12 @@
 	const requisition = $derived(shift.requisition);
 	const timezone = $derived(requisition?.referenceTimezone);
 	const locked = $derived(isPracticeLocked(shift));
-	const practice = $derived(shift.company?.name ?? shift.company?.companyName);
+	const practice = $derived(
+		shift.company?.name ?? shift.company?.companyName ?? shift.requisition?.companyName
+	);
 	const place = $derived(
-		[shift.location?.city, shift.location?.state].filter(Boolean).join(', ') ||
+		(!locked && shift.location?.completeAddress) ||
+			[shift.location?.city, shift.location?.state].filter(Boolean).join(', ') ||
 			(locked ? '' : (shift.location?.name ?? ''))
 	);
 	const relative = $derived(relativeShiftDay(day?.date, timezone));
@@ -62,6 +65,12 @@
 			</li>
 		{/if}
 	</ul>
+
+	{#if !locked && requisition?.specialInstructions}
+		<p class="mt-3 rounded-lg bg-muted p-3 text-sm">
+			<span class="font-bold">Important:</span> {requisition.specialInstructions}
+		</p>
+	{/if}
 
 	<div class="mt-4">{@render action()}</div>
 </article>

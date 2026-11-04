@@ -158,7 +158,7 @@
 					Open near you{#if requisitions.length}{' '}({requisitions.length}){/if}
 				</h2>
 				{#if requisitions.length}
-					<a href="/calendar" class="inline-flex min-h-11 items-center gap-1 text-sm font-bold text-primary-dark hover:underline">
+					<a href="/my-shifts?tab=available" class="inline-flex min-h-11 items-center gap-1 text-sm font-bold text-primary-dark hover:underline">
 						See all <ChevronRight class="size-4" aria-hidden="true" />
 					</a>
 				{/if}
