@@ -19,5 +19,6 @@
 		showUnavailable={false}
 		workPreference={undefined}
 		claimForm={null}
+		affiliateStatus={{ programEnabled: true, eligible: true, enrolled: page.url.searchParams.has('enrolled') }}
 	/>
 </AppShell>

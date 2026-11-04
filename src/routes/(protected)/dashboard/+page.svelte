@@ -14,4 +14,5 @@
 	showUnavailable={data.showUnavailable ?? false}
 	workPreference={data.workPreference}
 	claimForm={data.claimForm}
+	affiliateStatus={data.affiliateStatus}
 />

@@ -4,7 +4,6 @@
 		CalendarSearch,
 		ChevronRight,
 		Clipboard,
-		LifeBuoy,
 		MapPin,
 		Navigation
 	} from 'lucide-svelte';
@@ -27,6 +26,8 @@
 	import CertLockedBanner from '$lib/components/certifications/CertLockedBanner.svelte';
 	import NewSupportTicketDialog from '$lib/components/new-support-ticket-dialog.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import QuickLinks from './QuickLinks.svelte';
+	import type { AffiliateStatus } from '../quickLinks';
 	import WorkPreferenceBanner from '$lib/components/workPreference/WorkPreferenceBanner.svelte';
 
 	const OPEN_SHIFTS_SHOWN = 6;
@@ -40,7 +41,8 @@
 		hiddenByAvailability,
 		showUnavailable,
 		workPreference,
-		claimForm
+		claimForm,
+		affiliateStatus
 	}: {
 		firstName?: string | null;
 		workdays: any[];
@@ -51,6 +53,7 @@
 		showUnavailable: boolean;
 		workPreference: any;
 		claimForm: any;
+		affiliateStatus?: AffiliateStatus;
 	} = $props();
 
 	let selectedShift = $state<any>(null);
@@ -93,6 +96,8 @@
 				<Button href="/settings/availability" size="lg" class="mt-5">Set your availability</Button>
 			</div>
 		</section>
+
+		<QuickLinks {affiliateStatus} onsupport={() => (supportOpen = true)} />
 	{:else}
 		{#if nextShift}
 			<section aria-labelledby="next-shift-heading">
@@ -152,6 +157,8 @@
 			</section>
 		{/if}
 
+		<QuickLinks {affiliateStatus} onsupport={() => (supportOpen = true)} />
+
 		<section aria-labelledby="open-shifts-heading">
 			<div class="mb-3 flex items-center justify-between gap-3">
 				<h2 id="open-shifts-heading" class="text-h3">
@@ -190,13 +197,6 @@
 			{/if}
 		</section>
 	{/if}
-
-	<p class="text-center text-sm text-muted-foreground">
-		Need a hand?
-		<button class="inline-flex min-h-11 items-center gap-1 font-bold text-primary-dark hover:underline" onclick={() => (supportOpen = true)}>
-			<LifeBuoy class="size-4" aria-hidden="true" /> Contact support
-		</button>
-	</p>
 </Page>
 
 <ClaimShiftSheet {claimForm} shift={selectedShift} bind:open={sheetOpen} />

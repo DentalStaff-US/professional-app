@@ -9,6 +9,7 @@ export { default as CancelShiftButton } from './components/CancelShiftButton.sve
 export {
 	directionsUrl,
 	formatShiftDate,
+	formatShiftTime,
 	formatTimeRange,
 	formatWorkWeek,
 	relativeShiftDay

@@ -74,3 +74,18 @@ export const shiftDetail = {
 		email: 'frontdesk@example.com'
 	}
 };
+
+export const sheetRequisition = { id: 5, disciplineName: 'Dental Hygienist', hourlyRate: 48, referenceTimezone: zone };
+export const sheetCompany = { id: 'c1', name: 'Oak Street Family Dentistry', logo: null };
+export const sheetDays = [-2, -1, 1].map((days, i) => ({
+	workday: { id: `wd${i}` },
+	recurrenceDay: { date: dayFromNow(days), dayStart: at(days, 13), dayEnd: at(days, 22) }
+}));
+export const sheetSaved = [
+	{ date: dayFromNow(-2), startTime: at(-2, 13), endTime: at(-2, 22), lunchStartTime: at(-2, 17), lunchEndTime: at(-2, 18), hours: 8 }
+];
+export const sheetRows = [
+	{ timesheet: { id: 't1', weekBeginDate: dayFromNow(-20), status: 'APPROVED' }, company: sheetCompany, requisition: sheetRequisition },
+	{ timesheet: { id: 't2', weekBeginDate: dayFromNow(-6), status: 'DISCREPANCY' }, company: sheetCompany, requisition: sheetRequisition },
+	{ timesheet: { id: 't3', weekBeginDate: dayFromNow(-1), status: 'DRAFT' }, company: sheetCompany, requisition: sheetRequisition }
+];

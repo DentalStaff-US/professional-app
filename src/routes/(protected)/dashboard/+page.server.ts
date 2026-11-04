@@ -33,7 +33,7 @@ export const load = async (event) => {
 	}
 	const token = generateToken(user.id);
 
-	const [workdaysRes, timesheetsRes, requisitionsRes] = await Promise.all([
+	const [workdaysRes, timesheetsRes, requisitionsRes, affiliateRes] = await Promise.all([
 		fetchAdmin<{ data: any[] }>('/api/external/getUpcomingWorkdaysForCandidate', { token }),
 		fetchAdmin<{ data: any[] }>('/api/external/timesheets/getPendingTimesheetsForUser', {
 			token
@@ -53,6 +53,11 @@ export const load = async (event) => {
 		}>(
 			`/api/external/getUpcomingTempRequisitionsForCandidate${showUnavailable ? '?includeUnavailable=true' : ''}`,
 			{ token }
+		),
+		// Decides the partner quick link. A failure only hides that link.
+		fetchAdmin<{ programEnabled: boolean; eligible: boolean; enrolled: boolean }>(
+			'/api/external/affiliate/status',
+			{ token }
 		)
 	]);
 
@@ -62,6 +67,7 @@ export const load = async (event) => {
 		// applyForm`, which a +page.svelte never receives, so every fail() from
 		// claimWorkdayShift was silently discarded.
 		claimForm: await superValidate(event, recurrenceDayClaimSchema),
+		affiliateStatus: affiliateRes.ok ? affiliateRes.data : null,
 		workdays: workdaysRes.ok ? (workdaysRes.data.data ?? []) : [],
 		timesheets: timesheetsRes.ok ? (timesheetsRes.data.data ?? []) : [],
 		requisitions: requisitionsRes.ok ? (requisitionsRes.data.recurrenceDays ?? []) : [],
