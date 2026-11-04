@@ -92,7 +92,7 @@ export const sheetRows = [
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60000).toISOString();
 export const inboxConversations = [
-	{ id: 'a', type: 'APPLICATION', applicationData: { requisition: { disciplineName: 'Dental Hygienist' }, company: { name: 'Bright Smiles Dental' } }, lastMessage: { body: 'See you Thursday at 7:30. Please use the staff entrance around the back.', createdAt: minutesAgo(12) } },
+	{ id: 'a', type: 'APPLICATION', applicationData: { requisition: { disciplineName: 'Dental Hygienist' }, company: { name: 'Bright Smiles Dental' } }, lastMessage: { body: 'See you Thursday at 7:30. Please use the staff entrance around the back.', createdAt: minutesAgo(12) }, unreadCount: 2 },
 	{ id: 'b', participants: [{ user: { id: 'me', firstName: 'Maria', lastName: 'Lopez' } }, { user: { id: 'them', firstName: 'Sam', lastName: 'Reed' } }], lastMessage: { body: 'Thanks for covering!', createdAt: minutesAgo(60 * 26) } },
 	{ id: 'c', participants: [{ user: { id: 'me' } }, { user: { id: 'x', firstName: 'DTSS', lastName: 'Support' } }], lastMessage: null }
 ];

@@ -12,6 +12,7 @@
 		email,
 		avatarUrl,
 		initials,
+		unreadCount = 0,
 		topBanner,
 		banner,
 		children
@@ -21,6 +22,7 @@
 		email?: string;
 		avatarUrl?: string | null;
 		initials: string;
+		unreadCount?: number;
 		/** Always shown: admin impersonation. */
 		topBanner?: Snippet;
 		/** At most one account or page message. */
@@ -31,6 +33,7 @@
 	const active = $derived(activeTab(pathname));
 	const tabs = $derived(showsTabs(pathname));
 	const inner = $derived(innerPage(pathname));
+	const unreadLabel = $derived(unreadCount > 9 ? '9+' : String(unreadCount));
 </script>
 
 <!-- --tabbar-offset lets fixed action bars inside pages sit above the tabs. -->
@@ -78,6 +81,11 @@
 							)}
 						>
 							{tab.label}
+							{#if tab.href === '/inbox' && unreadCount > 0}
+								<span class="ml-1.5 rounded-full bg-primary-strong px-1.5 text-xs font-bold text-primary-foreground">
+									{unreadLabel}<span class="sr-only"> unread</span>
+								</span>
+							{/if}
 						</a>
 					{/each}
 				</nav>
@@ -111,7 +119,14 @@
 								active === tab.href ? 'text-primary-dark' : 'text-muted-foreground'
 							)}
 						>
-							<tab.icon class={cn('size-6', active === tab.href && 'stroke-[2.5]')} aria-hidden="true" />
+							<span class="relative">
+								<tab.icon class={cn('size-6', active === tab.href && 'stroke-[2.5]')} aria-hidden="true" />
+								{#if tab.href === '/inbox' && unreadCount > 0}
+									<span class="absolute -right-2.5 -top-1.5 min-w-4 rounded-full bg-primary-strong px-1 text-center text-[0.625rem] font-bold leading-4 text-primary-foreground">
+										{unreadLabel}<span class="sr-only"> unread</span>
+									</span>
+								{/if}
+							</span>
 							{tab.label}
 						</a>
 					</li>

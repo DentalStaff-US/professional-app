@@ -3,11 +3,13 @@
 	import { page } from '$app/stores';
 	import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 	import { ProgressBar } from '@prgm/sveltekit-progress-bar';
+	import { onMount } from 'svelte';
 	import { ModeWatcher, setMode } from 'mode-watcher';
 	import { getFlash } from 'sveltekit-flash-message';
 	import { toast } from 'svelte-sonner';
 	import Notice from '$dtss/Notice.svelte';
 	import { authClient } from '$lib/auth-client';
+	import { connectInboxSocket } from '$lib/inboxSocket';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import AppShell from '$shell/AppShell.svelte';
 
@@ -48,6 +50,8 @@
 		window.location.href = PUBLIC_CLIENT_APP_DOMAIN;
 	}
 	setMode('light');
+
+	onMount(() => connectInboxSocket());
 </script>
 
 <ModeWatcher defaultMode="light" />
@@ -99,6 +103,7 @@
 	email={user?.email}
 	avatarUrl={user?.avatarUrl}
 	initials={`${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`.toUpperCase()}
+	unreadCount={data.unreadCount ?? 0}
 	topBanner={impersonating ? impersonationBar : undefined}
 	banner={accountBlocked || loadError || savedJobIntent ? messageBanner : undefined}
 >

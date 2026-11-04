@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { invalidate } from '$app/navigation';
 	import { onMount, tick } from 'svelte';
 	import { superForm } from 'sveltekit-superforms/client';
 	import { Loader2, MessagesSquare, Send } from 'lucide-svelte';
@@ -32,6 +33,8 @@
 	onMount(() => {
 		anchor?.scrollIntoView({ block: 'end' });
 		seen = messages.length;
+		// Loading this thread marked it read, so the Inbox badge is out of date.
+		invalidate('inbox:unread');
 		return pollWhileVisible('inbox:conversation');
 	});
 
@@ -41,6 +44,7 @@
 		if (count === seen) return;
 		const follow = seen === 0 || nearBottom();
 		seen = count;
+		invalidate('inbox:unread');
 		if (follow) tick().then(() => anchor?.scrollIntoView({ block: 'end' }));
 	});
 </script>

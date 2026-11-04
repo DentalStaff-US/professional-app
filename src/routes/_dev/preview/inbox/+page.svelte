@@ -9,7 +9,7 @@
 	const state = $derived(page.url.searchParams.get('state'));
 </script>
 
-<AppShell pathname={thread ? '/inbox/a' : '/inbox'} name="Maria Lopez" email="maria@example.com" initials="ML">
+<AppShell pathname={thread ? '/inbox/a' : '/inbox'} name="Maria Lopez" email="maria@example.com" initials="ML" unreadCount={2}>
 	{#if thread}
 		<ConversationPage conversation={thread === 'missing' ? null : inboxThread} userId="me" form={null} />
 	{:else}

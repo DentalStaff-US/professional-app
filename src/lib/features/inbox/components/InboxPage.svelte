@@ -37,6 +37,7 @@
 			<ul class="divide-y overflow-hidden rounded-lg border bg-card shadow-card">
 				{#each visible as conversation (conversation.id)}
 					{@const about = describeConversation(conversation, userId)}
+					{@const unread = Number(conversation.unreadCount ?? 0) > 0}
 					<li>
 						<a
 							href={`/inbox/${conversation.id}`}
@@ -45,14 +46,20 @@
 							<ConversationAvatar {...about} />
 							<span class="min-w-0 flex-1">
 								<span class="flex items-baseline justify-between gap-3">
-									<span class="truncate font-bold">{about.title}</span>
+									<span class="flex min-w-0 items-center gap-2">
+										{#if unread}
+											<span class="size-2 shrink-0 rounded-full bg-primary-strong" aria-hidden="true"></span>
+											<span class="sr-only">Unread:</span>
+										{/if}
+										<span class="truncate font-bold">{about.title}</span>
+									</span>
 									<time class="shrink-0 text-xs text-muted-foreground" datetime={conversation.lastMessage?.createdAt}>
 										{relativeTime(conversation.lastMessage?.createdAt)}
 									</time>
 								</span>
 								{#if about.subtitle}<span class="block truncate text-sm text-muted-foreground">{about.subtitle}</span>{/if}
 								{#if conversation.lastMessage?.body}
-									<span class="mt-1 block truncate text-sm">{conversation.lastMessage.body}</span>
+									<span class={`mt-1 block truncate text-sm ${unread ? 'font-bold' : ''}`}>{conversation.lastMessage.body}</span>
 								{/if}
 							</span>
 						</a>
