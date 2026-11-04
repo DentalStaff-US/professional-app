@@ -822,7 +822,7 @@
 								value={selectedShift?.blockedByAvailability ? 'true' : 'false'}
 							/>
 							<Button
-								class="bg-primary hover:bg-primary/90 w-full md:w-fit"
+								class="w-full md:w-fit"
 								type="submit"
 								disabled={selectedShift?.recurrenceDay.status !== 'OPEN' ||
 									$submitting }

@@ -1,10 +1,6 @@
 <script lang="ts">
 	// @ts-ignore
-	import Calendar from '@event-calendar/core';
-	// @ts-ignore
-	import TimeGrid from '@event-calendar/time-grid';
-	// @ts-ignore
-	import DayGrid from '@event-calendar/day-grid';
+	import { Calendar, DayGrid, TimeGrid } from '@event-calendar/core';
 	import '@event-calendar/core/index.css';
 	import type { CalendarEvent } from './utils';
 

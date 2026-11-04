@@ -350,7 +350,7 @@
 
 							<!-- Submit Button -->
 							<Button
-								class="w-full bg-primary hover:bg-primary/90 text-white py-2"
+								class="w-full text-white py-2"
 								disabled={totalHours === 0 || $submitting}
 								type="submit"
 							>

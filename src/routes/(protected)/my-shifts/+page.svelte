@@ -272,7 +272,7 @@
 										<input type="hidden" value={shift.workday.id} name="workdayId" />
 										<Button
 											type="submit"
-											variant="destructiveOutline"
+											variant="destructive-outline"
 											class="gap-2 border-red-200 text-red-700 hover:bg-red-50"
 										>
 											<X class="h-4 w-4" />

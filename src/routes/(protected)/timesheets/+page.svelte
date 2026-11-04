@@ -37,7 +37,7 @@
 		<h1 class="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">Timesheets</h1>
 		<!-- <Button
 			href="/timesheets/new"
-			class="bg-primary hover:bg-primary/90 w-full md:w-fit flex-grow md:grow-0"
+			class="w-full md:w-fit flex-grow md:grow-0"
 			><PlusIcon size={24} class="mr-2" />New Timesheet</Button
 		> -->
 	</div>
@@ -56,7 +56,7 @@
 						<div class="flex flex-row gap-2 items-center">
 							<img alt="company logo" class="md:w-12 h-8 w-8 md:h-12" src={data.company.logo} />
 							<div>
-								<p class="">{data.requisition.disciplineName}</p>
+								<p >{data.requisition.disciplineName}</p>
 								<p class="text-xs text-gray-700">{data.company.name}</p>
 							</div>
 						</div>

@@ -420,7 +420,7 @@
 				<Button
 					type="submit"
 					form="experienceForm"
-					class="w-full sm:w-fit ml-auto bg-primary hover:bg-primary/90"
+					class="w-full sm:w-fit ml-auto"
 					disabled={$formData.disciplines.length === 0 || $submitting}
 				>
 					{#if $submitting}

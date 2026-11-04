@@ -122,7 +122,7 @@
 			</div>
 		{:else if mode === 'idle'}
 			<div>
-				<Button class="bg-primary hover:bg-primary/90" on:click={() => (mode = 'enable-password')}>
+				<Button  on:click={() => (mode = 'enable-password')}>
 					<ShieldCheck class="mr-2 h-4 w-4" /> Enable two-factor
 				</Button>
 			</div>
@@ -143,7 +143,7 @@
 					<Button
 						type="submit"
 						class={mode === 'enable-password'
-							? 'bg-primary hover:bg-primary/90'
+							? ''
 							: 'bg-destructive hover:bg-destructive/90'}
 						disabled={loading || !password}
 					>
@@ -153,7 +153,7 @@
 							{mode === 'enable-password' ? 'Continue' : 'Disable'}
 						{/if}
 					</Button>
-					<Button type="button" variant="destructiveOutline" on:click={reset}>Cancel</Button>
+					<Button type="button" variant="destructive-outline" on:click={reset}>Cancel</Button>
 				</div>
 			</form>
 		{/if}
@@ -211,14 +211,14 @@
 						class="tracking-widest"
 					/>
 					<div class="flex gap-2">
-						<Button type="submit" class="bg-primary hover:bg-primary/90" disabled={loading || !code}>
+						<Button type="submit"  disabled={loading || !code}>
 							{#if loading}
 								<Loader2 class="mr-2 h-4 w-4 animate-spin" /> Verifying…
 							{:else}
 								Verify &amp; enable
 							{/if}
 						</Button>
-						<Button type="button" variant="destructiveOutline" on:click={reset}>Cancel</Button>
+						<Button type="button" variant="destructive-outline" on:click={reset}>Cancel</Button>
 					</div>
 				</form>
 			</div>

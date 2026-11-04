@@ -24,7 +24,7 @@
     </div>
     <div class="space-y-2">
         <p class="text-xl md:text-2xl font-semibold">About Company</p>
-       <p class=" text-sm whitespace-pre-wrap">{company.companyDescription}</p>
+       <p class="text-sm whitespace-pre-wrap">{company.companyDescription}</p>
     </div>
     <div class="space-y-6">
         <p class="font-bold text-xl md:text-2xl">Openings for this company</p>

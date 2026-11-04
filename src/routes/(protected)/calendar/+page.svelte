@@ -412,7 +412,7 @@
 								value={selectedEvent.extendedProps.blockedByAvailability ? 'true' : 'false'}
 							/>
 							<Button
-								class="bg-primary hover:bg-primary/90 w-full md:w-fit"
+								class="w-full md:w-fit"
 								type="submit"
 								disabled={selectedEvent.extendedProps.recurrenceDay.status !== 'OPEN' ||
 									$submitting ||
@@ -431,7 +431,7 @@
 					{#if selectedEvent.extendedProps.recurrenceDay.status === 'FILLED'}
 						<Button
 							href={`/my-shifts/${selectedEvent.extendedProps?.workday?.id}`}
-							class="bg-primary hover:bg-primary/90">View Shift</Button
+							>View Shift</Button
 						>
 					{/if}
 				</Dialog.Footer>

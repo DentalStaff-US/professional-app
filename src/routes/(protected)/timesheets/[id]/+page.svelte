@@ -776,7 +776,7 @@
 							<Button
 								type="submit"
 								size="sm"
-								class="bg-primary hover:bg-primary/90 sm:w-auto"
+								class="sm:w-auto"
 								disabled={$addExpenseSubmitting}
 							>
 								{#if $addExpenseSubmitting}
@@ -969,7 +969,7 @@
 									<Button
 										on:click={() => (submitDialogOpen = true)}
 										disabled={!canSubmit}
-										class="w-full gap-2 bg-primary hover:bg-primary/90"
+										class="w-full gap-2"
 									>
 										<CheckCircle2 class="h-4 w-4" />
 										<span>Submit Timesheet</span>
@@ -984,7 +984,7 @@
 										</AlertDialog.Description>
 									</AlertDialog.Header>
 									<AlertDialog.Footer>
-										<Button variant="destructiveOutline" on:click={() => (submitDialogOpen = false)}>
+										<Button variant="destructive-outline" on:click={() => (submitDialogOpen = false)}>
 											Cancel
 										</Button>
 										<form
@@ -1005,7 +1005,7 @@
 										>
 											<input type="hidden" name="entries" value={JSON.stringify(timeEntries)} />
 											<input type="hidden" name="totalHours" value={totalHours} />
-											<Button type="submit" class="ml-2 bg-primary hover:bg-primary/90">
+											<Button type="submit" class="ml-2">
 												Submit
 											</Button>
 										</form>
@@ -1041,7 +1041,7 @@
 								<AlertDialog.Trigger asChild>
 									<Button
 										on:click={() => (cancelDialogOpen = true)}
-										variant="destructiveOutline"
+										variant="destructive-outline"
 										class="w-full border-red-200 text-red-700 hover:bg-red-50 gap-2"
 									>
 										<XCircle class="h-4 w-4" />
@@ -1056,7 +1056,7 @@
 										</AlertDialog.Description>
 									</AlertDialog.Header>
 									<AlertDialog.Footer>
-										<Button variant="destructiveOutline" on:click={() => (cancelDialogOpen = false)}>
+										<Button variant="destructive-outline" on:click={() => (cancelDialogOpen = false)}>
 											Cancel
 										</Button>
 										<form action="?/cancelTimesheet" method="POST" use:enhance>
@@ -1111,14 +1111,14 @@
 				<input type="hidden" name="companyId" value={company?.id ?? ''} />
 				<Button
 					type="submit"
-					variant="destructiveOutline"
+					variant="destructive-outline"
 					class="w-full"
 					on:click={() => (surveyDialogOpen = false)}
 				>
 					No, don't show me their jobs
 				</Button>
 			</form>
-			<Button on:click={() => (surveyDialogOpen = false)} class="ml-0 bg-primary hover:bg-primary/90">
+			<Button on:click={() => (surveyDialogOpen = false)} class="ml-0">
 				Yes
 			</Button>
 		</AlertDialog.Footer>
