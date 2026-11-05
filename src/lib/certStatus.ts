@@ -95,13 +95,13 @@ export function credentialBadge(
 		case 'MISSING':
 			return {
 				label: `${noun} needed`,
-				class: 'bg-red-50 text-red-700 ring-1 ring-red-200'
+				class: 'bg-status-negative-bg text-status-negative-fg ring-1 ring-status-negative-border'
 			};
 		case 'MISSING_GRACE': {
 			const left = graceDaysRemaining(c, today) ?? 0;
 			return {
 				label: `${noun} needed — ${left} day${left === 1 ? '' : 's'} left`,
-				class: 'bg-amber-50 text-amber-800 ring-1 ring-amber-200'
+				class: 'bg-status-warning-bg text-status-warning-fg ring-1 ring-status-warning-border'
 			};
 		}
 		case 'EXPIRED':
@@ -109,20 +109,20 @@ export function credentialBadge(
 				label: c.expiresOn
 					? `${noun} expired ${formatCertDate(c.expiresOn)} — jobs hidden`
 					: `${noun} still needed — jobs hidden`,
-				class: 'bg-red-50 text-red-700 ring-1 ring-red-200'
+				class: 'bg-status-negative-bg text-status-negative-fg ring-1 ring-status-negative-border'
 			};
 		case 'EXPIRING': {
 			const days = c.expiresOn ? daysUntil(c.expiresOn, today) : 0;
 			return {
 				label:
 					days <= 0 ? `${noun} expires today` : `${noun} expires in ${days} day${days === 1 ? '' : 's'}`,
-				class: 'bg-amber-50 text-amber-800 ring-1 ring-amber-200'
+				class: 'bg-status-warning-bg text-status-warning-fg ring-1 ring-status-warning-border'
 			};
 		}
 		case 'VALID':
 			return {
 				label: `${noun} valid through ${formatCertDate(c.expiresOn)}`,
-				class: 'bg-gray-50 text-gray-700 ring-1 ring-gray-200'
+				class: 'bg-muted text-muted-foreground ring-1 ring-border'
 			};
 	}
 }

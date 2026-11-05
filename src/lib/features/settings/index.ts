@@ -1,3 +1,9 @@
 export { default as SettingsMenu } from './components/SettingsMenu.svelte';
 export { default as NotificationsPage } from './components/NotificationsPage.svelte';
 export { default as ExperiencePage } from './components/ExperiencePage.svelte';
+export { default as AvailabilityPage } from './components/AvailabilityPage.svelte';
+export { default as DocumentsPage } from './components/DocumentsPage.svelte';
+export { default as EditProfilePage } from './components/EditProfilePage.svelte';
+export { default as ResumePage } from './components/ResumePage.svelte';
+export { default as SkillsPage } from './components/SkillsPage.svelte';
+export { default as SupportPage } from './components/SupportPage.svelte';

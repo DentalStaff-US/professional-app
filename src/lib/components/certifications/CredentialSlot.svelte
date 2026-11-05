@@ -129,7 +129,7 @@
 		{#if required}
 			<div class="flex gap-2">
 				<Button
-					size="sm"
+					class="min-h-11"
 					variant="outline"
 					on:click={() => (mode = mode === 'select' ? 'idle' : 'select')}
 					disabled={selectable.length === 0}
@@ -138,7 +138,7 @@
 				</Button>
 				{#if onUploadFile}
 					<Button
-						size="sm"
+						class="min-h-11"
 						variant={state === 'EXPIRED' || state === 'MISSING' ? 'default' : 'outline'}
 						on:click={() => (mode = mode === 'upload' ? 'idle' : 'upload')}
 					>
@@ -184,7 +184,7 @@
 					<strong>Once added, only DTSS staff can remove it</strong> — contact support
 					if you add it by mistake.
 				</p>
-				<Button type="submit" size="sm">Yes, my state requires one</Button>
+				<Button type="submit" class="min-h-11">Yes, my state requires one</Button>
 			</form>
 		{:else if !linked}
 			<p class="mt-3 border-t pt-3 text-xs text-muted-foreground">
@@ -266,7 +266,7 @@
 				If this date passes without a newer certificate, {abbreviation} jobs will be hidden until
 				you renew.
 			</p>
-			<Button type="submit" size="sm" disabled={!chosenDocumentId}>
+			<Button type="submit" class="min-h-11" disabled={!chosenDocumentId}>
 				Use as {abbreviation} certificate
 			</Button>
 		</form>
@@ -324,7 +324,7 @@
 					required
 				/>
 			</div>
-			<Button type="submit" size="sm" disabled={!uploadedUrl || !expiry || uploading}>
+			<Button type="submit" class="min-h-11" disabled={!uploadedUrl || !expiry || uploading}>
 				Save certificate
 			</Button>
 		</form>
