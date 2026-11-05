@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PasswordInput from '$lib/components/auth/PasswordInput.svelte';
 	import * as Form from '$lib/components/ui/form';
 	import * as Card from '$lib/components/ui/card';
 	import * as Alert from '$lib/components/ui/alert';
@@ -29,12 +30,12 @@
 
 <AuthShell>
 	<Form.Root let:submitting let:errors method="POST" {form} schema={signInSchema} let:config>
-		<Card.Root class="border-slate-200/80 shadow-xl shadow-teal-900/5">
+		<Card.Root class="border-border shadow-xl shadow-teal-900/5">
 			<Card.Header class="space-y-1">
 				<Card.Title class="text-2xl">Welcome back</Card.Title>
 				<Card.Description>
 					Don't have a professional account yet?
-					<a href={authSwitchHref} class="font-medium text-primary hover:underline">Sign up</a>
+					<a href={authSwitchHref} class="font-medium text-primary-dark hover:underline">Sign up</a>
 				</Card.Description>
 			</Card.Header>
 			<Card.Content class="grid gap-4">
@@ -62,19 +63,19 @@
 							<Form.Label>Password</Form.Label>
 							<a
 								href="/auth/password/reset"
-								class="text-sm text-slate-500 hover:text-primary hover:underline"
+								class="text-sm text-muted-foreground hover:text-primary-dark hover:underline"
 							>
 								Forgot password?
 							</a>
 						</div>
-						<Form.Input type="password" autocomplete="current-password" />
+						<PasswordInput autocomplete="current-password" />
 						<Form.Validation />
 					</Form.Item>
 				</Form.Field>
 			</Card.Content>
 			<Card.Footer>
 				<Form.Button
-					class="h-11 w-full bg-primary text-base hover:bg-primary/90"
+					class="h-11 w-full text-base"
 					disabled={submitting}
 				>
 					{#if submitting}

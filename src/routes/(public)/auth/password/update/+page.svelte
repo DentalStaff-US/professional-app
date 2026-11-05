@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PasswordInput from '$lib/components/auth/PasswordInput.svelte';
 	import * as Form from '$lib/components/ui/form';
 	import * as Card from '$lib/components/ui/card';
 	import * as Alert from '$lib/components/ui/alert';
@@ -13,9 +14,11 @@
 	$: form = data.form;
 </script>
 
+<svelte:head><title>Change your password | DTSS Professionals</title></svelte:head>
+
 <AuthShell>
 	<Form.Root let:submitting let:errors method="POST" {form} schema={userUpdatePasswordSchema} let:config>
-		<Card.Root class="border-slate-200/80 shadow-xl shadow-teal-900/5">
+		<Card.Root class="border-border shadow-xl shadow-teal-900/5">
 			<Card.Header class="space-y-1">
 				<Card.Title class="text-2xl">Change your password</Card.Title>
 				<Card.Description>Choose a new password for your account.</Card.Description>
@@ -45,21 +48,21 @@
 				<Form.Field {config} name="password">
 					<Form.Item>
 						<Form.Label>New password</Form.Label>
-						<Form.Input type="password" autocomplete="new-password" />
+						<PasswordInput autocomplete="new-password" strength />
 						<Form.Validation />
 					</Form.Item>
 				</Form.Field>
 				<Form.Field {config} name="confirmPassword">
 					<Form.Item>
 						<Form.Label>Confirm new password</Form.Label>
-						<Form.Input type="password" autocomplete="new-password" />
+						<PasswordInput autocomplete="new-password" />
 						<Form.Validation />
 					</Form.Item>
 				</Form.Field>
 			</Card.Content>
 			<Card.Footer>
 				<Form.Button
-					class="h-11 w-full bg-primary text-base hover:bg-primary/90"
+					class="h-11 w-full text-base"
 					disabled={submitting || !data.hasToken}
 				>
 					{#if submitting}
