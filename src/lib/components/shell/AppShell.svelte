@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { ChevronLeft } from 'lucide-svelte';
 	import logo from '$lib/assets/dtss-logo.png';
-	import { activeTab, innerPage, showsTabs, TABS } from '$lib/nav/nav';
+	import { activeTab, fillsScreen, innerPage, showsTabs, TABS } from '$lib/nav/nav';
 	import { cn } from '$lib/utils';
 	import UserMenu from './UserMenu.svelte';
 
@@ -32,6 +32,9 @@
 
 	const active = $derived(activeTab(pathname));
 	const tabs = $derived(showsTabs(pathname));
+	const fills = $derived(fillsScreen(pathname));
+	// A thread needs the room on a phone, and the top bar has a way back.
+	const phoneTabs = $derived(tabs && !fills);
 	const inner = $derived(innerPage(pathname));
 	const unreadLabel = $derived(unreadCount > 9 ? '9+' : String(unreadCount));
 </script>
@@ -39,8 +42,9 @@
 <!-- --tabbar-offset lets fixed action bars inside pages sit above the tabs. -->
 <div
 	class={cn(
-		'flex min-h-dvh flex-col bg-muted/40',
-		tabs && '[--tabbar-offset:calc(4rem+env(safe-area-inset-bottom))] md:[--tabbar-offset:0px]'
+		'flex flex-col bg-muted/40',
+		fills ? 'h-dvh overflow-hidden' : 'min-h-dvh',
+		phoneTabs && '[--tabbar-offset:calc(4rem+env(safe-area-inset-bottom))] md:[--tabbar-offset:0px]'
 	)}
 >
 	{@render topBanner?.()}
@@ -99,11 +103,11 @@
 		<div class="mx-auto w-full max-w-5xl px-4 pt-4 md:px-6">{@render banner()}</div>
 	{/if}
 
-	<main class={cn('flex w-full flex-1 flex-col py-6 md:py-8', tabs && 'pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-8')}>
+	<main class={cn('flex w-full flex-1 flex-col', fills ? 'min-h-0' : 'py-6 md:py-8', phoneTabs && 'pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-8')}>
 		{@render children()}
 	</main>
 
-	{#if tabs}
+	{#if phoneTabs}
 		<nav
 			aria-label="Main"
 			class="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"

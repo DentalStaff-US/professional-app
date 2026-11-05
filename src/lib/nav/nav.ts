@@ -20,6 +20,11 @@ export function showsTabs(pathname: string): boolean {
 	return !under(pathname, '/onboarding');
 }
 
+/** Screens that fill the viewport and scroll inside themselves: a message thread. */
+export function fillsScreen(pathname: string): boolean {
+	return /^\/inbox\/[^/]+/.test(pathname);
+}
+
 const INNER_PAGES: { pattern: RegExp; title: string; back: string }[] = [
 	{ pattern: /^\/my-shifts\/[^/]+/, title: 'Shift details', back: '/my-shifts' },
 	{ pattern: /^\/permanent\/[^/]+/, title: 'Job details', back: '/permanent' },
