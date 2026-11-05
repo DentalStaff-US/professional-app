@@ -26,7 +26,7 @@ export type CandidateSupportTicket = {
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const { user } = locals;
-	if (!user) redirect(302, '/sign-in');
+	if (!user) redirect(302, '/auth/sign-in');
 
 	const token = generateToken(user.id);
 	const res = await fetchAdmin<CandidateSupportTicket[]>('/api/external/support/tickets', {
@@ -50,7 +50,7 @@ const newTicketSchema = z.object({
 export const actions: Actions = {
 	default: async (event) => {
 		const { user } = event.locals;
-		if (!user) redirect(302, '/sign-in');
+		if (!user) redirect(302, '/auth/sign-in');
 
 		const data = await event.request.formData();
 		const parsed = newTicketSchema.safeParse({

@@ -8,7 +8,7 @@ import { updateUser } from '$lib/server/database/user-model';
 
 export const load: PageServerLoad = async (event) => {
 	const user = event.locals.user;
-	if (!user) redirect(302, '/sign-in');
+	if (!user) redirect(302, '/auth/sign-in');
 
 	const [row] = await db
 		.select({ receiveEmail: userTable.receiveEmail, receiveSms: userTable.receiveSms })

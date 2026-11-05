@@ -106,13 +106,13 @@
 	}
 </script>
 
-<div class="mt-3 rounded-md border bg-gray-50/60 p-3">
+<div class="mt-3 rounded-md border bg-muted/50 p-3">
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<div class="flex items-center gap-2 text-sm">
 			{#if state === 'MISSING' || state === 'EXPIRED'}
-				<AlertCircle class="h-4 w-4 text-red-600" />
+				<AlertCircle class="h-4 w-4 text-destructive" />
 			{:else}
-				<FileText class="h-4 w-4 text-gray-500" />
+				<FileText class="h-4 w-4 text-muted-foreground" />
 			{/if}
 			<span class="font-medium">{isLicense ? 'License' : 'Certification'}</span>
 			{#if badge}
@@ -120,7 +120,7 @@
 					{badge.label}
 				</span>
 			{:else}
-				<span class="text-xs text-gray-600">
+				<span class="text-xs text-muted-foreground">
 					No {noun} required for {disciplineName}
 				</span>
 			{/if}
@@ -150,7 +150,7 @@
 	</div>
 
 	{#if linked}
-		<p class="mt-2 text-xs text-gray-600">
+		<p class="mt-2 text-xs text-muted-foreground">
 			On file: <span class="font-medium">{linked.filename ?? 'certificate'}</span> · expires
 			{formatCertDate(linked.expiryDate)}
 		</p>
@@ -175,10 +175,10 @@
 				class="mt-3 space-y-2 border-t pt-3"
 			>
 				<input type="hidden" name="disciplineId" value={disciplineId} />
-				<p class="text-xs font-medium text-gray-700">
+				<p class="text-xs font-medium text-foreground">
 					Does your state require a certification for this discipline?
 				</p>
-				<p class="text-xs text-gray-600">
+				<p class="text-xs text-muted-foreground">
 					If it does, say so here and then upload the certificate — its expiration
 					comes from the document.
 					<strong>Once added, only DTSS staff can remove it</strong> — contact support
@@ -187,12 +187,12 @@
 				<Button type="submit" size="sm">Yes, my state requires one</Button>
 			</form>
 		{:else if !linked}
-			<p class="mt-3 border-t pt-3 text-xs text-gray-600">
+			<p class="mt-3 border-t pt-3 text-xs text-muted-foreground">
 				You have marked {abbreviation} as requiring a certification. Upload the certificate
 				below and set its expiration there — we will remind you before it lapses.
 			</p>
 		{:else}
-			<p class="mt-3 border-t pt-3 text-xs text-gray-600">
+			<p class="mt-3 border-t pt-3 text-xs text-muted-foreground">
 				If this date passes without a renewal, {abbreviation} jobs will be hidden until
 				you upload a current certificate.
 			</p>
@@ -218,13 +218,13 @@
 			<input type="hidden" name="disciplineId" value={disciplineId} />
 			<input type="hidden" name="credentialType" value={kind} />
 			<div class="space-y-1">
-				<label class="text-xs font-medium text-gray-700" for="sel-{disciplineId}">
+				<label class="text-xs font-medium text-foreground" for="sel-{disciplineId}">
 					Which document is your {disciplineName} ({abbreviation}) certificate?
 				</label>
 				<select
 					id="sel-{disciplineId}"
 					name="documentId"
-					class="w-full rounded-md border-gray-300 text-sm"
+					class="w-full rounded-md border-input text-sm"
 					bind:value={chosenDocumentId}
 					required
 				>
@@ -240,29 +240,29 @@
 			     document that has no date on it (uploaded before expiries were
 			     captured) asks for one. -->
 			{#if chosenDocExpiry}
-				<p class="text-xs text-gray-600">
+				<p class="text-xs text-muted-foreground">
 					Expires <span class="font-medium">{formatCertDate(chosenDocExpiry)}</span>, taken from
 					the document.
 				</p>
 				<input type="hidden" name="expiryDate" value={chosenDocExpiry} />
 			{:else if chosenDocumentId}
 				<div class="space-y-1">
-					<label class="text-xs font-medium text-gray-700" for="sel-exp-{disciplineId}">
-						Expires on <span class="font-normal text-gray-500">(if it has an expiry)</span>
+					<label class="text-xs font-medium text-foreground" for="sel-exp-{disciplineId}">
+						Expires on <span class="font-normal text-muted-foreground">(if it has an expiry)</span>
 					</label>
 					<input
 						id="sel-exp-{disciplineId}"
 						name="expiryDate"
 						type="date"
-						class="w-full rounded-md border-gray-300 text-sm"
+						class="w-full rounded-md border-input text-sm"
 						bind:value={expiry}
 					/>
-					<p class="text-xs text-gray-600">
+					<p class="text-xs text-muted-foreground">
 						This document has no expiry recorded. Add one if it has a date on it.
 					</p>
 				</div>
 			{/if}
-			<p class="text-xs text-gray-600">
+			<p class="text-xs text-muted-foreground">
 				If this date passes without a newer certificate, {abbreviation} jobs will be hidden until
 				you renew.
 			</p>
@@ -291,7 +291,7 @@
 			<input type="hidden" name="url" value={uploadedUrl} />
 			<input type="hidden" name="filename" value={uploadedName} />
 			<div class="space-y-1">
-				<label class="text-xs font-medium text-gray-700" for="up-{disciplineId}">
+				<label class="text-xs font-medium text-foreground" for="up-{disciplineId}">
 					Certificate file
 				</label>
 				<input
@@ -302,23 +302,23 @@
 					on:change={handleFile}
 				/>
 				{#if uploading}
-					<p class="text-xs text-gray-600">Uploading…</p>
+					<p class="text-xs text-muted-foreground">Uploading…</p>
 				{:else if uploadedName}
-					<p class="text-xs text-green-700">Ready: {uploadedName}</p>
+					<p class="text-xs text-status-positive-fg">Ready: {uploadedName}</p>
 				{/if}
 				{#if uploadError}
-					<p class="text-xs text-red-600">{uploadError}</p>
+					<p class="text-xs text-destructive">{uploadError}</p>
 				{/if}
 			</div>
 			<div class="space-y-1">
-				<label class="text-xs font-medium text-gray-700" for="up-exp-{disciplineId}">
+				<label class="text-xs font-medium text-foreground" for="up-exp-{disciplineId}">
 					Expires on
 				</label>
 				<input
 					id="up-exp-{disciplineId}"
 					name="expiryDate"
 					type="date"
-					class="w-full rounded-md border-gray-300 text-sm"
+					class="w-full rounded-md border-input text-sm"
 					min={todayInET()}
 					bind:value={expiry}
 					required

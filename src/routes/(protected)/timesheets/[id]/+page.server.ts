@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const { user } = locals;
 	if (!user) {
-		throw redirect(303, '/sign-in');
+		throw redirect(303, '/auth/sign-in');
 	}
 
 	const token = generateToken(user.id);

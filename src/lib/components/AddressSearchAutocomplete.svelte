@@ -7,6 +7,7 @@
     import type {AddressResult} from "$lib/types";
 
     // Props
+    export let id: string | undefined = undefined;
     export let placeholder = "Search for an address...";
     export let debounceMs = 300;
     export let minChars = 3;
@@ -212,6 +213,7 @@
 <Command.Root class="relative">
     <div class="relative">
         <input
+                {id}
                 bind:this={inputElement}
                 bind:value={query}
                 on:input={handleInput}
@@ -251,20 +253,20 @@
         {#each suggestions as suggestion}
             <div
                     on:click={() => selectAddress(suggestion)}
-                    class="cursor-pointer px-4 py-2 hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
+                    class="cursor-pointer px-4 py-2 hover:bg-muted border-b border-border last:border-b-0"
             >
                 <div class="flex flex-col gap-1">
                     <span class="font-medium text-sm">{suggestion.place_name}</span>
 
                     <!-- Show additional address components if available -->
                     {#if suggestion.address_components?.subpremise || suggestion.address_components?.secondary_address}
-                        <span class="text-xs text-blue-600">
+                        <span class="text-xs text-primary-dark">
                             Unit/Suite: {suggestion.address_components.subpremise || suggestion.address_components.secondary_address}
                         </span>
                     {/if}
 
                     {#if suggestion.context?.country}
-                        <span class="text-xs text-gray-600">
+                        <span class="text-xs text-muted-foreground">
                             {[
                                 suggestion.context.neighborhood,
                                 suggestion.context.locality,
@@ -278,7 +280,7 @@
         {/each}
 
         {#if !loading && suggestions.length === 0 && query.length >= minChars}
-            <div class="px-4 py-2 text-gray-600 text-sm">
+            <div class="px-4 py-2 text-muted-foreground text-sm">
                 No addresses found for "{query}"
             </div>
         {/if}

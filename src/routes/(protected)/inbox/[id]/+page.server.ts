@@ -19,7 +19,7 @@ export const load: PageServerLoad = async (event) => {
 	const userId = user?.id;
 
 	if (!user) {
-		redirect(302, '/sign-in');
+		redirect(302, '/auth/sign-in');
 	}
 
 	const token = generateToken(userId);
@@ -42,7 +42,7 @@ export const actions = {
 		const userId = user?.id;
 
 		if (!user) {
-			redirect(302, '/sign-in');
+			redirect(302, '/auth/sign-in');
 		}
 
 		const token = generateToken(userId);

@@ -33,7 +33,7 @@ export type SkillsPayload = {
 
 export const load: PageServerLoad = async (event) => {
 	const { user } = event.locals;
-	if (!user) return redirect(302, '/sign-in');
+	if (!user) return redirect(302, '/auth/sign-in');
 
 	const res = await fetchAdmin<SkillsPayload>('/api/external/candidateSkills', {
 		token: generateToken(user.id)
@@ -51,7 +51,7 @@ export const load: PageServerLoad = async (event) => {
 export const actions: Actions = {
 	saveSkills: async (event) => {
 		const user = event.locals.user;
-		if (!user) return redirect(302, '/sign-in');
+		if (!user) return redirect(302, '/auth/sign-in');
 
 		const fd = await event.request.formData();
 		const skillIds = fd.getAll('skillIds').map(String).filter(Boolean);
@@ -75,7 +75,7 @@ export const actions: Actions = {
 	/** Upload a certificate (file already stored via /api/uploadFile) for one skill. */
 	uploadSkillCertificate: async (event) => {
 		const user = event.locals.user;
-		if (!user) return redirect(302, '/sign-in');
+		if (!user) return redirect(302, '/auth/sign-in');
 
 		const fd = await event.request.formData();
 		const url = String(fd.get('url') ?? '');

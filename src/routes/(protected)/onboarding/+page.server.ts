@@ -12,7 +12,7 @@ export const load: PageServerLoad = async (event) => {
 	const { user } = event.locals;
 
 	if (!user) {
-		redirect(302, '/sign-in');
+		redirect(302, '/auth/sign-in');
 	}
 
 	if (!user.completedOnboarding && user.onboardingStep > 1) {
@@ -31,7 +31,7 @@ export const actions: Actions = {
 		const { user } = locals;
 
 		if (!user) {
-			redirect(302, '/sign-in');
+			redirect(302, '/auth/sign-in');
 		}
 
 		const userId = user.id;
@@ -75,7 +75,7 @@ export const actions: Actions = {
 		const { user } = locals;
 
 		if (!user) {
-			redirect(302, '/sign-in');
+			redirect(302, '/auth/sign-in');
 		}
 
 		const userId = user.id;

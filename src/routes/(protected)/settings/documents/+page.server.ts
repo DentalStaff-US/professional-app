@@ -54,7 +54,7 @@ export const actions = {
 		const { user } = locals;
 
 		if (!user) {
-			return redirect(302, '/sign-in');
+			return redirect(302, '/auth/sign-in');
 		}
 
 		// Clone before superValidate reads the body — a Request can only be consumed

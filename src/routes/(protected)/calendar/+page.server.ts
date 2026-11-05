@@ -22,7 +22,7 @@ export const load: PageServerLoad = async (event) => {
 	const { user } = locals;
 
 	if (!user) {
-		return redirect(303, '/sign-in');
+		return redirect(303, '/auth/sign-in');
 	}
 
 	if (!user.completedOnboarding) {
@@ -159,7 +159,7 @@ export const actions = {
 	 */
 	saveAvailability: async (event: RequestEvent) => {
 		const user = event.locals.user;
-		if (!user) return redirect(303, '/sign-in');
+		if (!user) return redirect(303, '/auth/sign-in');
 
 		const form = await superValidate(event, candidateAvailabilitySchema);
 		if (!form.valid) return fail(400, { form });

@@ -43,7 +43,7 @@ function addMonthsToISO(date: string, months: number): string {
 
 export const load: PageServerLoad = async (event) => {
 	const { user } = event.locals;
-	if (!user) redirect(302, '/sign-in');
+	if (!user) redirect(302, '/auth/sign-in');
 
 	const token = generateToken(user.id);
 	const from = todayInBusinessTz();
@@ -97,7 +97,7 @@ export const load: PageServerLoad = async (event) => {
 export const actions = {
 	saveAvailability: async (event: RequestEvent) => {
 		const { user } = event.locals;
-		if (!user) redirect(302, '/sign-in');
+		if (!user) redirect(302, '/auth/sign-in');
 
 		const form = await superValidate(event, candidateAvailabilitySchema);
 		if (!form.valid) return fail(400, { form });

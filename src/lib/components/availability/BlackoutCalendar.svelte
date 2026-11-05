@@ -106,9 +106,9 @@
 		let:weekdays
 	>
 		<Calendar.Header>
-			<Calendar.PrevButton />
+			<Calendar.PrevButton class="size-11" />
 			<Calendar.Heading />
-			<Calendar.NextButton />
+			<Calendar.NextButton class="size-11" />
 		</Calendar.Header>
 		<Calendar.Months>
 			{#each months as month (month.value.toString())}
