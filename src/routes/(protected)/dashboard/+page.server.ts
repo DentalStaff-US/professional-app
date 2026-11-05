@@ -1,4 +1,5 @@
 import { recurrenceDayClaimSchema } from '$lib/config/zod-schemas.js';
+import { homeNudges } from '$features/dashboard/nudges';
 import { generateToken } from '$lib/server/utils.js';
 import { redirect } from '@sveltejs/kit';
 import { superValidate } from 'sveltekit-superforms/server';
@@ -33,7 +34,7 @@ export const load = async (event) => {
 	}
 	const token = generateToken(user.id);
 
-	const [workdaysRes, timesheetsRes, requisitionsRes, affiliateRes] = await Promise.all([
+	const [workdaysRes, timesheetsRes, requisitionsRes, affiliateRes, profileRes, disciplinesRes] = await Promise.all([
 		fetchAdmin<{ data: any[] }>('/api/external/getUpcomingWorkdaysForCandidate', { token }),
 		fetchAdmin<{ data: any[] }>('/api/external/timesheets/getPendingTimesheetsForUser', {
 			token
@@ -58,7 +59,9 @@ export const load = async (event) => {
 		fetchAdmin<{ programEnabled: boolean; eligible: boolean; enrolled: boolean }>(
 			'/api/external/affiliate/status',
 			{ token }
-		)
+		),
+		fetchAdmin<{ completeAddress?: string | null; cellPhone?: string | null }>('/api/external/getCandidateProfile', { token }),
+		fetchAdmin<{ disciplines: any[] }>('/api/external/getCandidateDisciplines', { token })
 	]);
 
 	return {
@@ -68,6 +71,10 @@ export const load = async (event) => {
 		// claimWorkdayShift was silently discarded.
 		claimForm: await superValidate(event, recurrenceDayClaimSchema),
 		affiliateStatus: affiliateRes.ok ? affiliateRes.data : null,
+		nudges: homeNudges({
+			profile: profileRes.ok ? profileRes.data : null,
+			disciplines: disciplinesRes.ok ? (disciplinesRes.data.disciplines ?? []) : []
+		}),
 		workdays: workdaysRes.ok ? (workdaysRes.data.data ?? []) : [],
 		timesheets: timesheetsRes.ok ? (timesheetsRes.data.data ?? []) : [],
 		requisitions: requisitionsRes.ok ? (requisitionsRes.data.recurrenceDays ?? []) : [],

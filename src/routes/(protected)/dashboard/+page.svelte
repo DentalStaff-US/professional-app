@@ -15,4 +15,5 @@
 	workPreference={data.workPreference}
 	claimForm={data.claimForm}
 	affiliateStatus={data.affiliateStatus}
+	nudges={data.nudges}
 />

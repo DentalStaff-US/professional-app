@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { HomePage } from '$features/dashboard';
+	import { homeNudges } from '$features/dashboard/nudges';
 	import AppShell from '$shell/AppShell.svelte';
 	import { requisitions, timesheets, workdays } from '../../fixtures';
 
 	// /_dev/preview/home?state=first-run|empty
 	const state = $derived(page.url.searchParams.get('state'));
+	const dayInFuture = (days: number) => new Date(Date.now() + days * 864e5).toISOString().slice(0, 10);
 </script>
 
 <AppShell pathname="/dashboard" name="Maria Lopez" email="maria@example.com" initials="ML">
@@ -19,6 +21,7 @@
 		showUnavailable={false}
 		workPreference={undefined}
 		claimForm={null}
+		nudges={page.url.searchParams.has('nudges') ? homeNudges({ profile: { completeAddress: null, cellPhone: '1' }, disciplines: [{ disciplineId: 'd1', name: 'EFDA', requiresLicense: true, effectiveLicenseExpiry: dayInFuture(20) }] }) : []}
 		affiliateStatus={{ programEnabled: true, eligible: true, enrolled: page.url.searchParams.has('enrolled') }}
 	/>
 </AppShell>

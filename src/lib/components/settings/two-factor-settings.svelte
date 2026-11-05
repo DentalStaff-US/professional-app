@@ -90,7 +90,7 @@
 	}
 </script>
 
-<Card.Root class="border-slate-200/80">
+<Card.Root class="border-border/80">
 	<Card.Header>
 		<Card.Title class="flex items-center gap-2 text-xl">
 			<ShieldCheck class="h-5 w-5 text-primary" />

@@ -238,7 +238,7 @@
 
 <!-- Portal the dropdown to body to escape overflow constraints -->
 {#if open && (suggestions.length > 0 || loading || query.length >= minChars)}
-    <div style="position: fixed; z-index: 99999; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-height: 300px; overflow-y: auto; min-width: 300px; {dropdownStyle}"
+    <div style="position: fixed; z-index: 99999; background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-height: 300px; overflow-y: auto; min-width: 300px; {dropdownStyle}"
          class="suggestions-dropdown">
         {#if loading}
             <div class="flex items-center gap-2 px-4 py-2">

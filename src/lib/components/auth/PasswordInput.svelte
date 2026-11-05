@@ -5,7 +5,7 @@
 	import { passwordStrength } from './signUpContext';
 
 	// Lives inside a Form.Item, and reads the field from it.
-	let { autocomplete, strength = false }: { autocomplete: string; strength?: boolean } = $props();
+	let { autocomplete, strength = false }: { autocomplete: 'current-password' | 'new-password'; strength?: boolean } = $props();
 
 	const { value } = getFormField();
 

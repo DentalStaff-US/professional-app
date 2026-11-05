@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Notice from '$dtss/Notice.svelte';
+	import InstallPrompt from './InstallPrompt.svelte';
+	import type { HomeNudge } from '../nudges';
 	import {
 		CalendarCheck,
 		CalendarSearch,
@@ -42,7 +45,8 @@
 		showUnavailable,
 		workPreference,
 		claimForm,
-		affiliateStatus
+		affiliateStatus,
+		nudges = []
 	}: {
 		firstName?: string | null;
 		workdays: any[];
@@ -54,6 +58,7 @@
 		workPreference: any;
 		claimForm: any;
 		affiliateStatus?: AffiliateStatus;
+		nudges?: HomeNudge[];
 	} = $props();
 
 	let selectedShift = $state<any>(null);
@@ -84,6 +89,15 @@
 		basePath="/dashboard"
 	/>
 	<WorkPreferenceBanner {workPreference} />
+
+	{#each nudges as nudge (nudge.id)}
+		<Notice tone="warning" title={nudge.title}>
+			{nudge.text}
+			<a href={nudge.href} class="mt-1 block min-h-11 py-2 font-bold underline">{nudge.action}</a>
+		</Notice>
+	{/each}
+
+	<InstallPrompt hasClaimed={workdays.length > 0} />
 
 	{#if firstRun}
 		<section class="rounded-2xl bg-gradient-to-br from-teal-50 via-white to-emerald-50 p-6 ring-1 ring-primary/15 sm:p-10">
