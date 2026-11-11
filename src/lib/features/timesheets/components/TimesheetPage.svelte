@@ -196,9 +196,9 @@
 				<section class="rounded-lg border bg-card p-5 shadow-card" aria-label="Practice">
 					<div class="flex items-center gap-3">
 						{#if company?.logo}
-							<img src={company.logo} alt="" class="size-12 shrink-0 rounded-lg border bg-white object-contain p-1" />
+							<img src={company.logo} alt="" class="size-12 shrink-0 rounded-full border bg-white object-contain p-1" />
 						{:else}
-							<span class="flex size-12 shrink-0 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
+							<span class="flex size-12 shrink-0 items-center justify-center rounded-full border bg-muted text-muted-foreground">
 								<Building2 class="size-5" aria-hidden="true" />
 							</span>
 						{/if}

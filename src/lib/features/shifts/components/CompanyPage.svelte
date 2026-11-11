@@ -27,9 +27,9 @@
 	{:else}
 		<header class="flex items-center gap-4">
 			{#if company.companyLogo}
-				<img src={company.companyLogo} alt="" class="size-14 shrink-0 rounded-lg border bg-white object-contain p-1" />
+				<img src={company.companyLogo} alt="" class="size-14 shrink-0 rounded-full border bg-white object-contain p-1" />
 			{:else}
-				<span class="flex size-14 shrink-0 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
+				<span class="flex size-14 shrink-0 items-center justify-center rounded-full border bg-muted text-muted-foreground">
 					<Building2 class="size-6" aria-hidden="true" />
 				</span>
 			{/if}

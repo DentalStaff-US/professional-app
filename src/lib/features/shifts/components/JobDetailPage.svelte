@@ -57,11 +57,11 @@
 
 		<header class="flex items-start gap-4">
 			{#if locked}
-				<span class="flex size-14 shrink-0 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
+				<span class="flex size-14 shrink-0 items-center justify-center rounded-full border bg-muted text-muted-foreground">
 					<Lock class="size-6" aria-hidden="true" />
 				</span>
 			{:else if job.company?.companyLogo}
-				<img src={job.company.companyLogo} alt="" class="size-14 shrink-0 rounded-lg border bg-white object-contain p-1" />
+				<img src={job.company.companyLogo} alt="" class="size-14 shrink-0 rounded-full border bg-white object-contain p-1" />
 			{/if}
 			<div class="min-w-0">
 				{#if jobStatus}

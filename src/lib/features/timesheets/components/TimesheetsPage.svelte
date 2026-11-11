@@ -28,9 +28,9 @@
 			{#each sorted as row (row.timesheet.id)}
 				<li class="relative flex items-center gap-4 rounded-xl border bg-card p-4 shadow-card transition duration-fast hover:shadow-lift">
 					{#if row.company?.logo}
-						<img alt="" src={row.company.logo} class="size-12 shrink-0 rounded-lg border bg-white object-contain p-1" />
+						<img alt="" src={row.company.logo} class="size-12 shrink-0 rounded-full border bg-white object-contain p-1" />
 					{:else}
-						<span class="flex size-12 shrink-0 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
+						<span class="flex size-12 shrink-0 items-center justify-center rounded-full border bg-muted text-muted-foreground">
 							<Building2 class="size-5" aria-hidden="true" />
 						</span>
 					{/if}

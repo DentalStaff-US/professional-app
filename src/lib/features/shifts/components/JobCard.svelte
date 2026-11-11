@@ -16,13 +16,13 @@
 <article class="flex h-full flex-col rounded-xl border bg-card p-5 shadow-card">
 	<div class="flex items-start gap-3">
 		{#if locked}
-			<span class="flex size-12 shrink-0 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
+			<span class="flex size-12 shrink-0 items-center justify-center rounded-full border bg-muted text-muted-foreground">
 				<Lock class="size-5" aria-hidden="true" />
 			</span>
 		{:else if job.company?.companyLogo}
-			<img alt="" src={job.company.companyLogo} class="size-12 shrink-0 rounded-lg border bg-white object-contain p-1" />
+			<img alt="" src={job.company.companyLogo} class="size-12 shrink-0 rounded-full border bg-white object-contain p-1" />
 		{:else}
-			<span class="flex size-12 shrink-0 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
+			<span class="flex size-12 shrink-0 items-center justify-center rounded-full border bg-muted text-muted-foreground">
 				<Briefcase class="size-5" aria-hidden="true" />
 			</span>
 		{/if}
