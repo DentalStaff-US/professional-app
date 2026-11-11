@@ -25,6 +25,7 @@
 				timesheet={sheet}
 				requisition={sheetRequisition}
 				company={sheetCompany}
+				conversationId="preview-conversation"
 				workdays={sheetDays}
 				expenses={[{ id: 'e1', description: 'Parking', amountCents: 1250, status: 'PENDING', rejectionReason: null }, { id: 'e2', description: 'Supplies', amountCents: 800, status: 'REJECTED', rejectionReason: 'Provided by the practice' }]}
 				addExpenseForm={null}

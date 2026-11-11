@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Building2, Clipboard, LifeBuoy, Loader2, Utensils } from 'lucide-svelte';
+	import { Building2, Clipboard, LifeBuoy, Loader2, MessageSquare, Utensils } from 'lucide-svelte';
 	import ConfirmDialog from '$dtss/ConfirmDialog.svelte';
 	import EmptyState from '$dtss/EmptyState.svelte';
 	import Notice from '$dtss/Notice.svelte';
@@ -26,6 +26,7 @@
 		timesheet,
 		requisition,
 		company,
+		conversationId = null,
 		workdays,
 		expenses,
 		addExpenseForm
@@ -33,6 +34,7 @@
 		timesheet: any;
 		requisition: any;
 		company: any;
+		conversationId?: string | null;
 		workdays: any[];
 		expenses: any[];
 		addExpenseForm: any;
@@ -187,15 +189,23 @@
 					</dl>
 				</section>
 
-				<section class="flex items-center gap-3 rounded-lg border bg-card p-5 shadow-card" aria-label="Practice">
-					{#if company?.logo}
-						<img src={company.logo} alt="" class="size-12 shrink-0 rounded-lg border bg-white object-contain p-1" />
-					{:else}
-						<span class="flex size-12 shrink-0 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
-							<Building2 class="size-5" aria-hidden="true" />
-						</span>
+				<section class="rounded-lg border bg-card p-5 shadow-card" aria-label="Practice">
+					<div class="flex items-center gap-3">
+						{#if company?.logo}
+							<img src={company.logo} alt="" class="size-12 shrink-0 rounded-lg border bg-white object-contain p-1" />
+						{:else}
+							<span class="flex size-12 shrink-0 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
+								<Building2 class="size-5" aria-hidden="true" />
+							</span>
+						{/if}
+						<p class="min-w-0 font-bold">{company?.name ?? 'Practice'}</p>
+					</div>
+					<!-- Only when a thread already exists: professionals can't start one. -->
+					{#if conversationId}
+						<Button href="/inbox/{conversationId}" variant="outline" class="mt-4 min-h-11 w-full">
+							<MessageSquare class="mr-2 size-4" aria-hidden="true" /> Message the practice
+						</Button>
 					{/if}
-					<p class="min-w-0 font-bold">{company?.name ?? 'Practice'}</p>
 				</section>
 
 				{#if status === 'PENDING'}

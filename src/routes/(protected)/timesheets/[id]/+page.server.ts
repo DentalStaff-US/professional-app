@@ -65,6 +65,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		timesheet: data.timesheet,
 		requisition: data.requisition,
 		company: data.company,
+		conversationId: data.conversationId ?? null,
 		workday: data.workday,
 		recurrenceDay: data.recurrenceDay,
 		workdays: workdaysRes.ok ? (workdaysRes.data.workdays ?? []) : [],
