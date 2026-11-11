@@ -5,6 +5,7 @@
 	import { sheetCompany, sheetDays, sheetRequisition, sheetRows, sheetSaved } from '../../fixtures';
 
 	// /_dev/preview/timesheet?status=DRAFT|PENDING|DISCREPANCY|APPROVED or ?list=1 or ?list=empty
+	// &thread=none for no conversation yet (start one), &blocked=1 to hide the button
 	const list = $derived(page.url.searchParams.get('list'));
 	const status = $derived(page.url.searchParams.get('status') ?? 'DRAFT');
 	const sheet = $derived({
@@ -25,7 +26,8 @@
 				timesheet={sheet}
 				requisition={sheetRequisition}
 				company={sheetCompany}
-				conversationId="preview-conversation"
+				conversationId={page.url.searchParams.get('thread') === 'none' ? null : 'preview-conversation'}
+				canMessagePractice={page.url.searchParams.get('blocked') !== '1'}
 				workdays={sheetDays}
 				expenses={[{ id: 'e1', description: 'Parking', amountCents: 1250, status: 'PENDING', rejectionReason: null }, { id: 'e2', description: 'Supplies', amountCents: 800, status: 'REJECTED', rejectionReason: 'Provided by the practice' }]}
 				addExpenseForm={null}

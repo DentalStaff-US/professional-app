@@ -12,6 +12,7 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import DayHoursRow from './DayHoursRow.svelte';
 	import ExpensesCard from './ExpensesCard.svelte';
+	import MessagePracticeDialog from './MessagePracticeDialog.svelte';
 	import {
 		buildEntries,
 		entryProblem,
@@ -27,6 +28,7 @@
 		requisition,
 		company,
 		conversationId = null,
+		canMessagePractice = false,
 		workdays,
 		expenses,
 		addExpenseForm
@@ -35,6 +37,7 @@
 		requisition: any;
 		company: any;
 		conversationId?: string | null;
+		canMessagePractice?: boolean;
 		workdays: any[];
 		expenses: any[];
 		addExpenseForm: any;
@@ -85,6 +88,7 @@
 
 	let submitOpen = $state(false);
 	let surveyOpen = $state(false);
+	let messageOpen = $state(false);
 	let saving = $state(false);
 	let submitting = $state(false);
 </script>
@@ -200,9 +204,14 @@
 						{/if}
 						<p class="min-w-0 font-bold">{company?.name ?? 'Practice'}</p>
 					</div>
-					<!-- Only when a thread already exists: professionals can't start one. -->
+					<!-- Opens the existing thread, or starts one: a timesheet shows they've
+					     worked here. Hidden when either side has blocked the other. -->
 					{#if conversationId}
 						<Button href="/inbox/{conversationId}" variant="outline" class="mt-4 min-h-11 w-full">
+							<MessageSquare class="mr-2 size-4" aria-hidden="true" /> Message the practice
+						</Button>
+					{:else if canMessagePractice}
+						<Button variant="outline" class="mt-4 min-h-11 w-full" on:click={() => (messageOpen = true)}>
 							<MessageSquare class="mr-2 size-4" aria-hidden="true" /> Message the practice
 						</Button>
 					{/if}
@@ -282,6 +291,10 @@
 		</form>
 	{/snippet}
 </ConfirmDialog>
+
+{#if !conversationId && canMessagePractice}
+	<MessagePracticeDialog practiceName={company?.name ?? 'the practice'} bind:open={messageOpen} />
+{/if}
 
 <!-- Outside the draft block, so it survives the status changing on submit. "No" hides
      this practice's jobs from this professional. -->

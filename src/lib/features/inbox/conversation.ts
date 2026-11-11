@@ -5,6 +5,8 @@ type Conversation = {
 		requisition?: { disciplineName?: string | null } | null;
 		company?: { name?: string | null; companyName?: string | null; companyLogo?: string | null; logo?: string | null } | null;
 	} | null;
+	// A professional–practice thread started from a timesheet (no application).
+	practice?: { name?: string | null; logo?: string | null } | null;
 	participants?: any[] | null;
 	lastMessage?: { body?: string | null; createdAt?: string | Date | null } | null;
 };
@@ -17,7 +19,7 @@ function otherParticipant(conversation: Conversation, userId: string | undefined
 	return other?.user ?? other;
 }
 
-/** Who a conversation is with. A job conversation is named for the job and practice. */
+/** Who a conversation is with. A job conversation is named for the job and practice, a practice conversation for the practice. */
 export function describeConversation(conversation: Conversation, userId: string | undefined) {
 	const application = conversation.applicationData;
 	if (application) {
@@ -26,6 +28,14 @@ export function describeConversation(conversation: Conversation, userId: string 
 			title: application.requisition?.disciplineName || 'Job conversation',
 			subtitle: company?.companyName ?? company?.name ?? '',
 			avatarUrl: company?.companyLogo ?? company?.logo ?? null,
+			isOrganization: true
+		};
+	}
+	if (conversation.practice?.name) {
+		return {
+			title: conversation.practice.name,
+			subtitle: 'Practice',
+			avatarUrl: conversation.practice.logo ?? null,
 			isOrganization: true
 		};
 	}

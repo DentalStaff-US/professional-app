@@ -66,6 +66,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		requisition: data.requisition,
 		company: data.company,
 		conversationId: data.conversationId ?? null,
+		canMessagePractice: data.canMessagePractice === true,
 		workday: data.workday,
 		recurrenceDay: data.recurrenceDay,
 		workdays: workdaysRes.ok ? (workdaysRes.data.workdays ?? []) : [],
@@ -182,6 +183,42 @@ export const actions = {
 	// The admin app resolves the candidate from the JWT, so we only pass the
 	// company id. Failure is swallowed to a flash — the timesheet already
 	// submitted successfully and shouldn't appear broken over a survey hiccup.
+	// Start a conversation with the practice (or add to the one that exists).
+	// The admin API checks the timesheet is theirs and that neither side has
+	// blocked the other.
+	messagePractice: async (event: RequestEvent) => {
+		const { user } = event.locals;
+		if (!user) throw error(401, 'Unauthorized');
+
+		const formData = await event.request.formData();
+		const body = String(formData.get('body') ?? '').trim();
+		if (!body) return fail(400, { messageError: 'Write a message to send.', body });
+
+		const res = await fetchAdmin<{ conversationId: string }>(
+			'/api/external/inbox/startPracticeConversation',
+			{
+				method: 'POST',
+				token: generateToken(user.id),
+				body: { timesheetId: event.params.id, body }
+			}
+		);
+
+		if (!res.ok) {
+			logger.error('Failed to start practice conversation', {
+				timesheetId: event.params.id,
+				status: res.status,
+				distinctId: user.id
+			});
+			const messageError =
+				res.status === 403
+					? "You can't message this practice. Contact DTSS support if you need help with this timesheet."
+					: "Your message didn't send. Please try again.";
+			return fail(res.status === 403 ? 403 : 502, { messageError, body });
+		}
+
+		throw redirect(303, `/inbox/${res.data.conversationId}`);
+	},
+
 	submitExperienceSurvey: async (event: RequestEvent) => {
 		const { user } = event.locals;
 		if (!user) {

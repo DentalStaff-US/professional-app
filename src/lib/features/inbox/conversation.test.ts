@@ -32,6 +32,10 @@ describe('describeConversation', () => {
 		const thread = { id: 'c', applicationData: { requisition: {}, company: { companyName: 'Oak Street' } } };
 		expect(describeConversation(thread, 'me').subtitle).toBe('Oak Street');
 	});
+	it('names a practice conversation after the practice, not its owner', () => {
+		const thread = { id: 'p', practice: { name: 'Oak Street', logo: 'oak.png' }, participants: [{ userId: 'me' }, { userId: 'owner', firstName: 'Pat' }] };
+		expect(describeConversation(thread, 'me')).toEqual({ title: 'Oak Street', subtitle: 'Practice', avatarUrl: 'oak.png', isOrganization: true });
+	});
 	it('names a direct conversation after the other person, in either shape', () => {
 		expect(describeConversation(person, 'me').title).toBe('Sam Reed');
 		const flat = { id: 'd', participants: [{ userId: 'me', firstName: 'M' }, { userId: 'them', firstName: 'Sam' }] };
