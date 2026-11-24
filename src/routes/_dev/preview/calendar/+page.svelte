@@ -6,7 +6,7 @@
 
 	const empty = $derived(page.url.searchParams.has('empty'));
 	const req = $derived(Number(page.url.searchParams.get('req')) || null);
-	const form = { data: { availableDays: [1, 2, 3, 4, 5], blockedDates: [], replaceFrom: todayDate, replaceTo: todayDate } };
+	const form = { data: { availableDays: [1, 2, 3, 4, 5], blockedDates: [2, 3, 10].map((n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10)), replaceFrom: todayDate, replaceTo: todayDate } };
 </script>
 
 <AppShell pathname="/calendar" name="Maria Lopez" email="maria@example.com" initials="ML">

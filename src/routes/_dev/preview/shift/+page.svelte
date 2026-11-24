@@ -15,5 +15,5 @@
 </script>
 
 <AppShell pathname="/my-shifts/w1" name="Maria Lopez" email="maria@example.com" initials="ML">
-	<ShiftDetailPage {shift} />
+	<ShiftDetailPage shift={shift && { ...shift, canMessagePractice: page.url.searchParams.get('blocked') !== '1' }} />
 </AppShell>

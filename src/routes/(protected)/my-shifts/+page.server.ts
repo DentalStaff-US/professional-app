@@ -4,11 +4,12 @@ import { generateToken } from '$lib/server/utils';
 import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
 import { superValidate } from 'sveltekit-superforms/server';
 import { recurrenceDayClaimSchema } from '$lib/config/zod-schemas.js';
+import { shiftsTab } from '$features/shifts/split';
 import { cancelShift } from '$features/shifts/server/cancel';
 import { claimShift } from '$features/shifts/server/claim';
 
 export const load: PageServerLoad = async (event: RequestEvent) => {
-	const tab = event.url.searchParams.get('tab');
+	const tab = shiftsTab(event.url.searchParams.get('tab'));
 	const showUnavailable = event.url.searchParams.get('showUnavailable') === '1';
 
 	// Not cached while showing the unavailable set: the two variants are different

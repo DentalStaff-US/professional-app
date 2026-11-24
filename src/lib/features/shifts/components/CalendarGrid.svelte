@@ -10,6 +10,7 @@
 		today,
 		selected = null,
 		marks,
+		off = new Set(),
 		onselect
 	}: {
 		days: string[];
@@ -18,6 +19,8 @@
 		today: string;
 		selected?: string | null;
 		marks: Map<string, DayMarks>;
+		/** Days they've said they can't work. */
+		off?: Set<string>;
 		onselect: (date: string) => void;
 	} = $props();
 
@@ -27,7 +30,8 @@
 		const parts = [
 			mark?.open ? `${mark.open} open` : '',
 			mark?.claimed ? `${mark.claimed} claimed` : '',
-			mark?.off ? `${mark.off} on a day you marked off` : ''
+			off.has(date) ? 'day off' : '',
+			mark?.off ? `${mark.off} open on a day you marked off` : ''
 		].filter(Boolean);
 		return [formatShiftDate(`${date}T00:00:00Z`), ...parts].join(', ');
 	}
@@ -48,6 +52,7 @@
 			onclick={() => onselect(date)}
 			class={cn(
 				'flex min-h-12 flex-col items-center rounded-md border border-transparent p-1 text-sm transition-colors duration-fast hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-20 md:items-start md:p-2',
+				off.has(date) && 'bg-muted text-muted-foreground',
 				date === today && 'bg-primary-soft font-bold text-primary-dark',
 				selected === date && 'border-primary',
 				outside && 'text-muted-foreground/60'
@@ -59,12 +64,12 @@
 			<span class="mt-1 flex h-1.5 gap-0.5 md:hidden" aria-hidden="true">
 				{#if mark?.open}<span class="size-1.5 rounded-full bg-status-info-solid"></span>{/if}
 				{#if mark?.claimed}<span class="size-1.5 rounded-full bg-status-positive-solid"></span>{/if}
-				{#if mark?.off}<span class="size-1.5 rounded-full bg-status-neutral-solid"></span>{/if}
+				{#if off.has(date) || mark?.off}<span class="size-1.5 rounded-full bg-status-neutral-solid"></span>{/if}
 			</span>
 			<span class="mt-1 hidden w-full flex-col gap-0.5 text-left text-xs font-semibold md:flex" aria-hidden="true">
 				{#if mark?.claimed}<span class="truncate rounded bg-status-positive-bg px-1.5 py-0.5 text-status-positive-fg">{mark.claimed} claimed</span>{/if}
 				{#if mark?.open}<span class="truncate rounded bg-status-info-bg px-1.5 py-0.5 text-status-info-fg">{mark.open} open</span>{/if}
-				{#if mark?.off}<span class="truncate rounded bg-status-neutral-bg px-1.5 py-0.5 text-status-neutral-fg">{mark.off} day off</span>{/if}
+				{#if off.has(date) || mark?.off}<span class="truncate rounded bg-status-neutral-bg px-1.5 py-0.5 text-status-neutral-fg">Day off</span>{/if}
 			</span>
 		</button>
 	{/each}

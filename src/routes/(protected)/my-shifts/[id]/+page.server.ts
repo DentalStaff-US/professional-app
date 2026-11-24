@@ -3,6 +3,7 @@ import type { PageServerLoad, RequestEvent } from './$types';
 import { generateToken } from '$lib/server/utils';
 import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
 import { cancelShift } from '$features/shifts/server/cancel';
+import { messagePractice } from '$features/inbox/server/messagePractice';
 
 export const load: PageServerLoad = async (event: RequestEvent) => {
 	event.setHeaders({
@@ -29,12 +30,13 @@ export const load: PageServerLoad = async (event: RequestEvent) => {
 };
 
 export const actions = {
+	messagePractice: (event: RequestEvent) => messagePractice(event, { workdayId: event.params.id! }),
 	cancelWorkdayShift: async (event) => {
 		if (!event.locals.user) {
 			redirect(303, '/auth/sign-in');
 		}
 		if (await cancelShift(event)) {
-			redirect(303, '/my-shifts');
+			redirect(303, '/my-shifts?tab=upcoming');
 		}
 		return { success: false };
 	}

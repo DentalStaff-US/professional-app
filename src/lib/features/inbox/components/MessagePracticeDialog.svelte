@@ -6,7 +6,7 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
 
-	let { practiceName, open = $bindable(false) }: { practiceName: string; open?: boolean } = $props();
+	let { practiceName, reason, open = $bindable(false) }: { practiceName: string; reason: string; open?: boolean } = $props();
 
 	let body = $state('');
 	let sending = $state(false);
@@ -38,7 +38,7 @@
 		>
 			<Dialog.Header class="text-left">
 				<Dialog.Title class="text-h2">Message {practiceName}</Dialog.Title>
-				<Dialog.Description>You've worked here, so you can message the practice directly.</Dialog.Description>
+				<Dialog.Description>{reason}</Dialog.Description>
 			</Dialog.Header>
 
 			<div class="space-y-2">

@@ -15,7 +15,7 @@
 	import ClaimShiftSheet from './ClaimShiftSheet.svelte';
 	import ShiftCard from './ShiftCard.svelte';
 	import CalendarGrid from './CalendarGrid.svelte';
-	import { dayMarks, groupByDay, isClaimed, monthOf, shiftDate, weekOf } from '../agenda';
+	import { dayMarks, groupByDay, isClaimed, monthOf, offDays, shiftDate, weekOf } from '../agenda';
 	import { formatShiftDate } from '../format';
 
 	type Filter = 'ALL' | 'OPEN' | 'CLAIMED';
@@ -71,6 +71,10 @@
 	const anchor = $derived(focusDate ?? today);
 	const month = $derived(monthOf(anchor, offset));
 	const gridDays = $derived(view === 'month' ? month.days : weekOf(anchor, offset));
+	// Nothing is marked when availability failed to load: an empty set would read as "free".
+	const off = $derived(
+		availabilityLoaded ? offDays(selectedDate ? [...gridDays, selectedDate] : gridDays, availabilityForm.data, today) : new Set<string>()
+	);
 	const heading = $derived(
 		new Date(`${view === 'month' ? `${month.month}-01` : gridDays[0]}T00:00:00Z`).toLocaleDateString('en-US', {
 			month: 'long',
@@ -245,13 +249,14 @@
 				{today}
 				selected={selectedDate}
 				{marks}
+				{off}
 				onselect={selectDay}
 			/>
 
 			<ul class="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t pt-3 text-xs text-muted-foreground" aria-label="Legend">
 				<li class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-status-info-solid" aria-hidden="true"></span> Open</li>
 				<li class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-status-positive-solid" aria-hidden="true"></span> Claimed</li>
-				<li class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-status-neutral-solid" aria-hidden="true"></span> Day you marked off</li>
+				<li class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-status-neutral-solid" aria-hidden="true"></span> Day off</li>
 			</ul>
 		</section>
 
@@ -297,8 +302,10 @@
 		{:else}
 			<EmptyState
 				icon={CalendarSearch}
-				title={selectedDate ? 'Nothing on this day' : filter === 'ALL' ? 'Nothing on your calendar yet' : `No ${filter === 'OPEN' ? 'open' : 'claimed'} shifts coming up`}
-				description="New shifts show up here as practices post them."
+				title={selectedDate ? (off.has(selectedDate) ? "You're off this day" : 'Nothing on this day') : filter === 'ALL' ? 'Nothing on your calendar yet' : `No ${filter === 'OPEN' ? 'open' : 'claimed'} shifts coming up`}
+				description={selectedDate && off.has(selectedDate)
+					? 'Your availability hides open shifts on this day. Edit it if you can work.'
+					: 'New shifts show up here as practices post them.'}
 			>
 				{#if filter !== 'ALL'}
 					<Button variant="outline" on:click={() => (filter = 'ALL')}>Show all shifts</Button>

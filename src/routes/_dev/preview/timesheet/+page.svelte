@@ -11,6 +11,7 @@
 	const sheet = $derived({
 		id: 't1',
 		status,
+		wagesStatus: page.url.searchParams.get('wages') ?? 'WAGES_DUE',
 		weekBeginDate: sheetDays[0].recurrenceDay.date,
 		hoursRaw: status === 'DRAFT' ? [] : sheetSaved,
 		discrepancyNote: status === 'DISCREPANCY' ? 'Tuesday hours are longer than the scheduled shift.' : null

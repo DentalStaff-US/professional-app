@@ -1,3 +1,10 @@
+/** The tabs on /my-shifts. Finding work comes first, so Available is the default. */
+export type ShiftsTab = 'available' | 'upcoming' | 'past';
+
+export function shiftsTab(param: string | null): ShiftsTab {
+	return param === 'upcoming' || param === 'past' ? param : 'available';
+}
+
 type WithStart = { recurrenceDay?: { dayStart?: string | Date | null } | null };
 
 const startOf = (shift: WithStart) => new Date(shift.recurrenceDay?.dayStart ?? 0).getTime();

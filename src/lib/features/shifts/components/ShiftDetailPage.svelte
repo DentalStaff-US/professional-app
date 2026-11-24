@@ -16,6 +16,7 @@
 	import Page from '$dtss/Page.svelte';
 	import StatusBadge from '$dtss/StatusBadge.svelte';
 	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
+	import { MessagePracticeButton } from '$features/inbox';
 	import { Button } from '$lib/components/ui/button';
 	import CancelShiftButton from './CancelShiftButton.svelte';
 	import { directionsUrl, formatShiftDate, formatTimeRange } from '../format';
@@ -31,6 +32,7 @@
 	const title = $derived(requisition?.disciplineName ?? requisition?.discipline ?? 'Shift');
 	const practice = $derived(requisition?.companyName ?? shift?.company?.name);
 	const cancelled = $derived(day?.status === 'CANCELED' || Boolean(shift?.workday?.cancelledAt));
+	const canMessage = $derived(Boolean(shift?.conversationId || shift?.canMessagePractice));
 	const upcoming = $derived(Boolean(day?.dayStart) && new Date(day.dayStart) > new Date());
 	const ics = $derived(
 		shift && upcoming && !cancelled
@@ -56,7 +58,7 @@
 			title="We couldn't load this shift"
 			description="Please try again in a moment. Your other shifts are still on the Shifts tab."
 		>
-			<Button href="/my-shifts" variant="outline">Back to shifts</Button>
+			<Button href="/my-shifts?tab=upcoming" variant="outline">Back to shifts</Button>
 		</EmptyState>
 	{:else}
 		{#if cancelled}
@@ -135,25 +137,34 @@
 			</section>
 
 			<aside class="space-y-4">
-				{#if location?.companyPhone || location?.email}
+				{#if location?.companyPhone || location?.email || canMessage}
 					<section class="rounded-lg border bg-card p-5 shadow-card">
 						<h2 class="font-bold">Contact the practice</h2>
-						<ul class="mt-2">
-							{#if location.companyPhone}
-								<li>
-									<a href={`tel:${location.companyPhone}`} class="flex min-h-11 items-center gap-3 font-semibold text-primary-dark hover:underline">
-										<Phone class="size-5 shrink-0" aria-hidden="true" /> {location.companyPhone}
-									</a>
-								</li>
-							{/if}
-							{#if location.email}
-								<li>
-									<a href={`mailto:${location.email}`} class="flex min-h-11 items-center gap-3 break-all font-semibold text-primary-dark hover:underline">
-										<Mail class="size-5 shrink-0" aria-hidden="true" /> {location.email}
-									</a>
-								</li>
-							{/if}
-						</ul>
+						<MessagePracticeButton
+							conversationId={shift.conversationId}
+							canMessage={shift.canMessagePractice === true}
+							practiceName={practice}
+							reason="You've claimed a shift here, so you can message the practice directly."
+							class="mt-3"
+						/>
+						{#if location?.companyPhone || location?.email}
+							<ul class="mt-2">
+								{#if location.companyPhone}
+									<li>
+										<a href={`tel:${location.companyPhone}`} class="flex min-h-11 items-center gap-3 font-semibold text-primary-dark hover:underline">
+											<Phone class="size-5 shrink-0" aria-hidden="true" /> {location.companyPhone}
+										</a>
+									</li>
+								{/if}
+								{#if location.email}
+									<li>
+										<a href={`mailto:${location.email}`} class="flex min-h-11 items-center gap-3 break-all font-semibold text-primary-dark hover:underline">
+											<Mail class="size-5 shrink-0" aria-hidden="true" /> {location.email}
+										</a>
+									</li>
+								{/if}
+							</ul>
+						{/if}
 					</section>
 				{/if}
 

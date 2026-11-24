@@ -85,7 +85,7 @@ export const sheetSaved = [
 	{ date: dayFromNow(-2), startTime: at(-2, 13), endTime: at(-2, 22), lunchStartTime: at(-2, 17), lunchEndTime: at(-2, 18), hours: 8 }
 ];
 export const sheetRows = [
-	{ timesheet: { id: 't1', weekBeginDate: dayFromNow(-20), status: 'APPROVED' }, company: sheetCompany, requisition: sheetRequisition },
+	{ timesheet: { id: 't1', weekBeginDate: dayFromNow(-20), status: 'APPROVED', wagesStatus: 'WAGES_DUE' }, company: sheetCompany, requisition: sheetRequisition },
 	{ timesheet: { id: 't2', weekBeginDate: dayFromNow(-6), status: 'DISCREPANCY' }, company: sheetCompany, requisition: sheetRequisition },
 	{ timesheet: { id: 't3', weekBeginDate: dayFromNow(-1), status: 'DRAFT' }, company: sheetCompany, requisition: sheetRequisition }
 ];

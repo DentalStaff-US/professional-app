@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Building2, Clipboard, LifeBuoy, Loader2, MessageSquare, Utensils } from 'lucide-svelte';
+	import { Building2, Clipboard, LifeBuoy, Loader2, Utensils } from 'lucide-svelte';
 	import ConfirmDialog from '$dtss/ConfirmDialog.svelte';
 	import EmptyState from '$dtss/EmptyState.svelte';
 	import Notice from '$dtss/Notice.svelte';
 	import Page from '$dtss/Page.svelte';
 	import StatusBadge from '$dtss/StatusBadge.svelte';
+	import { MessagePracticeButton } from '$features/inbox';
 	import { formatShiftDate, formatWorkWeek, formatShiftTime } from '$features/shifts';
 	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
 	import { Button } from '$lib/components/ui/button';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import DayHoursRow from './DayHoursRow.svelte';
 	import ExpensesCard from './ExpensesCard.svelte';
-	import MessagePracticeDialog from './MessagePracticeDialog.svelte';
 	import {
 		buildEntries,
 		entryProblem,
@@ -21,7 +21,7 @@
 		workedHours,
 		type TimeEntry
 	} from '../hours';
-	import { TIMESHEET_STATUS_HINTS, TIMESHEET_STATUS_MESSAGE } from '../hints';
+	import { TIMESHEET_STATUS_HINTS, TIMESHEET_STATUS_MESSAGE, wagesBadge } from '../hints';
 
 	let {
 		timesheet,
@@ -45,6 +45,7 @@
 
 	const timezone = $derived(requisition?.referenceTimezone || 'America/New_York');
 	const status = $derived(timesheet?.status);
+	const wages = $derived(wagesBadge(timesheet));
 	const isDraft = $derived(status === 'DRAFT');
 	const canAddExpenses = $derived(['DRAFT', 'PENDING', 'DISCREPANCY'].includes(status));
 
@@ -88,7 +89,6 @@
 
 	let submitOpen = $state(false);
 	let surveyOpen = $state(false);
-	let messageOpen = $state(false);
 	let saving = $state(false);
 	let submitting = $state(false);
 </script>
@@ -106,7 +106,10 @@
 		</EmptyState>
 	{:else}
 		<header>
-			<StatusBadge {status} hint={TIMESHEET_STATUS_HINTS[status]} />
+			<div class="flex flex-wrap gap-2">
+				<StatusBadge {status} hint={TIMESHEET_STATUS_HINTS[status]} />
+				{#if wages}<StatusBadge status={wages.status} label={wages.label} hint={wages.hint} />{/if}
+			</div>
 			<h1 class="mt-3 text-h1">{formatWorkWeek(timesheet.weekBeginDate)}</h1>
 			<p class="mt-1 text-muted-foreground">
 				{[requisition?.disciplineName, company?.name].filter(Boolean).join(' · ')}
@@ -123,6 +126,7 @@
 		{:else if TIMESHEET_STATUS_MESSAGE[status]}
 			<Notice tone={status === 'APPROVED' ? 'positive' : status === 'PENDING' ? 'pending' : 'negative'}>
 				{TIMESHEET_STATUS_MESSAGE[status]}
+				{#if wages}{wages.hint}{/if}
 			</Notice>
 		{/if}
 
@@ -206,15 +210,13 @@
 					</div>
 					<!-- Opens the existing thread, or starts one: a timesheet shows they've
 					     worked here. Hidden when either side has blocked the other. -->
-					{#if conversationId}
-						<Button href="/inbox/{conversationId}" variant="outline" class="mt-4 min-h-11 w-full">
-							<MessageSquare class="mr-2 size-4" aria-hidden="true" /> Message the practice
-						</Button>
-					{:else if canMessagePractice}
-						<Button variant="outline" class="mt-4 min-h-11 w-full" on:click={() => (messageOpen = true)}>
-							<MessageSquare class="mr-2 size-4" aria-hidden="true" /> Message the practice
-						</Button>
-					{/if}
+					<MessagePracticeButton
+						{conversationId}
+						canMessage={canMessagePractice}
+						practiceName={company?.name}
+						reason="You've worked here, so you can message the practice directly."
+						class="mt-4"
+					/>
 				</section>
 
 				{#if status === 'PENDING'}
@@ -291,10 +293,6 @@
 		</form>
 	{/snippet}
 </ConfirmDialog>
-
-{#if !conversationId && canMessagePractice}
-	<MessagePracticeDialog practiceName={company?.name ?? 'the practice'} bind:open={messageOpen} />
-{/if}
 
 <!-- Outside the draft block, so it survives the status changing on submit. "No" hides
      this practice's jobs from this professional. -->

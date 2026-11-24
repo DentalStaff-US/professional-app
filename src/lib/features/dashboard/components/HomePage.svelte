@@ -31,6 +31,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import QuickLinks from './QuickLinks.svelte';
 	import type { AffiliateStatus } from '../quickLinks';
+	import { needsAttention } from '../attention';
 	import WorkPreferenceBanner from '$lib/components/workPreference/WorkPreferenceBanner.svelte';
 
 	const OPEN_SHIFTS_SHOWN = 6;
@@ -68,6 +69,7 @@
 	const startOf = (shift: any) =>
 		new Date(shift.recurrenceDay?.dayStart ?? shift.recurrenceDay?.date ?? 0).getTime();
 	const nextShift = $derived([...workdays].sort((a, b) => startOf(a) - startOf(b))[0]);
+	const attention = $derived(needsAttention(timesheets));
 	const firstRun = $derived(!workdays.length && !timesheets.length && !requisitions.length);
 	const address = $derived(nextShift?.location?.completeAddress);
 
@@ -145,11 +147,11 @@
 			</section>
 		{/if}
 
-		{#if timesheets.length}
-			<section aria-labelledby="needs-you-heading">
-				<h2 id="needs-you-heading" class="mb-3 text-h3">Needs you</h2>
+		{#if attention.length}
+			<section aria-labelledby="attention-heading">
+				<h2 id="attention-heading" class="mb-3 text-h3">Needs your attention</h2>
 				<ul class="space-y-3">
-					{#each timesheets as row (row.timesheet.id)}
+					{#each attention as row (row.timesheet.id)}
 						<li>
 							<a
 								href={`/timesheets/${row.timesheet.id}`}

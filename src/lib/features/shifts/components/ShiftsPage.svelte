@@ -12,7 +12,7 @@
 	import ClaimShiftSheet from './ClaimShiftSheet.svelte';
 	import ShiftCard from './ShiftCard.svelte';
 	import ShiftsTabs from './ShiftsTabs.svelte';
-	import { canCancelShift, shiftMonth, splitShifts } from '../split';
+	import { canCancelShift, shiftMonth, splitShifts, type ShiftsTab } from '../split';
 
 	let {
 		tab,
@@ -24,7 +24,7 @@
 		workPreference,
 		claimForm
 	}: {
-		tab: string | null;
+		tab: ShiftsTab;
 		workdays: any[];
 		openShifts: any[];
 		certLocked: any[];
@@ -34,7 +34,6 @@
 		claimForm: any;
 	} = $props();
 
-	const active = $derived(tab === 'available' || tab === 'past' ? tab : 'upcoming');
 	const split = $derived(splitShifts(workdays));
 
 	let selectedShift = $state<any>(null);
@@ -54,9 +53,9 @@
 
 <Page>
 	<PageHeader title="Shifts" description="Find work and keep track of your schedule." />
-	<ShiftsTabs {active} />
+	<ShiftsTabs active={tab} />
 
-	{#if active === 'available'}
+	{#if tab === 'available'}
 		<CertLockedBanner {certLocked} />
 		<AvailabilityHiddenBanner
 			hiddenCount={hiddenByAvailability}
@@ -88,7 +87,7 @@
 				<Button href="/settings/availability" variant="outline">Update availability</Button>
 			</EmptyState>
 		{/if}
-	{:else if active === 'upcoming'}
+	{:else if tab === 'upcoming'}
 		{#if split.upcoming.length}
 			<ul class="grid gap-4 md:grid-cols-2">
 				{#each split.upcoming as shift (shift.workday.id)}
@@ -112,7 +111,7 @@
 				title="No upcoming shifts"
 				description="Shifts you claim will show up here."
 			>
-				<Button href="/my-shifts?tab=available">Browse available shifts</Button>
+				<Button href="/my-shifts">Browse available shifts</Button>
 			</EmptyState>
 		{/if}
 	{:else}

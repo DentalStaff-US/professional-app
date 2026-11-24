@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayMarks, groupByDay, isClaimed, monthOf, weekOf } from './agenda';
+import { dayMarks, groupByDay, isClaimed, monthOf, offDays, weekOf } from './agenda';
 
 const shift = (date: string, dayStart = `${date}T12:00:00Z`) => ({
 	recurrenceDay: { date: `${date}T00:00:00.000Z`, dayStart }
@@ -68,5 +68,19 @@ describe('dayMarks', () => {
 			{ recurrenceDay: { date: '2026-11-05T00:00:00.000Z', status: 'FILLED' }, workday: { id: 'w' } }
 		]).get('2026-11-05');
 		expect(mark).toEqual({ open: 1, claimed: 1, off: 1 });
+	});
+});
+
+describe('offDays', () => {
+	const week = weekOf('2026-11-04'); // Sun Nov 1 to Sat Nov 7
+	it('marks blocked dates and weekdays outside the weekly pattern', () => {
+		const off = offDays(week, { availableDays: [1, 2, 3, 4, 5], blockedDates: ['2026-11-05'] }, '2026-11-01');
+		expect([...off]).toEqual(['2026-11-01', '2026-11-05', '2026-11-07']);
+	});
+	it('treats no weekly pattern as available every day', () => {
+		expect([...offDays(week, { availableDays: null, blockedDates: ['2026-11-06'] }, '2026-11-01')]).toEqual(['2026-11-06']);
+	});
+	it('leaves past days alone', () => {
+		expect([...offDays(week, { availableDays: [1, 2, 3, 4, 5], blockedDates: ['2026-11-02'] }, '2026-11-04')]).toEqual(['2026-11-07']);
 	});
 });

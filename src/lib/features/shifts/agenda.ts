@@ -1,3 +1,5 @@
+import { dayOfWeek, normalizeDays } from '$lib/components/availability/availability';
+
 export type AgendaDay<T> = { date: string; shifts: T[] };
 
 const dateKey = (shift: any): string => String(shift?.recurrenceDay?.date ?? '').slice(0, 10);
@@ -63,6 +65,21 @@ export function dayMarks(shifts: any[]): Map<string, { open: number; claimed: nu
 		marks.set(date, mark);
 	}
 	return marks;
+}
+
+/**
+ * Which of `days` the professional has said they can't work: dates they marked
+ * off, and weekdays outside their weekly pattern. From today on, because that's
+ * how far back marked-off dates are loaded and a past day no longer matters.
+ */
+export function offDays(
+	days: string[],
+	availability: { availableDays: number[] | null; blockedDates: string[] },
+	today: string
+): Set<string> {
+	const blocked = new Set(availability.blockedDates);
+	const weekdays = new Set(normalizeDays(availability.availableDays));
+	return new Set(days.filter((date) => date >= today && (blocked.has(date) || !weekdays.has(dayOfWeek(date)))));
 }
 
 export const isClaimed = (shift: any): boolean => Boolean(shift?.workday?.id);

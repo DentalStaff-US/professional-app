@@ -5,8 +5,8 @@
 	let { active }: { active: Tab } = $props();
 
 	const TABS: { id: Tab; label: string; href: string }[] = [
-		{ id: 'available', label: 'Available', href: '/my-shifts?tab=available' },
-		{ id: 'upcoming', label: 'Upcoming', href: '/my-shifts' },
+		{ id: 'available', label: 'Available', href: '/my-shifts' },
+		{ id: 'upcoming', label: 'Upcoming', href: '/my-shifts?tab=upcoming' },
 		{ id: 'past', label: 'Past', href: '/my-shifts?tab=past' },
 		{ id: 'permanent', label: 'Permanent', href: '/permanent' }
 	];

@@ -30,7 +30,7 @@ describe('showsTabs', () => {
 
 describe('innerPage', () => {
 	it('gives inner pages a title and a way back', () => {
-		expect(innerPage('/my-shifts/abc')).toEqual({ title: 'Shift details', back: '/my-shifts' });
+		expect(innerPage('/my-shifts/abc')).toEqual({ title: 'Shift details', back: '/my-shifts?tab=upcoming' });
 		expect(innerPage('/settings/support/9')?.back).toBe('/settings/support');
 		expect(innerPage('/settings/support')?.back).toBe('/settings');
 	});

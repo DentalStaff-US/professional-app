@@ -26,7 +26,7 @@ export function fillsScreen(pathname: string): boolean {
 }
 
 const INNER_PAGES: { pattern: RegExp; title: string; back: string }[] = [
-	{ pattern: /^\/my-shifts\/[^/]+/, title: 'Shift details', back: '/my-shifts' },
+	{ pattern: /^\/my-shifts\/[^/]+/, title: 'Shift details', back: '/my-shifts?tab=upcoming' },
 	{ pattern: /^\/permanent\/[^/]+/, title: 'Job details', back: '/permanent' },
 	{ pattern: /^\/company\/[^/]+/, title: 'Practice', back: '/permanent' },
 	{ pattern: /^\/inbox\/[^/]+/, title: 'Conversation', back: '/inbox' },

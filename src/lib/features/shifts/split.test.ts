@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canCancelShift, shiftMonth, splitShifts } from './split';
+import { canCancelShift, shiftMonth, splitShifts, shiftsTab } from './split';
 
 const now = new Date('2026-11-04T15:00:00Z');
 const at = (dayStart: string, extra = {}) => ({ recurrenceDay: { dayStart, status: 'FILLED', ...extra } });
@@ -31,5 +31,13 @@ describe('canCancelShift', () => {
 describe('shiftMonth', () => {
 	it('keeps the calendar month in zones behind UTC', () => {
 		expect(shiftMonth({ recurrenceDay: { date: '2026-11-01T00:00:00.000Z' } })).toBe('November 2026');
+	});
+});
+
+describe('shiftsTab', () => {
+	it('opens on Available unless another tab is asked for', () => {
+		expect([null, '', 'available', 'nonsense'].map((t) => shiftsTab(t))).toEqual(Array(4).fill('available'));
+		expect(shiftsTab('upcoming')).toBe('upcoming');
+		expect(shiftsTab('past')).toBe('past');
 	});
 });

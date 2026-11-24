@@ -6,7 +6,7 @@
 	import StatusBadge from '$dtss/StatusBadge.svelte';
 	import { formatWorkWeek } from '$features/shifts';
 	import { Button } from '$lib/components/ui/button';
-	import { TIMESHEET_STATUS_HINTS } from '../hints';
+	import { TIMESHEET_STATUS_HINTS, wagesBadge } from '../hints';
 
 	let { timesheets }: { timesheets: any[] } = $props();
 
@@ -26,6 +26,7 @@
 	{#if sorted.length}
 		<ul class="space-y-3">
 			{#each sorted as row (row.timesheet.id)}
+				{@const wages = wagesBadge(row.timesheet)}
 				<li class="relative flex items-center gap-4 rounded-xl border bg-card p-4 shadow-card transition duration-fast hover:shadow-lift">
 					{#if row.company?.logo}
 						<img alt="" src={row.company.logo} class="size-12 shrink-0 rounded-full border bg-white object-contain p-1" />
@@ -44,8 +45,9 @@
 						<p class="truncate text-sm text-muted-foreground">
 							{[row.requisition?.disciplineName, row.company?.name].filter(Boolean).join(' · ')}
 						</p>
-						<div class="relative z-10 mt-2 w-fit">
+						<div class="relative z-10 mt-2 flex w-fit flex-wrap gap-2">
 							<StatusBadge status={row.timesheet.status} hint={TIMESHEET_STATUS_HINTS[row.timesheet.status]} />
+							{#if wages}<StatusBadge status={wages.status} label={wages.label} hint={wages.hint} />{/if}
 						</div>
 					</div>
 					<ChevronRight class="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -58,7 +60,7 @@
 			title="No timesheets yet"
 			description="A timesheet appears here after you work a shift."
 		>
-			<Button href="/my-shifts" variant="outline">View your shifts</Button>
+			<Button href="/my-shifts?tab=upcoming" variant="outline">View your shifts</Button>
 		</EmptyState>
 	{/if}
 </Page>
