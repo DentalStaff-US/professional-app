@@ -1,4 +1,5 @@
 import { recurrenceDayClaimSchema } from '$lib/config/zod-schemas.js';
+import type { AffiliateOverview } from '$features/dashboard/affiliateCard';
 import { homeNudges } from '$features/dashboard/nudges';
 import { generateToken } from '$lib/server/utils.js';
 import { redirect } from '@sveltejs/kit';
@@ -55,11 +56,8 @@ export const load = async (event) => {
 			`/api/external/getUpcomingTempRequisitionsForCandidate${showUnavailable ? '?includeUnavailable=true' : ''}`,
 			{ token }
 		),
-		// Decides the partner quick link. A failure only hides that link.
-		fetchAdmin<{ programEnabled: boolean; eligible: boolean; enrolled: boolean }>(
-			'/api/external/affiliate/status',
-			{ token }
-		),
+		// The referral card and the partner quick link. A failure only hides them.
+		fetchAdmin<AffiliateOverview>('/api/external/affiliate/overview', { token }),
 		fetchAdmin<{ completeAddress?: string | null; cellPhone?: string | null }>('/api/external/getCandidateProfile', { token }),
 		fetchAdmin<{ disciplines: any[] }>('/api/external/getCandidateDisciplines', { token })
 	]);

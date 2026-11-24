@@ -22,6 +22,6 @@
 		workPreference={undefined}
 		claimForm={null}
 		nudges={page.url.searchParams.has('nudges') ? homeNudges({ profile: { completeAddress: null, cellPhone: '1' }, disciplines: [{ disciplineId: 'd1', name: 'EFDA', requiresLicense: true, effectiveLicenseExpiry: dayInFuture(20) }] }) : []}
-		affiliateStatus={{ programEnabled: true, eligible: true, enrolled: page.url.searchParams.has('enrolled') }}
+		affiliateStatus={{ programEnabled: true, eligible: true, enrolled: page.url.searchParams.has('enrolled'), status: 'ACTIVE', connectComplete: !page.url.searchParams.has('setup'), referralUrl: 'https://partners.dtstaffingsolutions.com/r/MARIA', ratePercent: '2.50', activity: page.url.searchParams.has('enrolled') ? { clicks: 48, referralsActive: 3, referralsPending: 1, earningsUnpaid: 182.4, earningsPaid: 640 } : null }}
 	/>
 </AppShell>

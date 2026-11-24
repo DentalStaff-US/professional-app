@@ -52,7 +52,10 @@
 		try {
 			// Create a FormData instance for the upload
 			const formData = new FormData();
-			formData.append('file', file);
+			// The storage key is the file name, and phones name every photo "image.jpg":
+			// give it its own so one person's photo can't overwrite another's.
+			const extension = file.type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg';
+			formData.append('file', new File([file], `${crypto.randomUUID()}.${extension}`, { type: file.type }));
 			formData.append('location', 'images');
 
 			// Send directly to an endpoint in the current app

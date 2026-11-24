@@ -29,8 +29,9 @@
 	import CertLockedBanner from '$lib/components/certifications/CertLockedBanner.svelte';
 	import NewSupportTicketDialog from '$lib/components/new-support-ticket-dialog.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import AffiliateCard from './AffiliateCard.svelte';
 	import QuickLinks from './QuickLinks.svelte';
-	import type { AffiliateStatus } from '../quickLinks';
+	import type { AffiliateOverview } from '../affiliateCard';
 	import { needsAttention } from '../attention';
 	import WorkPreferenceBanner from '$lib/components/workPreference/WorkPreferenceBanner.svelte';
 
@@ -58,7 +59,7 @@
 		showUnavailable: boolean;
 		workPreference: any;
 		claimForm: any;
-		affiliateStatus?: AffiliateStatus;
+		affiliateStatus?: AffiliateOverview | null;
 		nudges?: HomeNudge[];
 	} = $props();
 
@@ -114,6 +115,8 @@
 		</section>
 
 		<QuickLinks {affiliateStatus} onsupport={() => (supportOpen = true)} />
+
+		<AffiliateCard overview={affiliateStatus} />
 	{:else}
 		{#if nextShift}
 			<section aria-labelledby="next-shift-heading">
@@ -174,6 +177,8 @@
 		{/if}
 
 		<QuickLinks {affiliateStatus} onsupport={() => (supportOpen = true)} />
+
+		<AffiliateCard overview={affiliateStatus} />
 
 		<section aria-labelledby="open-shifts-heading">
 			<div class="mb-3 flex items-center justify-between gap-3">
