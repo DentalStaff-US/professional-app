@@ -8,6 +8,7 @@
 	import StatusBadge from '$dtss/StatusBadge.svelte';
 	import { MessagePracticeButton } from '$features/inbox';
 	import { formatShiftDate, formatWorkWeek, formatShiftTime } from '$features/shifts';
+	import { payRate } from '$lib/_helpers/hourlyRate';
 	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
 	import { Button } from '$lib/components/ui/button';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
@@ -45,6 +46,7 @@
 
 	const timezone = $derived(requisition?.referenceTimezone || 'America/New_York');
 	const status = $derived(timesheet?.status);
+	const pay = $derived(payRate(requisition, timesheet));
 	const wages = $derived(wagesBadge(timesheet));
 	const isDraft = $derived(status === 'DRAFT');
 	const canAddExpenses = $derived(['DRAFT', 'PENDING', 'DISCREPANCY'].includes(status));
@@ -191,8 +193,11 @@
 						<div class="flex justify-between gap-3"><dt class="text-muted-foreground">Regular</dt><dd class="font-semibold tabular-nums">{split.regular.toFixed(2)} hrs</dd></div>
 						<div class="flex justify-between gap-3"><dt class="text-muted-foreground">Overtime</dt><dd class="font-semibold tabular-nums">{split.overtime.toFixed(2)} hrs</dd></div>
 						<div class="flex justify-between gap-3 border-t pt-2 text-base"><dt class="font-bold">Total</dt><dd class="font-extrabold tabular-nums">{totalHours.toFixed(2)} hrs</dd></div>
-						{#if requisition?.hourlyRate}
-							<div class="flex justify-between gap-3"><dt class="text-muted-foreground">Base rate</dt><dd class="font-semibold tabular-nums">${requisition.hourlyRate}/hr</dd></div>
+						{#if pay.adjusted}
+							<div class="flex justify-between gap-3"><dt class="text-muted-foreground">Adjusted rate</dt><dd class="font-semibold tabular-nums">${pay.rate}/hr</dd></div>
+						{/if}
+						{#if pay.base}
+							<div class="flex justify-between gap-3"><dt class="text-muted-foreground">Base rate</dt><dd class="font-semibold tabular-nums">${pay.base}/hr</dd></div>
 						{/if}
 					</dl>
 				</section>

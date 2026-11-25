@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { Banknote, CalendarDays, CalendarOff, Lock, MapPin } from 'lucide-svelte';
 	import StatusBadge from '$dtss/StatusBadge.svelte';
+	import { payRate } from '$lib/_helpers/hourlyRate';
 	import { isPracticeLocked } from '$lib/_helpers/practiceIdentity';
 	import { formatShiftDate, formatTimeRange, relativeShiftDay } from '../format';
 
@@ -10,6 +11,7 @@
 	const day = $derived(shift.recurrenceDay);
 	const requisition = $derived(shift.requisition);
 	const timezone = $derived(requisition?.referenceTimezone);
+	const pay = $derived(payRate(requisition, shift.timesheet));
 	const locked = $derived(isPracticeLocked(shift));
 	const practice = $derived(
 		shift.company?.name ?? shift.company?.companyName ?? shift.requisition?.companyName
@@ -52,10 +54,10 @@
 				</span>
 			</li>
 		{/if}
-		{#if requisition?.hourlyRate}
+		{#if pay.rate}
 			<li class="flex items-start gap-2">
 				<Banknote class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-				<span class="font-bold text-foreground">${requisition.hourlyRate}/hr</span>
+				<span class="font-bold text-foreground">${pay.rate}/hr</span>
 			</li>
 		{/if}
 		{#if shift.blockedByAvailability}

@@ -15,6 +15,7 @@
 	import Notice from '$dtss/Notice.svelte';
 	import Page from '$dtss/Page.svelte';
 	import StatusBadge from '$dtss/StatusBadge.svelte';
+	import { payRate } from '$lib/_helpers/hourlyRate';
 	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
 	import { MessagePracticeButton } from '$features/inbox';
 	import { Button } from '$lib/components/ui/button';
@@ -28,6 +29,7 @@
 	const day = $derived(shift?.recurrenceDay);
 	const requisition = $derived(shift?.requisition);
 	const location = $derived(shift?.location);
+	const pay = $derived(payRate(requisition, shift?.timesheet));
 	const timezone = $derived(requisition?.referenceTimezone || 'America/New_York');
 	const title = $derived(requisition?.disciplineName ?? requisition?.discipline ?? 'Shift');
 	const practice = $derived(requisition?.companyName ?? shift?.company?.name);
@@ -92,11 +94,11 @@
 						</div>
 					</div>
 				{/if}
-				{#if requisition?.hourlyRate != null}
+				{#if pay.rate !== null}
 					<div class="flex items-start gap-4">
 						<IconSquare icon={Banknote} />
 						<div>
-							<h2 class="font-bold">${Number(requisition.hourlyRate).toFixed(2)} per hour</h2>
+							<h2 class="font-bold">${pay.rate.toFixed(2)} per hour</h2>
 						</div>
 					</div>
 				{/if}
