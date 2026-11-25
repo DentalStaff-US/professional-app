@@ -53,6 +53,7 @@
 	import { onMount } from 'svelte';
 	import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
+	import { payRate } from '$lib/_helpers/hourlyRate';
 
 	export let data: PageData;
 
@@ -296,6 +297,7 @@
 	});
 
 	// ✅ Calculate total hours
+	$: pay = payRate(requisition, timesheet);
 	$: totalHours = Object.values(timeEntries).reduce((sum, entry) => sum + (entry.hours || 0), 0);
 
 	// Overtime is per-WEEK (>40h). When a week is split across timesheets, some
@@ -509,7 +511,14 @@
 						</div>
 						<div>
 							<h3 class="font-medium">Pay Information</h3>
-							<p class="text-muted-foreground">Base Rate: ${requisition?.hourlyRate || 0}/hr</p>
+							{#if pay.adjusted}
+								<p class="text-muted-foreground">Adjusted Rate: ${pay.rate}/hr</p>
+								{#if pay.base !== null}
+									<p class="text-sm text-muted-foreground">Base Rate: ${pay.base}/hr</p>
+								{/if}
+							{:else}
+								<p class="text-muted-foreground">Base Rate: ${pay.rate ?? 0}/hr</p>
+							{/if}
 						</div>
 					</div>
 

@@ -49,6 +49,7 @@
 		startOfDay
 	} from 'date-fns';
 	import { enhance } from '$app/forms';
+	import { payRate } from '$lib/_helpers/hourlyRate';
 
 	export let data: PageData;
 	// Filters and sorting
@@ -220,7 +221,7 @@
 												class="flex items-center gap-2 text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full"
 											>
 												<DollarSign class="h-4 w-4" />
-												<span>${shift.requisition.hourlyRate}/hr</span>
+												<span>${payRate(shift.requisition, shift.timesheet).rate ?? 0}/hr</span>
 											</div>
 											<Button href={`/my-shifts/${shift.workday.id}`} variant="outline" size="sm"
 												>View Details</Button

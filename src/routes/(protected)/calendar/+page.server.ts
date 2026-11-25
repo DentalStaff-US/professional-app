@@ -80,7 +80,8 @@ export const load: PageServerLoad = async (event) => {
 				requisition: w.requisition,
 				workday: w.workday,
 				company: w.company,
-				location: w.location
+				location: w.location,
+				timesheet: w.timesheet ? { adjustedHourlyRate: w.timesheet.adjustedHourlyRate } : null
 			}))
 		: [];
 

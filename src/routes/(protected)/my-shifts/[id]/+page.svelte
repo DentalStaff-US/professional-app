@@ -47,6 +47,7 @@
 	import { format } from 'date-fns';
 	import { formatInTimeZone } from 'date-fns-tz';
 	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
+	import { payRate } from '$lib/_helpers/hourlyRate';
 	import { enhance } from '$app/forms';
 
 	export let data: PageData;
@@ -204,7 +205,7 @@
 						<div>
 							<h3 class="font-medium">Hourly Rate</h3>
 							<p class="text-muted-foreground">
-								${data.workday.requisition.hourlyRate.toFixed(2)} per hour
+								${(payRate(data.workday.requisition, data.workday.timesheet).rate ?? 0).toFixed(2)} per hour
 							</p>
 						</div>
 					</div>
