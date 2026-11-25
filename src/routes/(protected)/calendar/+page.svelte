@@ -13,6 +13,7 @@
 	import { isPast } from 'date-fns';
 	import { formatInTimeZone } from 'date-fns-tz';
 	import { formatTimezoneName } from '$lib/_helpers/UTCTimezoneUtils';
+	import { payRate } from '$lib/_helpers/hourlyRate';
 	import LockedPracticeDetails from '$lib/components/general/LockedPracticeDetails.svelte';
 	import { isPracticeLocked } from '$lib/_helpers/practiceIdentity';
 	import AvailabilityEditor from '$lib/components/availability/AvailabilityEditor.svelte';
@@ -320,7 +321,7 @@
 						<div class="grid grid-cols-2 gap-4">
 							<div class="flex items-center gap-2 text-gray-600">
 								<CircleDollarSign size={18} />
-								<span>${selectedEvent.extendedProps.requisition.hourlyRate}/hr</span>
+								<span>${payRate(selectedEvent.extendedProps.requisition, selectedEvent.extendedProps.timesheet).rate ?? 0}/hr</span>
 							</div>
 							<div class="flex items-center gap-2 text-gray-600">
 								<Tag size={18} />

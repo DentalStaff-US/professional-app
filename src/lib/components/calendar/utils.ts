@@ -126,6 +126,8 @@ export function convertRecurrenceDayToEvent(data: {
 		referenceTimezone?: string | null;
 	};
 	workday: any | null;
+	// The professional's own sheet for this shift; open listings have none.
+	timesheet?: { adjustedHourlyRate?: number | null } | null;
 	company: { id: string | null; name?: string | null; logo?: string | null };
 	location: {
 		completeAddress?: string | null;
@@ -194,6 +196,7 @@ export function convertRecurrenceDayToEvent(data: {
 			// regardless of which endpoint produced the row.
 			recurrenceDay: { ...data.recurrenceDay, dayStart, dayEnd },
 			workday: { ...workday },
+			timesheet: data.timesheet ?? null,
 			company: { ...company },
 			location: { ...location },
 			identityLocked: data.identityLocked ?? false
