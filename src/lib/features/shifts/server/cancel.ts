@@ -1,4 +1,4 @@
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$lib/config/appUrls';
 import { type RequestEvent } from '@sveltejs/kit';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { adminForwardHeaders } from '$lib/server/fetchAdmin';

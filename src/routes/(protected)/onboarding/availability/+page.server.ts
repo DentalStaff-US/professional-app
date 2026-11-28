@@ -1,6 +1,6 @@
 import { error, fail, redirect, type RequestEvent } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$lib/config/appUrls';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { generateToken } from '$lib/server/utils';
 import { adminForwardHeaders, fetchAdmin } from '$lib/server/fetchAdmin';

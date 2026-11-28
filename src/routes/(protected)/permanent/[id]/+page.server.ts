@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { fail, redirect, type RequestEvent } from '@sveltejs/kit';
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$lib/config/appUrls';
 import { getSavedJobs } from '$lib/server/cache/cacheUtils';
 import { generateToken } from '$lib/server/utils';
 import { message, setError, superValidate } from 'sveltekit-superforms/server';

@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$lib/config/appUrls';
 import { generateToken } from '$lib/server/utils';
 import { superValidate, message, setError } from 'sveltekit-superforms/server';
 import { documentUrlSchema } from '$lib/config/zod-schemas';

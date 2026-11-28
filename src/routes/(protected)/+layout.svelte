@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Global CSS is imported once in the root layout (src/routes/+layout.svelte).
 	import { page } from '$app/stores';
-	import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+	import { PUBLIC_CLIENT_APP_DOMAIN } from '$lib/config/appUrls';
 	import { ProgressBar } from '@prgm/sveltekit-progress-bar';
 	import { onMount } from 'svelte';
 	import { ModeWatcher, setMode } from 'mode-watcher';

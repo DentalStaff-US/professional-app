@@ -9,7 +9,7 @@ import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { getRequestEvent } from '$app/server';
 import { Argon2id } from 'oslo/password';
 import { env } from '$env/dynamic/private';
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$lib/config/appUrls';
 
 import db from '$lib/server/database/drizzle';
 import {

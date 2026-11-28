@@ -5,7 +5,7 @@ import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { building } from '$app/environment';
 import { redirect, type Handle } from '@sveltejs/kit';
 import type { HandleServerError } from '@sveltejs/kit';
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$lib/config/appUrls';
 import { logger } from '$lib/server/logger';
 import { installConsoleGuard } from '$lib/server/consoleGuard';
 import type { AppUser } from '$lib/server/auth';
