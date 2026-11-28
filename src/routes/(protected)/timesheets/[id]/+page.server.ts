@@ -1,10 +1,11 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, RequestEvent } from './$types';
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$lib/config/appUrls';
 import { generateToken } from '$lib/server/utils';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE, adminForwardHeaders } from '$lib/server/fetchAdmin';
 import { logger } from '$lib/server/logger';
+import { messagePractice } from '$features/inbox/server/messagePractice';
 import { superValidate } from 'sveltekit-superforms/server';
 import { addExpenseSchema } from '$lib/config/zod-schemas';
 
@@ -16,7 +17,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const { user } = locals;
 	if (!user) {
-		throw redirect(303, '/sign-in');
+		throw redirect(303, '/auth/sign-in');
 	}
 
 	const token = generateToken(user.id);
@@ -65,6 +66,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		timesheet: data.timesheet,
 		requisition: data.requisition,
 		company: data.company,
+		conversationId: data.conversationId ?? null,
+		canMessagePractice: data.canMessagePractice === true,
 		workday: data.workday,
 		recurrenceDay: data.recurrenceDay,
 		workdays: workdaysRes.ok ? (workdaysRes.data.workdays ?? []) : [],
@@ -174,6 +177,8 @@ export const actions = {
 			return { success: false, error: 'Failed to submit timesheet' };
 		}
 	},
+
+	messagePractice: (event: RequestEvent) => messagePractice(event, { timesheetId: event.params.id! }),
 
 	// Post-submission "experience survey": the candidate answered that they
 	// would NOT keep working with this client. Blacklist the company for them so

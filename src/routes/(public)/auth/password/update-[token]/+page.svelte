@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PasswordInput from '$lib/components/auth/PasswordInput.svelte';
 	import * as Form from '$lib/components/ui/form';
 	import * as Card from '$lib/components/ui/card';
 	import * as Alert from '$lib/components/ui/alert';
@@ -11,6 +12,8 @@
 
 	export let form: SuperValidated<UserUpdatePasswordSchema>;
 </script>
+
+<svelte:head><title>Change your password | DTSS Professionals</title></svelte:head>
 
 <div class="flex items-center justify-center mx-auto max-w-2xl">
 	<Form.Root
@@ -42,14 +45,14 @@
 				<Form.Field {config} name="password">
 					<Form.Item>
 						<Form.Label>New Password</Form.Label>
-						<Form.Input type="password" />
+						<PasswordInput autocomplete="new-password" strength />
 						<Form.Validation />
 					</Form.Item>
 				</Form.Field>
 				<Form.Field {config} name="confirmPassword">
 					<Form.Item>
 						<Form.Label>Confirm New Password</Form.Label>
-						<Form.Input type="password" />
+						<PasswordInput autocomplete="new-password" />
 						<Form.Validation />
 					</Form.Item>
 				</Form.Field>

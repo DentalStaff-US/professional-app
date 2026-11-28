@@ -1,13 +1,11 @@
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
 import { recurrenceDayClaimSchema } from '$lib/config/zod-schemas.js';
+import type { AffiliateOverview } from '$features/dashboard/affiliateCard';
+import { homeNudges } from '$features/dashboard/nudges';
 import { generateToken } from '$lib/server/utils.js';
-import { fail, redirect } from '@sveltejs/kit';
-import { message, superValidate } from 'sveltekit-superforms/server';
-import type { RequestEvent } from './$types';
-import { setFlash } from 'sveltekit-flash-message/server';
-import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE, adminForwardHeaders } from '$lib/server/fetchAdmin';
-import { getCandidateStatus, inactiveAccountMessage } from '$lib/server/candidateStatus';
-import { logger } from '$lib/server/logger';
+import { redirect } from '@sveltejs/kit';
+import { superValidate } from 'sveltekit-superforms/server';
+import { fetchAdmin, ADMIN_LOAD_ERROR_MESSAGE } from '$lib/server/fetchAdmin';
+import { claimShift } from '$features/shifts/server/claim';
 import { resolveJobIntentRedirect } from '$lib/server/jobIntentRedirect';
 
 export const load = async (event) => {
@@ -37,7 +35,7 @@ export const load = async (event) => {
 	}
 	const token = generateToken(user.id);
 
-	const [workdaysRes, timesheetsRes, requisitionsRes] = await Promise.all([
+	const [workdaysRes, timesheetsRes, requisitionsRes, affiliateRes, profileRes, disciplinesRes] = await Promise.all([
 		fetchAdmin<{ data: any[] }>('/api/external/getUpcomingWorkdaysForCandidate', { token }),
 		fetchAdmin<{ data: any[] }>('/api/external/timesheets/getPendingTimesheetsForUser', {
 			token
@@ -57,7 +55,11 @@ export const load = async (event) => {
 		}>(
 			`/api/external/getUpcomingTempRequisitionsForCandidate${showUnavailable ? '?includeUnavailable=true' : ''}`,
 			{ token }
-		)
+		),
+		// The referral card and the partner quick link. A failure only hides them.
+		fetchAdmin<AffiliateOverview>('/api/external/affiliate/overview', { token }),
+		fetchAdmin<{ completeAddress?: string | null; cellPhone?: string | null }>('/api/external/getCandidateProfile', { token }),
+		fetchAdmin<{ disciplines: any[] }>('/api/external/getCandidateDisciplines', { token })
 	]);
 
 	return {
@@ -66,6 +68,11 @@ export const load = async (event) => {
 		// applyForm`, which a +page.svelte never receives, so every fail() from
 		// claimWorkdayShift was silently discarded.
 		claimForm: await superValidate(event, recurrenceDayClaimSchema),
+		affiliateStatus: affiliateRes.ok ? affiliateRes.data : null,
+		nudges: homeNudges({
+			profile: profileRes.ok ? profileRes.data : null,
+			disciplines: disciplinesRes.ok ? (disciplinesRes.data.disciplines ?? []) : []
+		}),
 		workdays: workdaysRes.ok ? (workdaysRes.data.data ?? []) : [],
 		timesheets: timesheetsRes.ok ? (timesheetsRes.data.data ?? []) : [],
 		requisitions: requisitionsRes.ok ? (requisitionsRes.data.recurrenceDays ?? []) : [],
@@ -87,90 +94,5 @@ export const load = async (event) => {
 };
 
 export const actions = {
-	claimWorkdayShift: async (event: RequestEvent) => {
-		const userId = event.locals.user?.id;
-		const token = generateToken(userId);
-		// Read the body once: superValidate(event) would consume it, and a later
-		// request.clone() then throws 'unusable' — every claim failed that way.
-		const formData = await event.request.formData();
-		const form = await superValidate(formData, recurrenceDayClaimSchema);
-		const recurrenceDayId = form.data.recurrenceDayId;
-		// Claiming a shift on a day they marked off is their own override, so the
-		// admin app permits it only when the intent is explicit — otherwise the
-		// "Show them anyway" banner would surface a shift that cannot be claimed.
-		const acknowledgeUnavailable = formData.get('acknowledgeUnavailable') === 'true';
-
-		if (!userId || !recurrenceDayId) {
-			return fail(400, {
-				form: { ...form, errors: { _errors: ['Missing required information'] } }
-			});
-		}
-
-		if (!form.valid) {
-			return fail(400, { form });
-		}
-
-		// Block non-active candidates before the cross-app request.
-		const status = await getCandidateStatus(userId);
-		if (status !== 'ACTIVE') {
-			return fail(403, {
-				form: { ...form, errors: { _errors: [inactiveAccountMessage(status)] } }
-			});
-		}
-
-		try {
-			const req = await fetch(`${PUBLIC_CLIENT_APP_DOMAIN}/api/external/applyForTempRequisition`, {
-				method: 'POST',
-				body: JSON.stringify({ recurrenceDayId, acknowledgeUnavailable }),
-				headers: {
-					...adminForwardHeaders(),
-					Authorization: `Bearer ${token}`,
-					'Content-Type': 'application/json'
-				},
-				credentials: 'include'
-			});
-
-			const responseData = await req.json();
-
-			if (!req.ok || !responseData.success) {
-				return fail(req.status || 403, {
-					form: {
-						...form,
-						errors: {
-							_errors: [responseData.message || 'Failed to claim shift']
-						}
-					}
-				});
-			}
-			setFlash(
-				{
-					type: 'success',
-					message: 'Successfully claimed shift.'
-				},
-				event
-			);
-			return message(form, 'Successfully claimed shift!');
-		} catch (error) {
-			logger.error('Failed to claim workday shift', {
-				error,
-				recurrenceDayId,
-				distinctId: userId
-			});
-			setFlash(
-				{
-					type: 'error',
-					message: 'Something went wrong while claiming the shift'
-				},
-				event
-			);
-			return fail(500, {
-				form: {
-					...form,
-					errors: {
-						_errors: ['Something went wrong while claiming the shift']
-					}
-				}
-			});
-		}
-	}
+	claimWorkdayShift: claimShift
 };

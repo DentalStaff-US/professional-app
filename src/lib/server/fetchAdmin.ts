@@ -1,4 +1,4 @@
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$lib/config/appUrls';
 import { getRequestEvent } from '$app/server';
 import { logger } from '$lib/server/logger';
 

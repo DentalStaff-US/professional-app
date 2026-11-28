@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { fail, redirect, type Actions } from '@sveltejs/kit';
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$lib/config/appUrls';
 import { generateToken } from '$lib/server/utils';
 import { superValidate } from 'sveltekit-superforms/server';
 import { z } from 'zod';
@@ -13,12 +13,13 @@ const messageSchema = z.object({
 });
 
 export const load: PageServerLoad = async (event) => {
+	event.depends('inbox:conversation');
 	const { id } = event.params;
 	const { user } = event.locals;
 	const userId = user?.id;
 
 	if (!user) {
-		redirect(302, '/sign-in');
+		redirect(302, '/auth/sign-in');
 	}
 
 	const token = generateToken(userId);
@@ -41,7 +42,7 @@ export const actions = {
 		const userId = user?.id;
 
 		if (!user) {
-			redirect(302, '/sign-in');
+			redirect(302, '/auth/sign-in');
 		}
 
 		const token = generateToken(userId);

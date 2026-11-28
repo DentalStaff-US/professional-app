@@ -1,0 +1,141 @@
+<script lang="ts">
+	import type { Snippet } from 'svelte';
+	import { ChevronLeft } from 'lucide-svelte';
+	import logo from '$lib/assets/dtss-logo.png';
+	import { activeTab, fillsScreen, innerPage, showsTabs, TABS } from '$lib/nav/nav';
+	import { cn } from '$lib/utils';
+	import UserMenu from './UserMenu.svelte';
+
+	let {
+		pathname,
+		name,
+		email,
+		avatarUrl,
+		initials,
+		unreadCount = 0,
+		topBanner,
+		banner,
+		children
+	}: {
+		pathname: string;
+		name: string;
+		email?: string;
+		avatarUrl?: string | null;
+		initials: string;
+		unreadCount?: number;
+		/** Always shown: admin impersonation. */
+		topBanner?: Snippet;
+		/** At most one account or page message. */
+		banner?: Snippet;
+		children: Snippet;
+	} = $props();
+
+	const active = $derived(activeTab(pathname));
+	const tabs = $derived(showsTabs(pathname));
+	const fills = $derived(fillsScreen(pathname));
+	// A thread needs the room on a phone, and the top bar has a way back.
+	const phoneTabs = $derived(tabs && !fills);
+	const inner = $derived(innerPage(pathname));
+	const unreadLabel = $derived(unreadCount > 9 ? '9+' : String(unreadCount));
+</script>
+
+<!-- --tabbar-offset lets fixed action bars inside pages sit above the tabs. -->
+<div
+	class={cn(
+		'flex flex-col bg-muted/40',
+		fills ? 'h-dvh overflow-hidden' : 'min-h-dvh',
+		phoneTabs && '[--tabbar-offset:calc(4rem+env(safe-area-inset-bottom))] md:[--tabbar-offset:0px]'
+	)}
+>
+	{@render topBanner?.()}
+
+	<header class="border-b bg-card">
+		<div class="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 md:h-16 md:px-6">
+			{#if inner}
+				<a
+					href={inner.back}
+					class="-ml-2 flex h-11 min-w-0 items-center gap-1 rounded-md pr-2 font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+				>
+					<ChevronLeft class="size-5 shrink-0" aria-hidden="true" />
+					<span class="sr-only">Back to</span>
+					<span class="truncate">{inner.title}</span>
+				</a>
+			{/if}
+			<a
+				href={tabs ? '/dashboard' : undefined}
+				class={cn(
+					'shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+					inner && 'hidden md:block'
+				)}
+			>
+				<img src={logo} alt="DTSS" class="h-9 w-auto" />
+			</a>
+
+			{#if tabs}
+				<nav aria-label="Main" class="hidden h-full flex-1 items-stretch justify-center gap-1 md:flex">
+					{#each TABS as tab (tab.href)}
+						<a
+							href={tab.href}
+							aria-current={active === tab.href ? 'page' : undefined}
+							class={cn(
+								'flex items-center border-b-2 px-3 pt-0.5 text-sm font-semibold transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+								active === tab.href
+									? 'border-primary text-primary-dark'
+									: 'border-transparent text-muted-foreground hover:text-foreground'
+							)}
+						>
+							{tab.label}
+							{#if tab.href === '/inbox' && unreadCount > 0}
+								<span class="ml-1.5 rounded-full bg-primary-strong px-1.5 text-xs font-bold text-primary-foreground">
+									{unreadLabel}<span class="sr-only"> unread</span>
+								</span>
+							{/if}
+						</a>
+					{/each}
+				</nav>
+			{/if}
+
+			<UserMenu {name} {email} {avatarUrl} {initials} />
+		</div>
+	</header>
+
+	{#if banner}
+		<div class="mx-auto w-full max-w-5xl px-4 pt-4 md:px-6">{@render banner()}</div>
+	{/if}
+
+	<main class={cn('flex w-full flex-1 flex-col', fills ? 'min-h-0' : 'py-6 md:py-8', phoneTabs && 'pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-8')}>
+		{@render children()}
+	</main>
+
+	{#if phoneTabs}
+		<nav
+			aria-label="Main"
+			class="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+		>
+			<ul class="flex h-16">
+				{#each TABS as tab (tab.href)}
+					<li class="flex-1">
+						<a
+							href={tab.href}
+							aria-current={active === tab.href ? 'page' : undefined}
+							class={cn(
+								'flex h-full flex-col items-center justify-center gap-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+								active === tab.href ? 'text-primary-dark' : 'text-muted-foreground'
+							)}
+						>
+							<span class="relative">
+								<tab.icon class={cn('size-6', active === tab.href && 'stroke-[2.5]')} aria-hidden="true" />
+								{#if tab.href === '/inbox' && unreadCount > 0}
+									<span class="absolute -right-2.5 -top-1.5 min-w-4 rounded-full bg-primary-strong px-1 text-center text-[0.625rem] font-bold leading-4 text-primary-foreground">
+										{unreadLabel}<span class="sr-only"> unread</span>
+									</span>
+								{/if}
+							</span>
+							{tab.label}
+						</a>
+					</li>
+				{/each}
+			</ul>
+		</nav>
+	{/if}
+</div>

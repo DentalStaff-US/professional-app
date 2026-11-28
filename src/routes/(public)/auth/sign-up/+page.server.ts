@@ -1,6 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { REF_COOKIE_NAME, parseRefCookie } from '$lib/server/affiliate/refCookie';
+import { jobHeadline } from '$lib/components/auth/signUpContext';
 import { fetchAdmin } from '$lib/server/fetchAdmin';
+import { normalizePublicId, readJobIntent } from '$lib/server/jobIntent';
 import { generateToken } from '$lib/server/utils';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { setError, superValidate } from 'sveltekit-superforms/server';
@@ -24,9 +26,21 @@ export const load: PageServerLoad = async (event: PageServerLoadEvent) => {
 	}
 	const form = await superValidate(event, signUpSchema);
 	return {
-		form
+		form,
+		headline: await jobContextHeadline(event),
+		referred:
+			event.url.searchParams.has('ref') || parseRefCookie(event.cookies.get(REF_COOKIE_NAME)) !== null
 	};
 };
+
+// Never holds up sign-up: a closed job or a failed lookup gets the normal headline.
+async function jobContextHeadline(event: PageServerLoadEvent): Promise<string | null> {
+	const publicId =
+		normalizePublicId(event.url.searchParams.get('job')) ?? readJobIntent(event.cookies)?.publicId;
+	if (!publicId) return null;
+	const res = await fetchAdmin<{ job: Parameters<typeof jobHeadline>[0] }>(`/api/public/jobs/${publicId}`);
+	return res.ok && res.data.job ? jobHeadline(res.data.job) : null;
+}
 
 export const actions = {
 	default: async (event: RequestEvent) => {

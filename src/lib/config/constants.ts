@@ -3,17 +3,8 @@ export const BASE_URL = dev ? 'http://localhost:5173' : 'https://app.dtstaffings
 export const APP_NAME = 'Dental Temps Staffing Solutions';
 export const CONTACT_EMAIL = 'dtss@dtstaffingsolutions.com';
 export const DOMAIN = 'https://app.dtstaffingsolutions.com';
-/* WARNING!!! TERMS AND CONDITIONS AND PRIVACY POLICY
-WERE CREATED BY CHATGPT AS AN EXAMPLE ONLY.
-CONSULT A LAWYER AND DEVELOP YOUR OWN TERMS AND PRIVACY POLICY!!! */
-export const TERMS_PRIVACY_CONTACT_EMAIL = 'dtss@dtstaffingsolutions.com';
-export const TERMS_PRIVACY_WEBSITE = 'https://app.dtstaffingsolutions.com';
-export const TERMS_PRIVACY_COMPANY = 'Dental Temps Staffing Solutions';
-export const TERMS_PRIVACY_EFFECTIVE_DATE = 'January 1, 2023';
-export const TERMS_PRIVACY_APP_NAME = 'Dental Temps Staffing Solutions';
-export const TERMS_PRIVACY_APP_PRICING_AND_SUBSCRIPTIONS =
-	'[Details about the pricing, subscription model, refund policy]';
-export const TERMS_PRIVACY_COUNTRY = 'United States';
+/** The marketing site: terms and privacy live there, not in this app. */
+export const LEGAL_SITE = 'https://www.dtstaffingsolutions.com';
 
 export const STATES: { name: string; abbreviation: string }[] = [
 	{ name: 'Alabama', abbreviation: 'AL' },

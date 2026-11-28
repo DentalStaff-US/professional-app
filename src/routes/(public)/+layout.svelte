@@ -7,7 +7,6 @@
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { toast } from 'svelte-sonner';
 	import { ProgressBar } from '@prgm/sveltekit-progress-bar';
-	import Navigation from '$lib/components/navigation/navigation.svelte';
 
 	export let data: PageData;
 	let user: PageData['user'];
@@ -33,17 +32,8 @@
 <div class="relative flex min-h-screen flex-col">
 	<!-- <Navigation {user} /> -->
 	<div id="app-main">
-		<!-- <ProgressBar class="text-blue-500" zIndex={100} /> -->
-		<slot />
+			<slot />
 	</div>
 </div>
 
-<!--
-	Removed leftover CodeStitch landing-template boilerplate that defined a global
-	`:root { --primary: #ff6a3e; ... }`. Because Svelte can't scope `:root`, it leaked
-	app-wide and overrode shadcn's HSL `--primary`, making `bg-primary`/`text-primary`
-	resolve to `hsl(#ff6a3e)` (invalid) → broken/white styles on public pages. The
-	`.cs-*` classes and these vars were unused anywhere in the app; the body/box-sizing
-	resets are already covered by Tailwind's preflight.
--->
 

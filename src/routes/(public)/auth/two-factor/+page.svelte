@@ -28,8 +28,10 @@
 	}
 </script>
 
+<svelte:head><title>Two-factor authentication | DTSS Professionals</title></svelte:head>
+
 <AuthShell>
-	<Card.Root class="border-slate-200/80 shadow-xl shadow-teal-900/5">
+	<Card.Root class="border-border shadow-xl shadow-teal-900/5">
 		<Card.Header class="space-y-2 text-center">
 			<ShieldCheck class="mx-auto h-12 w-12 text-primary" />
 			<Card.Title class="text-2xl">Two-factor authentication</Card.Title>
@@ -56,7 +58,7 @@
 				/>
 				<Button
 					type="submit"
-					class="h-11 w-full bg-primary text-base hover:bg-primary/90"
+					class="h-11 w-full text-base"
 					disabled={loading || !code}
 				>
 					{#if loading}

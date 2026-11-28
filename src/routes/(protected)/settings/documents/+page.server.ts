@@ -1,7 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { generateToken } from '$lib/server/utils';
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$lib/config/appUrls';
 import {
 	documentDeleteSchema,
 	documentUpdateSchema,
@@ -54,7 +54,7 @@ export const actions = {
 		const { user } = locals;
 
 		if (!user) {
-			return redirect(302, '/sign-in');
+			return redirect(302, '/auth/sign-in');
 		}
 
 		// Clone before superValidate reads the body — a Request can only be consumed

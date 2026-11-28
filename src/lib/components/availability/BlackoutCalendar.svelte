@@ -84,7 +84,7 @@
 		</span>
 		<span class="inline-flex items-center gap-1.5">
 			<span
-				class="inline-flex h-4 w-4 items-center justify-center rounded border border-sky-300 bg-sky-100 text-sky-700"
+				class="inline-flex h-4 w-4 items-center justify-center rounded border border-primary/30 bg-primary-soft text-primary-dark"
 				><Lock class="h-2.5 w-2.5" /></span
 			>{COPY.off.legendBooked}
 		</span>
@@ -106,9 +106,9 @@
 		let:weekdays
 	>
 		<Calendar.Header>
-			<Calendar.PrevButton />
+			<Calendar.PrevButton class="size-11" />
 			<Calendar.Heading />
-			<Calendar.NextButton />
+			<Calendar.NextButton class="size-11" />
 		</Calendar.Header>
 		<Calendar.Months>
 			{#each months as month (month.value.toString())}
@@ -136,8 +136,8 @@
 											class="mx-auto h-11 w-full max-w-11
 												data-[selected]:bg-destructive data-[selected]:text-destructive-foreground
 												data-[selected]:line-through
-												data-[unavailable]:border data-[unavailable]:border-sky-300
-												data-[unavailable]:bg-sky-100 data-[unavailable]:text-sky-800
+												data-[unavailable]:border data-[unavailable]:border-primary/30
+												data-[unavailable]:bg-primary-soft data-[unavailable]:text-primary-dark
 												data-[unavailable]:no-underline data-[unavailable]:opacity-100"
 											title={bookedSet.has(iso) ? COPY.off.bookedTooltip(subject) : undefined}
 											let:selected={isSelected}

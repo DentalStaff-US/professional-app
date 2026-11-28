@@ -7,8 +7,10 @@
 	export let data;
 </script>
 
+<svelte:head><title>Verify your email | DTSS Professionals</title></svelte:head>
+
 <AuthShell>
-	<Card.Root class="border-slate-200/80 shadow-xl shadow-teal-900/5">
+	<Card.Root class="border-border shadow-xl shadow-teal-900/5">
 		<Card.Header class="space-y-2 text-center">
 			<MailCheck class="mx-auto h-12 w-12 text-primary" />
 			<Card.Title class="text-2xl">Confirm your email</Card.Title>
@@ -27,7 +29,7 @@
 					Resend verification email
 				</Button>
 			{/if}
-			<a href="/auth/sign-in" class="text-sm text-slate-500 hover:text-primary hover:underline">
+			<a href="/auth/sign-in" class="text-sm text-muted-foreground hover:text-primary-dark hover:underline">
 				Back to sign in
 			</a>
 		</Card.Footer>

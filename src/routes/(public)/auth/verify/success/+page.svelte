@@ -7,8 +7,10 @@
 	export let data: { verifyError: string | null };
 </script>
 
+<svelte:head><title>Email verified | DTSS Professionals</title></svelte:head>
+
 <AuthShell>
-	<Card.Root class="border-slate-200/80 shadow-xl shadow-teal-900/5">
+	<Card.Root class="border-border shadow-xl shadow-teal-900/5">
 		<Card.Header class="space-y-2 text-center">
 			{#if data.verifyError}
 				<AlertCircle class="mx-auto h-12 w-12 text-destructive" />
@@ -24,7 +26,7 @@
 			{/if}
 		</Card.Header>
 		<Card.Footer>
-			<Button href="/auth/sign-in" class="h-11 w-full bg-primary text-base hover:bg-primary/90">
+			<Button href="/auth/sign-in" class="h-11 w-full text-base">
 				Continue to sign in
 			</Button>
 		</Card.Footer>

@@ -4,7 +4,7 @@
 	import { enhance } from '$app/forms';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import { Badge } from '$lib/components/ui/badge';
-	import { StatusBadge } from '$lib/components/ui/status-badge';
+	import StatusBadge from '$dtss/StatusBadge.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import {
 		Card,
@@ -176,7 +176,7 @@
 						<div class="flex justify-end">
 							<Button
 								type="submit"
-								class="bg-primary hover:bg-primary/90"
+								
 								disabled={postingComment || newComment.trim().length === 0}
 							>
 								{#if postingComment}

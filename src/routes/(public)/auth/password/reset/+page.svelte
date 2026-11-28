@@ -16,9 +16,11 @@
 	export let form: SuperValidated<ResetPasswordSchema>;
 </script>
 
+<svelte:head><title>Reset your password | DTSS Professionals</title></svelte:head>
+
 <AuthShell>
 	<Form.Root let:submitting let:errors method="POST" {form} schema={resetPasswordSchema} let:config>
-		<Card.Root class="border-slate-200/80 shadow-xl shadow-teal-900/5">
+		<Card.Root class="border-border shadow-xl shadow-teal-900/5">
 			<Card.Header class="space-y-1">
 				<Card.Title class="text-2xl">Reset your password</Card.Title>
 				<Card.Description>Enter your email and we'll send you a reset link.</Card.Description>
@@ -45,7 +47,7 @@
 			</Card.Content>
 			<Card.Footer class="flex-col gap-4">
 				<Form.Button
-					class="h-11 w-full bg-primary text-base hover:bg-primary/90"
+					class="h-11 w-full text-base"
 					disabled={submitting}
 				>
 					{#if submitting}
@@ -54,7 +56,7 @@
 						Send reset link
 					{/if}
 				</Form.Button>
-				<a href="/auth/sign-in" class="text-sm text-slate-500 hover:text-primary hover:underline">
+				<a href="/auth/sign-in" class="text-sm text-muted-foreground hover:text-primary-dark hover:underline">
 					Back to sign in
 				</a>
 			</Card.Footer>

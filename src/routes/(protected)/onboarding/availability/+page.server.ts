@@ -1,6 +1,6 @@
 import { error, fail, redirect, type RequestEvent } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$lib/config/appUrls';
 import { setFlash } from 'sveltekit-flash-message/server';
 import { generateToken } from '$lib/server/utils';
 import { adminForwardHeaders, fetchAdmin } from '$lib/server/fetchAdmin';
@@ -31,7 +31,7 @@ const ONBOARDING_STEP = 6;
 
 export const load: PageServerLoad = async (event) => {
 	const { user } = event.locals;
-	if (!user) redirect(302, '/sign-in');
+	if (!user) redirect(302, '/auth/sign-in');
 
 	// `>` and never `<`. onboarding_step is NULL for admin-created and seeded
 	// professionals; `null > 6` is false (safe) but `null < 6` is TRUE, which would
@@ -77,7 +77,7 @@ async function advanceStep(event: RequestEvent, userId: string) {
 export const actions = {
 	saveAvailability: async (event: RequestEvent) => {
 		const { user } = event.locals;
-		if (!user) redirect(302, '/sign-in');
+		if (!user) redirect(302, '/auth/sign-in');
 
 		const fd = await event.request.formData();
 		const rawDays = fd.get('availableDays');
@@ -120,7 +120,7 @@ export const actions = {
 
 	skipAvailability: async (event: RequestEvent) => {
 		const { user } = event.locals;
-		if (!user) redirect(302, '/sign-in');
+		if (!user) redirect(302, '/auth/sign-in');
 
 		// THE SKIP WRITES NOTHING. available_days stays NULL and no blackout rows are
 		// created, which preserves the difference between "never answered" and

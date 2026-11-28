@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PasswordInput from '$lib/components/auth/PasswordInput.svelte';
 	import * as Form from '$lib/components/ui/form';
 	import * as Card from '$lib/components/ui/card';
 	import * as Alert from '$lib/components/ui/alert';
@@ -24,6 +25,7 @@
 	$: authSwitchHref = jobParam ? `/auth/sign-in?job=${encodeURIComponent(jobParam)}` : '/auth/sign-in';
 
 	export let form: SuperValidated<SignUpSchema>;
+	export let data: { headline: string | null; referred: boolean };
 </script>
 
 <svelte:head>
@@ -32,15 +34,18 @@
 
 <AuthShell>
 	<Form.Root let:submitting let:errors method="POST" {form} schema={signUpSchema} let:config>
-		<Card.Root class="border-slate-200/80 shadow-xl shadow-teal-900/5">
+		<Card.Root class="border-border shadow-xl shadow-teal-900/5">
 			<Card.Header class="space-y-1">
-				<Card.Title class="text-2xl">Create your account</Card.Title>
+				<Card.Title class="text-2xl">{data.headline ?? 'Create your account'}</Card.Title>
 				<Card.Description>
 					Already have an account?
-					<a href={authSwitchHref} class="font-medium text-primary hover:underline">Sign in</a>
+					<a href={authSwitchHref} class="font-medium text-primary-dark hover:underline">Sign in</a>
 				</Card.Description>
 			</Card.Header>
 			<Card.Content class="grid gap-4">
+				{#if data.referred}
+					<p class="rounded-md bg-primary-soft px-3 py-2 text-sm font-semibold">You were invited by a DTSS partner.</p>
+				{/if}
 				{#if errors?._errors?.length}
 					<Alert.Root variant="destructive">
 						<AlertCircle class="h-4 w-4" />
@@ -78,20 +83,20 @@
 				<Form.Field {config} name="password">
 					<Form.Item>
 						<Form.Label>Password</Form.Label>
-						<Form.Input type="password" autocomplete="new-password" />
+						<PasswordInput autocomplete="new-password" strength />
 						<Form.Validation />
 					</Form.Item>
 				</Form.Field>
 				<Form.Field {config} name="terms">
 					<Form.Item
-						class="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-slate-200 p-4"
+						class="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-border p-4"
 					>
 						<Form.Checkbox />
 						<div class="space-y-1 leading-none">
 							<Form.Label>I accept the terms and privacy policy.</Form.Label>
 							<Form.Description>
-								You agree to the <a href="/terms" class="text-primary underline">terms</a> and
-								<a href="/privacy" class="text-primary underline">privacy policy</a>.
+								You agree to the <a href="https://www.dtstaffingsolutions.com/terms" target="_blank" rel="noopener" class="text-primary-dark underline">terms</a> and
+								<a href="https://www.dtstaffingsolutions.com/privacy" target="_blank" rel="noopener" class="text-primary-dark underline">privacy policy</a>.
 							</Form.Description>
 						</div>
 					</Form.Item>
@@ -99,7 +104,7 @@
 			</Card.Content>
 			<Card.Footer>
 				<Form.Button
-					class="h-11 w-full bg-primary text-base hover:bg-primary/90"
+					class="h-11 w-full text-base"
 					disabled={submitting}
 				>
 					{#if submitting}

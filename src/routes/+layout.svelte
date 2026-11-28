@@ -4,6 +4,7 @@
 	// root bundle. Importing it only in the (public)/(protected) group layouts
 	// made it a route-level CSS chunk that, if it failed to preload, dropped the
 	// :root variables → unstyled/white buttons (bg-primary → hsl(var(--primary))).
+	import '@fontsource-variable/nunito';
 	import '../app.pcss';
 	import posthog from 'posthog-js';
 	import { browser } from '$app/environment';

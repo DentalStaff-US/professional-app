@@ -64,11 +64,11 @@
 </script>
 
 {#if isCredentialType && disciplines.length > 0}
-	<div class="space-y-3 rounded-md border bg-gray-50/60 p-3">
+	<div class="space-y-3 rounded-md border bg-muted/50 p-3">
 		<label class="flex items-start gap-2 text-sm font-medium">
 			<input
 				type="checkbox"
-				class="mt-0.5 h-4 w-4 rounded border-gray-300"
+				class="mt-0.5 h-4 w-4 rounded border-input"
 				{disabled}
 				{checked}
 				on:change={onToggle}
@@ -79,13 +79,13 @@
 		{#if checked}
 			<div class="space-y-3 pl-6">
 				<div class="space-y-1">
-					<label class="text-xs font-medium text-gray-700" for="credential-discipline">
+					<label class="text-xs font-medium text-foreground" for="credential-discipline">
 						Applies to
 					</label>
 					<select
 						id="credential-discipline"
 						name="documentDisciplineId"
-						class="w-full rounded-md border-gray-300 text-sm"
+						class="h-11 w-full rounded-md border border-input bg-background px-3 text-base"
 						bind:value={disciplineId}
 						{disabled}
 						required
@@ -100,11 +100,11 @@
 						{/each}
 					</select>
 					{#if currentBadge}
-						<p class="text-xs text-gray-600">
+						<p class="text-xs text-muted-foreground">
 							Currently: <span class="font-medium">{currentBadge.label}</span>
 						</p>
 					{:else if selected && !selected.requiresLicense}
-						<p class="text-xs text-gray-600">
+						<p class="text-xs text-muted-foreground">
 							This discipline does not require a license or registration, so nothing will be hidden if this
 							one expires.
 						</p>
@@ -116,19 +116,19 @@
 				     governs a certification lives on the Experience & Rates entry. Making
 				     this required blocked people from filing a perfectly valid document. -->
 				<div class="space-y-1">
-					<label class="text-xs font-medium text-gray-700" for="credential-expiry">
-						Expires on <span class="font-normal text-gray-500">(if it has an expiry)</span>
+					<label class="text-xs font-medium text-foreground" for="credential-expiry">
+						Expires on <span class="font-normal text-muted-foreground">(if it has an expiry)</span>
 					</label>
 					<input
 						id="credential-expiry"
 						name="documentExpiryDate"
 						type="date"
-						class="w-full rounded-md border-gray-300 text-sm"
+						class="h-11 w-full rounded-md border border-input bg-background px-3 text-base"
 						bind:value={expiryDate}
 						min={minDate}
 						{disabled}
 					/>
-					<p class="text-xs text-gray-600">
+					<p class="text-xs text-muted-foreground">
 						Leave blank if this document does not expire.
 					</p>
 				</div>
