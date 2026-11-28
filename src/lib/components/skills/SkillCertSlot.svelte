@@ -25,10 +25,10 @@
 	let expiry = '';
 
 	$: status = !certExpiresOn
-		? { text: 'Certificate needed — this skill won’t count for matching until you add one.', tone: 'text-amber-700' }
+		? { text: 'Certificate needed — this skill won’t count for matching until you add one.', tone: 'text-status-warning-fg' }
 		: !effective
-			? { text: `Certificate expired ${certExpiresOn} — upload your renewal.`, tone: 'text-red-600' }
-			: { text: `Certificate on file, expires ${certExpiresOn}.`, tone: 'text-green-700' };
+			? { text: `Certificate expired ${certExpiresOn} — upload your renewal.`, tone: 'text-destructive' }
+			: { text: `Certificate on file, expires ${certExpiresOn}.`, tone: 'text-status-positive-fg' };
 
 	async function handleFile(e: Event) {
 		const file = (e.currentTarget as HTMLInputElement).files?.[0];
@@ -46,11 +46,11 @@
 	}
 </script>
 
-<div class="mt-2 rounded-md border bg-gray-50 p-3">
+<div class="mt-2 rounded-md border bg-muted/50 p-3">
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<p class="text-xs {status.tone}">{skillName}: {status.text}</p>
 		{#if !open}
-			<Button type="button" size="sm" variant="outline" on:click={() => (open = true)}>
+			<Button type="button" class="min-h-11" variant="outline" on:click={() => (open = true)}>
 				{certExpiresOn ? 'Upload renewal' : 'Upload certificate'}
 			</Button>
 		{/if}
@@ -77,7 +77,7 @@
 			<input type="hidden" name="url" value={uploadedUrl} />
 			<input type="hidden" name="filename" value={uploadedName} />
 			<div class="space-y-1">
-				<label class="text-xs font-medium text-gray-700" for="skill-up-{skillId}">Certificate file</label>
+				<label class="text-xs font-medium text-foreground" for="skill-up-{skillId}">Certificate file</label>
 				<input
 					id="skill-up-{skillId}"
 					type="file"
@@ -86,31 +86,31 @@
 					on:change={handleFile}
 				/>
 				{#if uploading}
-					<p class="text-xs text-gray-600">Uploading…</p>
+					<p class="text-xs text-muted-foreground">Uploading…</p>
 				{:else if uploadedName}
-					<p class="text-xs text-green-700">Ready: {uploadedName}</p>
+					<p class="text-xs text-status-positive-fg">Ready: {uploadedName}</p>
 				{/if}
 				{#if uploadError}
-					<p class="text-xs text-red-600">{uploadError}</p>
+					<p class="text-xs text-destructive">{uploadError}</p>
 				{/if}
 			</div>
 			<div class="space-y-1">
-				<label class="text-xs font-medium text-gray-700" for="skill-exp-{skillId}">Expires on</label>
+				<label class="text-xs font-medium text-foreground" for="skill-exp-{skillId}">Expires on</label>
 				<input
 					id="skill-exp-{skillId}"
 					name="expiryDate"
 					type="date"
-					class="w-full rounded-md border-gray-300 text-sm"
+					class="w-full rounded-md border-input text-sm"
 					min={todayInET()}
 					bind:value={expiry}
 					required
 				/>
 			</div>
 			<div class="flex gap-2">
-				<Button type="submit" size="sm" disabled={!uploadedUrl || !expiry || uploading}>
+				<Button type="submit" class="min-h-11" disabled={!uploadedUrl || !expiry || uploading}>
 					Save certificate
 				</Button>
-				<Button type="button" size="sm" variant="ghost" on:click={() => (open = false)}>Cancel</Button>
+				<Button type="button" class="min-h-11" variant="ghost" on:click={() => (open = false)}>Cancel</Button>
 			</div>
 		</form>
 	{/if}

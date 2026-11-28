@@ -52,7 +52,10 @@
 		try {
 			// Create a FormData instance for the upload
 			const formData = new FormData();
-			formData.append('file', file);
+			// The storage key is the file name, and phones name every photo "image.jpg":
+			// give it its own so one person's photo can't overwrite another's.
+			const extension = file.type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg';
+			formData.append('file', new File([file], `${crypto.randomUUID()}.${extension}`, { type: file.type }));
 			formData.append('location', 'images');
 
 			// Send directly to an endpoint in the current app
@@ -108,7 +111,7 @@
 
 		<label
 			for="avatar-upload"
-			class="absolute bottom-1 right-1 rounded-full bg-white text-gray-300 p-2 cursor-pointer shadow-sm transition-colors"
+			class="absolute -bottom-1 -right-1 flex size-11 cursor-pointer items-center justify-center rounded-full border bg-card text-primary-dark shadow-sm transition-colors focus-within:ring-2 focus-within:ring-ring"
 			class:opacity-50={isUploading}
 			class:pointer-events-none={isUploading}
 		>
@@ -119,7 +122,7 @@
 				id="avatar-upload"
 				name="avatar"
 				accept="image/png, image/jpeg, image/webp"
-				class="hidden"
+				class="sr-only"
 				on:change={handleFileUpload}
 				disabled={isUploading}
 			/>
@@ -133,7 +136,7 @@
 			{:else if error}
 				<span class="text-destructive">{error}</span>
 			{:else}
-				Upload a clear headshot to help employers recognize you.
+				Upload a clear headshot to help practices recognize you.
 			{/if}
 		</p>
 		<p class="text-xs text-muted-foreground">JPG or PNG, max 2MB</p>

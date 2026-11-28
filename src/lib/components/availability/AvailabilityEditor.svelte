@@ -205,7 +205,7 @@
 		     edge at 375px. Status on its own row, then the two buttons sharing the
 		     width below. From sm: up it collapses back to one right-aligned row. -->
 		<div
-			class="fixed inset-x-0 bottom-0 z-20 flex flex-col gap-2 border-t bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:static sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:backdrop-blur-none"
+			class="fixed inset-x-0 bottom-[var(--tabbar-offset,0px)] z-20 flex flex-col gap-2 border-t bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:static sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:backdrop-blur-none"
 		>
 			<p class="text-sm text-muted-foreground sm:mr-auto">
 				{dirty ? COPY.save.dirty(changeCount) : COPY.save.clean}

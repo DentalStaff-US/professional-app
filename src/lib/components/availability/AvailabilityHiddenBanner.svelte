@@ -62,7 +62,7 @@
 						<EyeOff class="h-4 w-4" /> Hide them again
 					</Button>
 				{:else}
-					<Button variant="outline" size="sm" class="gap-2" href={`${basePath}?showUnavailable=1`}>
+					<Button variant="outline" size="sm" class="gap-2" href={`${basePath}${basePath.includes('?') ? '&' : '?'}showUnavailable=1`}>
 						<Eye class="h-4 w-4" /> Show them anyway
 					</Button>
 				{/if}

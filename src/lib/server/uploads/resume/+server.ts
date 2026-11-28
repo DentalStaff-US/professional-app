@@ -11,7 +11,7 @@ import { authenticateUser } from '$lib/server/serverUtils';
 import { eq } from 'drizzle-orm';
 
 const corsHeaders = {
-	'Access-Control-Allow-Origin': env.CANDIDATE_APP_DOMAIN,
+	'Access-Control-Allow-Origin': (env.CANDIDATE_APP_DOMAIN ?? '').replace(/\/+$/, ''),
 	'Access-Control-Allow-Methods': 'POST, OPTIONS',
 	'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 	'Access-Control-Allow-Credentials': 'true'

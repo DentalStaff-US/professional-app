@@ -1,11 +1,15 @@
 import { uploadFile } from '$lib/server/uploads';
 import type { FileType } from '$lib/server/uploads';
-import { fail, json, type RequestEvent } from '@sveltejs/kit';
+import { json, type RequestEvent } from '@sveltejs/kit';
 
-export const POST = async ({ request }: RequestEvent) => {
+export const POST = async ({ request, locals }: RequestEvent) => {
+	if (!locals.user) {
+		return json({ success: false, message: 'Unauthorized' }, { status: 401 });
+	}
+
 	const contentType = request.headers.get('Content-Type');
 	if (!contentType || !contentType.startsWith('multipart/form-data')) {
-		return fail(400, { success: false, message: 'Invalid content type' });
+		return json({ success: false, message: 'Invalid content type' }, { status: 400 });
 	}
 
 	try {
@@ -15,7 +19,7 @@ export const POST = async ({ request }: RequestEvent) => {
 		const uploadedFile = formData.get('file');
 
 		if (!uploadedFile || !(uploadedFile instanceof File)) {
-			return fail(400, { success: false, message: 'No file provided' });
+			return json({ success: false, message: 'No file provided' }, { status: 400 });
 		}
 
 		// Convert the file to an ArrayBuffer
@@ -33,6 +37,6 @@ export const POST = async ({ request }: RequestEvent) => {
 		return json({ success: true, url, fileName: uploadedFile.name });
 	} catch (error) {
 		console.error('Error uploading file:', error);
-		return fail(500, { success: false, message: 'File upload failed' });
+		return json({ success: false, message: 'File upload failed' }, { status: 500 });
 	}
 };

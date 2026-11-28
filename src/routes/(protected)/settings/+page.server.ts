@@ -8,7 +8,7 @@ import { redirect } from '@sveltejs/kit';
 export const load = async (event) => {
 	const user = event.locals.user;
 	if (!user) {
-		redirect(302, '/sign-in');
+		redirect(302, '/auth/sign-in');
 	}
 	// Affiliate card data — status and link only; everything else is in the
 	// portal. Never blocks the settings page: fetchAdmin returns a result rather

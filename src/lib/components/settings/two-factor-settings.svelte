@@ -90,7 +90,7 @@
 	}
 </script>
 
-<Card.Root class="border-slate-200/80">
+<Card.Root class="border-border/80">
 	<Card.Header>
 		<Card.Title class="flex items-center gap-2 text-xl">
 			<ShieldCheck class="h-5 w-5 text-primary" />
@@ -111,7 +111,7 @@
 
 		{#if enabled && mode === 'idle'}
 			<div
-				class="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm font-medium text-green-700"
+				class="flex items-center gap-2 rounded-md bg-status-positive-bg px-3 py-2 text-sm font-medium text-status-positive-fg"
 			>
 				<ShieldCheck class="h-4 w-4" /> Two-factor authentication is on.
 			</div>
@@ -122,7 +122,7 @@
 			</div>
 		{:else if mode === 'idle'}
 			<div>
-				<Button class="bg-primary hover:bg-primary/90" on:click={() => (mode = 'enable-password')}>
+				<Button  on:click={() => (mode = 'enable-password')}>
 					<ShieldCheck class="mr-2 h-4 w-4" /> Enable two-factor
 				</Button>
 			</div>
@@ -143,7 +143,7 @@
 					<Button
 						type="submit"
 						class={mode === 'enable-password'
-							? 'bg-primary hover:bg-primary/90'
+							? ''
 							: 'bg-destructive hover:bg-destructive/90'}
 						disabled={loading || !password}
 					>
@@ -153,7 +153,7 @@
 							{mode === 'enable-password' ? 'Continue' : 'Disable'}
 						{/if}
 					</Button>
-					<Button type="button" variant="destructiveOutline" on:click={reset}>Cancel</Button>
+					<Button type="button" variant="destructive-outline" on:click={reset}>Cancel</Button>
 				</div>
 			</form>
 		{/if}
@@ -166,7 +166,7 @@
 				</p>
 				<div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
 					{#if qrDataUrl}
-						<img src={qrDataUrl} alt="2FA QR code" class="h-44 w-44 rounded-lg border bg-white p-2" />
+						<img src={qrDataUrl} alt="2FA QR code" class="h-44 w-44 rounded-lg border bg-card p-2" />
 					{/if}
 					<div class="text-sm">
 						<p class="text-muted-foreground">Can't scan it? Enter this key manually:</p>
@@ -177,22 +177,22 @@
 				</div>
 
 				{#if backupCodes.length}
-					<div class="rounded-md border border-amber-200 bg-amber-50 p-3">
+					<div class="rounded-md border border-status-warning-border bg-status-warning-bg p-3">
 						<div class="mb-2 flex items-center justify-between">
-							<p class="text-sm font-semibold text-amber-900">Save your backup codes</p>
+							<p class="text-sm font-semibold text-status-warning-fg">Save your backup codes</p>
 							<button
 								type="button"
-								class="flex items-center gap-1 text-xs text-amber-800 hover:underline"
+								class="flex items-center gap-1 text-xs text-status-warning-fg hover:underline"
 								on:click={copyBackupCodes}
 							>
 								{#if copied}<Check class="h-3 w-3" /> Copied{:else}<Copy class="h-3 w-3" /> Copy{/if}
 							</button>
 						</div>
-						<p class="mb-2 text-xs text-amber-800">
+						<p class="mb-2 text-xs text-status-warning-fg">
 							Each code can be used once if you lose access to your authenticator. Store them
 							somewhere safe.
 						</p>
-						<div class="grid grid-cols-2 gap-1 font-mono text-xs text-amber-900 sm:grid-cols-3">
+						<div class="grid grid-cols-2 gap-1 font-mono text-xs text-status-warning-fg sm:grid-cols-3">
 							{#each backupCodes as bc}
 								<span>{bc}</span>
 							{/each}
@@ -211,14 +211,14 @@
 						class="tracking-widest"
 					/>
 					<div class="flex gap-2">
-						<Button type="submit" class="bg-primary hover:bg-primary/90" disabled={loading || !code}>
+						<Button type="submit"  disabled={loading || !code}>
 							{#if loading}
 								<Loader2 class="mr-2 h-4 w-4 animate-spin" /> Verifying…
 							{:else}
 								Verify &amp; enable
 							{/if}
 						</Button>
-						<Button type="button" variant="destructiveOutline" on:click={reset}>Cancel</Button>
+						<Button type="button" variant="destructive-outline" on:click={reset}>Cancel</Button>
 					</div>
 				</form>
 			</div>

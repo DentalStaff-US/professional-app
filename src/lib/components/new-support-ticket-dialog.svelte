@@ -59,13 +59,13 @@
 			<Dialog.Footer class="shrink-0 gap-2 border-t p-6 pt-4">
 				<Button
 					type="button"
-					variant="destructiveOutline"
+					variant="destructive-outline"
 					on:click={() => (open = false)}
 					disabled={submitting}
 				>
 					Cancel
 				</Button>
-				<Button type="submit" class="bg-primary hover:bg-primary/90" disabled={submitting}>
+				<Button type="submit"  disabled={submitting}>
 					{#if submitting}
 						<Loader2 class="mr-2 h-4 w-4 animate-spin" />
 						Submitting...

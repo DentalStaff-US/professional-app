@@ -1,6 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$lib/config/appUrls';
 import { generateToken } from '$lib/server/utils';
 import { superValidate, message, setError } from 'sveltekit-superforms/server';
 import { newCandidateDisciplinesSchema } from '$lib/config/zod-schemas';
@@ -11,7 +11,7 @@ import { logger } from '$lib/server/logger';
 export const load: PageServerLoad = async (event) => {
 	const { user } = event.locals;
 	if (!user) {
-		return redirect(302, '/sign-in');
+		return redirect(302, '/auth/sign-in');
 	}
 
 	if (!user.completedOnboarding && user.onboardingStep > 2) {
@@ -45,7 +45,7 @@ export const actions: Actions = {
 		const { user } = locals;
 
 		if (!user) {
-			return redirect(302, '/sign-in');
+			return redirect(302, '/auth/sign-in');
 		}
 
 		const form = await superValidate(request, newCandidateDisciplinesSchema);

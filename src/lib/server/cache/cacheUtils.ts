@@ -1,4 +1,4 @@
-import { PUBLIC_CLIENT_APP_DOMAIN } from '$env/static/public';
+import { PUBLIC_CLIENT_APP_DOMAIN } from '$lib/config/appUrls';
 import { generateToken } from '../utils';
 import { error } from '@sveltejs/kit';
 import { logger } from '$lib/server/logger';

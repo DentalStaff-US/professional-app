@@ -9,7 +9,7 @@ export const load: PageServerLoad = async (event) => {
 	});
 	const user = event.locals.user;
 	if (!user) {
-		redirect(302, '/sign-in');
+		redirect(302, '/auth/sign-in');
 	}
 
 	if (!user.completedOnboarding) {

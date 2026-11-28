@@ -4,6 +4,8 @@
 	export let data: { heading?: string; message?: string };
 </script>
 
+<svelte:head><title>Verify your email | DTSS Professionals</title></svelte:head>
+
 <section class="container grid items-center gap-6">
 	<div class="flex max-w-[980px] flex-col items-start gap-2">
 		{#if data.heading}

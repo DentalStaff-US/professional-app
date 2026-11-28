@@ -47,7 +47,7 @@ export type TicketDetailsResponse = {
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const { user } = locals;
-	if (!user) redirect(302, '/sign-in');
+	if (!user) redirect(302, '/auth/sign-in');
 
 	const token = generateToken(user.id);
 	const res = await fetchAdmin<TicketDetailsResponse>(
@@ -73,7 +73,7 @@ const commentSchema = z.object({ body: z.string().min(1, 'Comment cannot be empt
 export const actions: Actions = {
 	addComment: async (event) => {
 		const { user } = event.locals;
-		if (!user) redirect(302, '/sign-in');
+		if (!user) redirect(302, '/auth/sign-in');
 
 		const data = await event.request.formData();
 		const parsed = commentSchema.safeParse({ body: data.get('body') });
@@ -101,7 +101,7 @@ export const actions: Actions = {
 	},
 	closeTicket: async (event) => {
 		const { user } = event.locals;
-		if (!user) redirect(302, '/sign-in');
+		if (!user) redirect(302, '/auth/sign-in');
 
 		const token = generateToken(user.id);
 		const res = await fetchAdmin(

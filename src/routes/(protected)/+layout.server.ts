@@ -21,8 +21,11 @@ import type { LayoutServerLoad } from './$types';
 import db from '$lib/server/database/drizzle';
 import { sql } from 'drizzle-orm';
 import { readJobIntent } from '$lib/server/jobIntent';
+import { fetchAdmin } from '$lib/server/fetchAdmin';
+import { generateToken } from '$lib/server/utils';
 
 export const load: LayoutServerLoad = async (event) => {
+	event.depends('inbox:unread');
 	const user = event.locals.user;
 	// Surfaced so the layout can show an "admin is impersonating you" banner.
 	const impersonating = Boolean(event.locals.session?.impersonatedBy);
@@ -57,5 +60,10 @@ export const load: LayoutServerLoad = async (event) => {
 	// the admin external API and shown a banner here.
 	const candidateStatus = (result.rows[0] as { candidate_status: string }).candidate_status;
 
-	return { candidateStatus, impersonating };
+	// Only the Inbox tab's badge depends on this, so a failure just hides the badge.
+	const unread = await fetchAdmin<{ unreadCount: number }>('/api/external/inbox/getUnreadCount', {
+		token: generateToken(user.id)
+	});
+
+	return { candidateStatus, impersonating, unreadCount: unread.ok ? unread.data.unreadCount : 0 };
 };

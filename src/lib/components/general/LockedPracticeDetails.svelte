@@ -24,23 +24,23 @@
 </script>
 
 <div
-	class="rounded-md border border-dashed border-slate-300 bg-slate-50/80 px-3 py-2 {compact
+	class="rounded-md border border-dashed border-border bg-muted/50/80 px-3 py-2 {compact
 		? 'space-y-0.5'
 		: 'space-y-1'}"
 >
-	<div class="flex items-center gap-1.5 text-slate-700">
+	<div class="flex items-center gap-1.5 text-foreground">
 		<Lock class="h-3.5 w-3.5 shrink-0" />
 		<span class="text-sm font-medium">Practice details hidden</span>
 	</div>
 
 	{#if locationLine}
-		<div class="flex items-center gap-1.5 text-sm text-slate-600">
+		<div class="flex items-center gap-1.5 text-sm text-muted-foreground">
 			<MapPin class="h-3.5 w-3.5 shrink-0" />
 			<span>{locationLine}</span>
 		</div>
 	{/if}
 
 	{#if !compact}
-		<p class="text-xs text-slate-500">{unlockMessage}</p>
+		<p class="text-xs text-muted-foreground">{unlockMessage}</p>
 	{/if}
 </div>
